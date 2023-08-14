@@ -65,7 +65,13 @@ impl NetworkManager {
 
             // Configure this NetworkManager for a server
             ServerOrClient::Server => {
-                let (endpoint, _server_cert) = make_server_endpoint(address).unwrap();
+                let (endpoint, _server_cert) = match make_server_endpoint(address) {
+                    Ok((ep, cert)) => (ep, cert),
+                    Err(_) => {
+                        eprintln!("[server] failed to bind to address. exiting");
+                        std::process::exit(1);
+                    }
+                };
 
                 endpoint
             }

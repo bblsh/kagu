@@ -6,7 +6,7 @@ use crate::realms::realm_desc::RealmDescription;
 use crate::types::{ChannelIdSize, RealmIdSize, UserIdSize};
 use crate::user::User;
 use quinn::{Connection, ConnectionError, Endpoint};
-use std::collections::{HashMap, VecDeque};
+use std::collections::VecDeque;
 use std::sync::Arc;
 use tokio::sync::mpsc::{channel, error::TryRecvError, Receiver, Sender};
 use tokio::sync::Mutex;
@@ -35,8 +35,6 @@ pub struct Client {
     // This is an option because it's possible this client isn't registered with the server yet
     user: Arc<Mutex<Option<User>>>,
 
-    // This maps usernames to a user id
-    user_id_to_username: Arc<Mutex<HashMap<UserIdSize, String>>>,
     username: String,
 
     // Our known Realms
@@ -89,7 +87,6 @@ impl Client {
             connection_sender: Arc::new(Mutex::new(None)),
             messages: Arc::new(Mutex::new(VecDeque::new())),
             user: Arc::new(Mutex::new(None)),
-            user_id_to_username: Arc::new(Mutex::new(HashMap::new())),
             username: username,
             realms: Arc::new(Mutex::new(Vec::new())),
             audio_manager: Arc::new(Mutex::new(Some(audio_manager))),
@@ -165,7 +162,6 @@ impl Client {
         }
 
         let user_handle = self.user.clone();
-        let id_to_user = self.user_id_to_username.clone();
 
         let audio_sender = self.audio_sender.clone().unwrap();
 
@@ -205,13 +201,7 @@ impl Client {
                             MessageType::LoginSuccess(user) => {
                                 let mut guard = user_handle.lock().await;
                                 let id = user.get_id();
-                                let username = String::from(user.get_username());
                                 *guard = Some(user);
-
-                                // Let's add ourselves to our User to UserIDs so we know who we are
-                                let u_t_u_id = id_to_user.clone();
-                                let mut u_t_u_id = u_t_u_id.lock().await;
-                                u_t_u_id.insert(id.clone(), username);
 
                                 // Now that we've logged in, let's request any realms we're part of
                                 Client::send(
