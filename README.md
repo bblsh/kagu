@@ -12,6 +12,11 @@ Rustcord is powered by:
 
 Follow these instructions.
 
+### Prerequisites
+
+* To build on Debian or Ubuntu, install `libasound2-devel`.
+* To build on Fedora install `alsa-lib-devel`.
+
 ### Clone the repo
 
 ```
@@ -66,6 +71,7 @@ Pressing `Esc` will exit edit mode.
 * There's currently no option to choose an audio input and output (coming soonTM), so the defaults will be used.
 * Any and all feedback or pull requests to improve Rustcord in any way is welcome!
 * This was tested on macOS, and `cpal` may have issues building or running on other platforms.
+* Windows has not been tested yet.
 
 [rust]: https://www.rust-lang.org/
 [cpal]: https://github.com/RustAudio/cpal
