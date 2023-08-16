@@ -1,5 +1,5 @@
 use crate::message::{Message, MessageType};
-use crate::network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
+use crate::network_manager::{NetworkManager, ServerOrClient};
 use crate::realms::realm::ChannelType;
 use crate::realms::realms_manager::RealmsManager;
 use crate::types::{ConnectionIdSize, UserIdSize};
@@ -9,7 +9,6 @@ use quinn::{Connection, Endpoint};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::mpsc;
-use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::{mpsc::Receiver, mpsc::Sender, Mutex};
 use tokio::task::JoinHandle;
 
@@ -35,8 +34,6 @@ pub struct Server {
     endpoint: Endpoint,
     num_connections: Arc<Mutex<ConnectionIdSize>>,
     connections: Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-    connection_command_senders:
-        Arc<Mutex<HashMap<ConnectionIdSize, mpsc::Sender<ConnectionCommand>>>>,
     users: Arc<Mutex<Vec<User>>>,
     num_users: Arc<Mutex<UserIdSize>>,
     realms_manager: Arc<Mutex<RealmsManager>>,
@@ -50,7 +47,6 @@ impl Server {
             endpoint: endpoint,
             num_connections: Arc::new(Mutex::new(0)),
             connections: Arc::new(Mutex::new(HashMap::new())),
-            connection_command_senders: Arc::new(Mutex::new(HashMap::new())),
             users: Arc::new(Mutex::new(Vec::new())),
             num_users: Arc::new(Mutex::new(0)),
             realms_manager: Arc::new(Mutex::new(RealmsManager::new())),
@@ -125,7 +121,6 @@ impl Server {
         self: &Self,
         message_sender: mpsc::Sender<Vec<u8>>,
     ) -> JoinHandle<()> {
-        let connection_senders = self.connection_command_senders.clone();
         let endpoint = self.endpoint.clone();
         let connections_handle = self.connections.clone();
 
@@ -161,14 +156,7 @@ impl Server {
 
                 let _connections = connections_handle.clone();
 
-                let (tx, mut rx): (
-                    mpsc::Sender<ConnectionCommand>,
-                    mpsc::Receiver<ConnectionCommand>,
-                ) = mpsc::channel(1000);
-
                 let connection_id_clone = connection_id.clone();
-                let mut connection_senders = connection_senders.lock().await;
-                connection_senders.insert(connection_id, tx);
 
                 let message_sender = message_sender.clone();
 
@@ -180,20 +168,6 @@ impl Server {
                 // Spawn a tokio thread to listen for data
                 tokio::spawn(async move {
                     loop {
-                        // Listen for channel messages to stop listening on this channel
-                        match rx.try_recv() {
-                            Ok(command) => match command {
-                                ConnectionCommand::StopReceiving => {
-                                    break;
-                                }
-                            },
-                            Err(TryRecvError::Empty) => (), // Do nothing here, nothing to receive yet
-                            Err(TryRecvError::Disconnected) => {
-                                eprintln!("No sender available to receive from");
-                                break;
-                            }
-                        }
-
                         let stream = connection.accept_bi().await;
                         let _stream = match stream {
                             Ok((_send_stream, mut read_stream)) => {
