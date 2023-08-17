@@ -89,11 +89,11 @@ impl Server {
         );
 
         // Make another realm
-        let id = realms_manager.add_realm(String::from("GrtysLr"));
-        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Spiral Mtn"));
-        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Frzzy Peak"));
-        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Mumbo's Mtn"));
-        realms_manager.add_channel(id, ChannelType::VoiceChannel, String::from("Gobis Valley"));
+        // let id = realms_manager.add_realm(String::from("GrtysLr"));
+        // realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Spiral Mtn"));
+        // realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Frzzy Peak"));
+        // realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Mumbo's Mtn"));
+        // realms_manager.add_channel(id, ChannelType::VoiceChannel, String::from("Gobis Valley"));
 
         realms_manager
     }
