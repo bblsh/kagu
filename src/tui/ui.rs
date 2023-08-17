@@ -396,34 +396,7 @@ fn get_lines_from_text_channel<'a>(app: &App) -> Vec<Line<'a>> {
                     for message in &channel.chat_history {
                         // If there's optional image data
                         if let Some(_image) = &message.1 {
-                            // This is SUPER inefficient and needs to be completely scrapped
-                            // and replaced with better logic not involving loading the image
-                            // every time the UI is drawn
-
-                            // let span: Vec<Span> = vec![
-                            //     Span::raw(app.get_username_from_id(message.0)),
-                            //     Span::raw(": "),
-                            // ];
-                            // // Push the first line with the "Username: "
-                            // lines.push(Line::from(span));
-                            // let image = image::load_from_memory(image.as_slice()).unwrap();
-                            // let new_image =
-                            //     image.resize(20, 20, image::imageops::FilterType::Nearest);
-
-                            // let mut cur_width = 0;
-                            // for pixel in new_image.pixels() {
-                            //     let span: Vec<Span> = vec![Span::styled(
-                            //         " ",
-                            //         Style::default()
-                            //             .bg(Color::Rgb(pixel.2[0], pixel.2[1], pixel.2[2])),
-                            //     )];
-                            //     if cur_width == new_image.width() {
-                            //         lines.push(Line::from(span));
-                            //         cur_width = 0;
-                            //     } else {
-                            //         cur_width = cur_width + 1;
-                            //     }
-                            // }
+                            // Render the image here
                         } else {
                             let mut spans: Vec<Span> = vec![
                                 Span::raw(app.get_username_from_id(message.0)),
