@@ -399,6 +399,9 @@ impl Server {
                 // Remove this user from our list of users
                 users.retain(|user| user.get_id() != user_id);
 
+                // Remove this from our list of connections
+                connections.retain(|id, _| id != &user_id);
+
                 Server::send_to_everyone_except_id(
                     user_id,
                     connections,
