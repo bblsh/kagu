@@ -9,7 +9,7 @@ use std::collections::HashMap;
 // Instead of sending everything like chat history, active members, etc
 // we send a high-level, smaller set of data for each realm to users.
 // Additional information may be requested and sent in other messages.
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RealmDescription {
     pub id: RealmIdSize,
     pub name: String,

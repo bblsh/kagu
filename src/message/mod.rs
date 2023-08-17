@@ -5,14 +5,14 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct MessageHeader {
     pub user_id: UserIdSize,
     pub realm_id: RealmIdSize,
     pub channel_id: ChannelIdSize,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub enum MessageType {
     // User communications
     Text(Vec<u8>),
@@ -57,7 +57,7 @@ pub enum MessageType {
     Heartbeat,
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct Message {
     pub user_id: UserIdSize,
     pub realm_id: RealmIdSize,
@@ -77,6 +77,7 @@ impl From<MessageType> for Message {
             MessageType::LoginAttempt(username) => {
                 Message::new(0, MessageType::LoginAttempt(username))
             }
+            MessageType::LoginSuccess(user) => Message::new(0, MessageType::LoginSuccess(user)),
             MessageType::UserJoined(user) => {
                 Message::new(user.get_id(), MessageType::UserJoined(user))
             }
@@ -124,7 +125,7 @@ impl Message {
         }
     }
 
-    pub fn get_message(self: Self) -> MessageType {
+    pub fn get_message(self) -> MessageType {
         match self.message {
             MessageType::Text(text) => MessageType::Text(text),
             MessageType::TextMention(message) => MessageType::TextMention(message),

@@ -16,34 +16,13 @@ async fn main() -> AppResult<()> {
     let client = Client::new(address, username).await;
     client.run_client().await;
 
+    loop {
+        if client.get_user_id().await.is_some() {
+            break;
+        }
+    }
+
     // Create an application.
     let mut app = App::new(client);
     app.run_app().await
-
-    /*
-    // Initialize the audio manager to handle all playback and recording
-    let mut audio_manager = AudioManager::new();
-
-    audio_manager.start_recording();
-    audio_manager.start_listening();
-
-    // Keep recording and sending until we command the program to stop
-    loop {
-        let mut input = String::new();
-        let stdin = std::io::stdin();
-        stdin.read_line(&mut input).unwrap();
-
-        match input.as_str().trim_end() {
-            "stop" => {
-                println!("Stopping recording and exiting...");
-                let _ = &audio_manager.stop_recording();
-                let _ = &audio_manager.stop_listening();
-                break;
-            }
-            _ => {
-                println!("Not a valid command. Enter \"stop\" to stop recording");
-            }
-        }
-    }
-    */
 }

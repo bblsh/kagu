@@ -45,6 +45,9 @@ pub struct Client {
 
     // Audio manager to handle audio recording and playback
     audio_manager: Arc<Mutex<Option<AudioManager>>>,
+
+    // If the user is logged in
+    is_logged_in: Arc<Mutex<bool>>,
 }
 
 impl Client {
@@ -90,6 +93,7 @@ impl Client {
             username: username,
             realms: Arc::new(Mutex::new(Vec::new())),
             audio_manager: Arc::new(Mutex::new(Some(audio_manager))),
+            is_logged_in: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -112,8 +116,10 @@ impl Client {
     }
 
     async fn login(self: &Self, username: String) {
+        println!("Logging in...");
         let login_message = Message::from(MessageType::LoginAttempt(username));
 
+        // Try to log in
         Client::send(
             login_message.into_vec_u8().unwrap().as_slice(),
             self.connection.clone(),
@@ -149,6 +155,13 @@ impl Client {
         }
     }
 
+    pub async fn is_logged_in(&self) -> bool {
+        let logged_in = self.is_logged_in.lock().await;
+        let is_logged_in = *logged_in;
+
+        is_logged_in
+    }
+
     async fn receive_data(self: &Self) {
         let connection = self.connection.clone();
         let messages = self.messages.clone();
@@ -162,6 +175,7 @@ impl Client {
         }
 
         let user_handle = self.user.clone();
+        let is_logged_in = self.is_logged_in.clone();
 
         let audio_sender = self.audio_sender.clone().unwrap();
 
@@ -184,6 +198,7 @@ impl Client {
                 }
 
                 let audio_sender = audio_sender.clone();
+                let logged_in = is_logged_in.clone();
 
                 let connection = connection.clone();
                 let stream = connection.accept_bi().await;
@@ -203,6 +218,9 @@ impl Client {
                                 let id = user.get_id();
                                 *guard = Some(user);
 
+                                let mut logged_in = logged_in.lock().await;
+                                *logged_in = true;
+
                                 // Now that we've logged in, let's request any realms we're part of
                                 Client::send(
                                     Message::from(MessageType::GetRealms(id))
@@ -216,7 +234,10 @@ impl Client {
                             MessageType::Audio(audio) => {
                                 audio_sender.send((audio.0, audio.3)).await.unwrap();
                             }
-                            _ => messages.push_back(Message::from_vec_u8(message).unwrap()),
+                            _ => {
+                                //println!("{:?}", Message::from_vec_u8(message).unwrap());
+                                messages.push_back(Message::from_vec_u8(message).unwrap());
+                            }
                         }
                     }
                     Err(quinn::ConnectionError::ApplicationClosed(ac)) => {
