@@ -6,7 +6,7 @@ use ringbuf::{Consumer, SharedRb};
 use std::sync::Arc;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
-use crate::message::{Message, MessageType};
+use crate::message::{Message, MessageHeader, MessageType};
 use crate::types::UserIdSize;
 
 pub enum AudioManagerError {
@@ -418,7 +418,7 @@ where
 
     // Pack the data
     //let message = Message::from(MessageType::Audio(audio));
-    let message = Message::from(MessageType::Audio((0, 0, 0, audio)));
+    let message = Message::from(MessageType::Audio((MessageHeader::new(0, 0, 0), audio)));
 
     // Create the runtime
     let rt = tokio::runtime::Runtime::new().unwrap();

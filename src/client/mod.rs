@@ -232,7 +232,7 @@ impl Client {
                                 .await;
                             }
                             MessageType::Audio(audio) => {
-                                audio_sender.send((audio.0, audio.3)).await.unwrap();
+                                audio_sender.send((audio.0.user_id, audio.1)).await.unwrap();
                             }
                             _ => {
                                 //println!("{:?}", Message::from_vec_u8(message).unwrap());
@@ -285,9 +285,7 @@ impl Client {
         if let Some(ref user) = *guard {
             // Send our mention message
             let message = Message::from(MessageType::TextMention((
-                user.get_id(),
-                realm_id,
-                channel_id,
+                MessageHeader::new(user.get_id(), realm_id, channel_id),
                 message_chunks,
             )));
             let serialized = message.into_vec_u8().unwrap();
@@ -323,7 +321,7 @@ impl Client {
         let guard = self.user.lock().await;
         if let Some(ref user) = *guard {
             // Send our join message
-            let message = Message::from(MessageType::UserLeftVoiceChannel((
+            let message = Message::from(MessageType::UserLeftVoiceChannel(MessageHeader::new(
                 user.get_id(),
                 *realm_id,
                 *channel_id,
@@ -356,10 +354,8 @@ impl Client {
                 if let Some(ref user) = *guard {
                     // Send our join message
                     let message = Message::from(MessageType::JoinChannel((
-                        user.get_id(),
-                        realm_id,
+                        MessageHeader::new(user.get_id(), realm_id, channel_id),
                         channel_type,
-                        channel_id,
                     )));
                     let serialized = message.into_vec_u8().unwrap();
                     Client::send(serialized.as_slice(), self.connection.clone()).await;
@@ -370,11 +366,9 @@ impl Client {
                 let guard = self.user.lock().await;
                 if let Some(ref user) = *guard {
                     // Send our join message
-                    let message = Message::from(MessageType::UserJoinedVoiceChannel((
-                        user.get_id(),
-                        realm_id,
-                        channel_id,
-                    )));
+                    let message = Message::from(MessageType::UserJoinedVoiceChannel(
+                        MessageHeader::new(user.get_id(), realm_id, channel_id),
+                    ));
                     let serialized = message.into_vec_u8().unwrap();
                     Client::send(serialized.as_slice(), self.connection.clone()).await;
                 }

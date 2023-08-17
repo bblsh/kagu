@@ -280,34 +280,40 @@ impl<'a> App<'a> {
                     }
                     MessageType::UserJoinedVoiceChannel(join) => {
                         // Add this user to that channel's connected_users
-                        self.realms_manager
-                            .add_user_to_voice_channel(join.0, join.1, join.2);
+                        self.realms_manager.add_user_to_voice_channel(
+                            join.user_id,
+                            join.realm_id,
+                            join.channel_id,
+                        );
 
                         // For now let's update the voice_channels list with
                         // what we already have saved elsewhere
                         for channel in &mut self.voice_channels.items {
-                            if channel.0 == join.2 {
-                                channel.2.push(join.0);
+                            if channel.0 == join.channel_id {
+                                channel.2.push(join.user_id);
                             }
                         }
 
                         // If this is us, let us know we've been connected via voice
                         if let Some(id) = self.client.get_user_id().await {
-                            if id == join.0 {
+                            if id == join.user_id {
                                 self.is_voice_connected = true;
                                 // Update our current voice channel ID
-                                self.current_voice_channel = Some(join.2);
+                                self.current_voice_channel = Some(join.channel_id);
                             }
                         }
                     }
                     MessageType::UserLeftVoiceChannel(left) => {
-                        self.realms_manager
-                            .remove_user_from_voice_channel(left.0, left.1, left.2);
+                        self.realms_manager.remove_user_from_voice_channel(
+                            left.user_id,
+                            left.realm_id,
+                            left.channel_id,
+                        );
 
                         // For now let's update the voice_channels list with
                         // what we already have saved elsewhere
                         for channel in &mut self.voice_channels.items {
-                            if let Some(index) = channel.2.iter().position(|x| x == &left.0) {
+                            if let Some(index) = channel.2.iter().position(|x| x == &left.user_id) {
                                 channel.2.remove(index);
                             }
                         }
@@ -334,15 +340,18 @@ impl<'a> App<'a> {
                     MessageType::TextMention(message) => {
                         // Add this message to its respective channel's history
                         // Get our realm
-                        if let Some(realm) = self.realms_manager.get_realm_mut(message.1) {
+                        if let Some(realm) = self.realms_manager.get_realm_mut(message.0.realm_id) {
                             // Get this text channel
-                            if let Some(channel) = realm.get_text_channel_mut(message.2) {
+                            if let Some(channel) = realm.get_text_channel_mut(message.0.channel_id)
+                            {
                                 // Add this message to our that channel's chat history
-                                channel
-                                    .chat_history
-                                    .push((message.0, None, message.3.clone()));
+                                channel.chat_history.push((
+                                    message.0.user_id,
+                                    None,
+                                    message.1.clone(),
+                                ));
 
-                                for chunk in message.3 {
+                                for chunk in message.1 {
                                     if let Some(id) = chunk.1 {
                                         if id == self.user_id.unwrap() {
                                             // If we are currently in this channel, don't mark a pending mention

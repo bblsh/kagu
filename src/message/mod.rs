@@ -12,19 +12,26 @@ pub struct MessageHeader {
     pub channel_id: ChannelIdSize,
 }
 
+impl MessageHeader {
+    pub fn new(
+        user_id: UserIdSize,
+        realm_id: RealmIdSize,
+        channel_id: ChannelIdSize,
+    ) -> MessageHeader {
+        MessageHeader {
+            user_id: user_id,
+            realm_id: realm_id,
+            channel_id: channel_id,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub enum MessageType {
     // User communications
     Text(Vec<u8>),
-    Audio((UserIdSize, RealmIdSize, ChannelIdSize, Vec<u8>)),
-    TextMention(
-        (
-            UserIdSize,
-            RealmIdSize,
-            ChannelIdSize,
-            Vec<(String, Option<UserIdSize>)>,
-        ),
-    ),
+    Audio((MessageHeader, Vec<u8>)),
+    TextMention((MessageHeader, Vec<(String, Option<UserIdSize>)>)),
     AudioConnection(UserIdSize),
     Image((MessageHeader, Vec<u8>)),
 
@@ -36,10 +43,10 @@ pub enum MessageType {
     // Users coming and going
     UserJoined(User),
     UserLeft(UserIdSize),
-    JoinChannel((UserIdSize, RealmIdSize, ChannelType, ChannelIdSize)),
-    LeaveChannel((UserIdSize, RealmIdSize, ChannelType, ChannelIdSize)),
-    UserJoinedVoiceChannel((UserIdSize, RealmIdSize, ChannelIdSize)),
-    UserLeftVoiceChannel((UserIdSize, RealmIdSize, ChannelIdSize)),
+    JoinChannel((MessageHeader, ChannelType)),
+    LeaveChannel((MessageHeader, ChannelType)),
+    UserJoinedVoiceChannel(MessageHeader),
+    UserLeftVoiceChannel(MessageHeader),
     Disconnecting(UserIdSize),
 
     // Users
@@ -83,10 +90,10 @@ impl From<MessageType> for Message {
             }
             MessageType::UserLeft(user_id) => Message::new(user_id, MessageType::UserLeft(user_id)),
             MessageType::JoinChannel(join_info) => {
-                Message::new(join_info.0, MessageType::JoinChannel(join_info))
+                Message::new(join_info.0.user_id, MessageType::JoinChannel(join_info))
             }
             MessageType::LeaveChannel(leave_info) => {
-                Message::new(leave_info.0, MessageType::JoinChannel(leave_info))
+                Message::new(leave_info.0.user_id, MessageType::LeaveChannel(leave_info))
             }
             MessageType::UserJoinedVoiceChannel(joined) => {
                 Message::new(0, MessageType::UserJoinedVoiceChannel(joined))

@@ -2,19 +2,17 @@ use crate::message::{Message, MessageType};
 use crate::network_manager::{NetworkManager, ServerOrClient};
 use crate::realms::realm::ChannelType;
 use crate::realms::realms_manager::RealmsManager;
-use crate::types::{ConnectionIdSize, UserIdSize};
+use crate::types::UserIdSize;
 use crate::user::User;
 
 use quinn::{Connection, Endpoint};
 use std::collections::HashMap;
-use std::sync::Arc;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
-use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 // Not used at the moment
 pub enum ServerMessageType {
-    RemoveConnection(UserIdSize),
+    RemoveConnection(Connection),
     SuccessfulLogin((String, Connection)),
     FailedLogin(Connection),
     Message((Connection, Message)),
@@ -46,7 +44,7 @@ impl Server {
         // The recevier receives data, and sends this to the process thread to handle
         let (data_tx, data_rx): (Sender<ServerMessage>, Receiver<ServerMessage>) = channel(5000);
 
-        // The processor receives messsages and sends messages to the send thread to send
+        // The processing thread receives messsages and sends messages to the send thread to send
         let (message_tx, message_rx): (Sender<ServerMessage>, Receiver<ServerMessage>) =
             channel(5000);
 
@@ -61,49 +59,41 @@ impl Server {
         }
     }
 
-    fn make_test_realm() -> RealmsManager {
+    fn make_test_realms() -> RealmsManager {
         let mut realms_manager = RealmsManager::new();
         let id = realms_manager.add_realm(String::from("MshKngdm"));
+
+        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Peach's Castle"));
+        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Yoshi Land"));
         realms_manager.add_channel(
-            id.clone(),
-            ChannelType::TextChannel,
-            String::from("Peach's Castle"),
-        );
-        realms_manager.add_channel(
-            id.clone(),
-            ChannelType::TextChannel,
-            String::from("Yoshi Land"),
-        );
-        realms_manager.add_channel(
-            id.clone(),
+            id,
             ChannelType::TextChannel,
             String::from("Jolly Roger Bay"),
         );
-        realms_manager.add_channel(
-            id.clone(),
-            ChannelType::TextChannel,
-            String::from("Hazy Maze Cave"),
-        );
-        realms_manager.add_channel(
-            id.clone(),
-            ChannelType::TextChannel,
-            String::from("Rainbow Ride"),
-        );
+        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Hazy Maze Cave"));
+        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Rainbow Ride"));
         realms_manager.add_channel(
             id,
             ChannelType::VoiceChannel,
             String::from("Bowser's Castle"),
         );
         realms_manager.add_channel(
-            id.clone(),
+            id,
             ChannelType::VoiceChannel,
             String::from("Goombas Galore"),
         );
         realms_manager.add_channel(
-            id.clone(),
+            id,
             ChannelType::VoiceChannel,
             String::from("Tick Tock Clock"),
         );
+
+        // Make another realm
+        let id = realms_manager.add_realm(String::from("GrtysLr"));
+        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Spiral Mtn"));
+        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Frzzy Peak"));
+        realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Mumbo's Mtn"));
+        realms_manager.add_channel(id, ChannelType::VoiceChannel, String::from("Gobis Valley"));
 
         realms_manager
     }
@@ -162,7 +152,20 @@ impl Server {
                                                 }
                                                 _ => {
                                                     eprintln!("[server] unauthenticated user message. removing connection");
-                                                    // send failed login message to that connection
+                                                    // Send a failed login message
+                                                    let sm = ServerMessage::new(
+                                                        ServerMessageType::FailedLogin(
+                                                            connection.clone(),
+                                                        ),
+                                                    );
+
+                                                    match tx.send(sm).await {
+                                                        Ok(_) => (),
+                                                        Err(_) => eprintln!(
+                                                            "[server] failed to send to a channel"
+                                                        ),
+                                                    }
+
                                                     break;
                                                 }
                                             }
@@ -175,6 +178,7 @@ impl Server {
                                 } else {
                                     // This connection/user is logged in, so handle this message normally
                                     match Message::from_vec_u8(buffer) {
+                                        // The message was deserialized, so let's send it to the send thread
                                         Ok(message) => {
                                             // Send this message to be handled
                                             let sm =
@@ -198,12 +202,23 @@ impl Server {
                             }
                             Err(quinn::ConnectionError::ApplicationClosed { .. }) => {
                                 println!("[server] connection closed");
-                                // Send message to remove connection
+                                // The user sent a disconnect message by now, so no need to send anything here
                                 break;
                             }
                             Err(e) => {
                                 println!("[server] stream error ({}) removing connection", e);
                                 // Send message to remove connection
+                                let sm = ServerMessage::new(ServerMessageType::RemoveConnection(
+                                    connection.clone(),
+                                ));
+
+                                match tx.send(sm).await {
+                                    Ok(_) => (),
+                                    Err(_) => {
+                                        eprintln!("[server] failed to send to a channel")
+                                    }
+                                }
+
                                 break;
                             }
                         };
@@ -211,139 +226,6 @@ impl Server {
                 });
             }
         });
-    }
-
-    async fn handle_message(
-        connection_id: ConnectionIdSize,
-        connections_handle: Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-        message: Vec<u8>,
-        message_sender: Sender<Vec<u8>>,
-        users: Arc<Mutex<Vec<User>>>,
-        realms_manager: Arc<Mutex<RealmsManager>>,
-        num_users: Arc<Mutex<UserIdSize>>,
-    ) {
-        let deserialized: Message = bincode::deserialize(message.as_slice()).unwrap();
-        match deserialized.get_message() {
-            MessageType::LoginAttempt(username) => {
-                println!("Authenticating user...");
-                Server::authenticate_user(
-                    &connections_handle,
-                    connection_id,
-                    username.clone(),
-                    users,
-                    num_users,
-                )
-                .await;
-                println!("[server] client {} logged in", username);
-            }
-            MessageType::Text(text) => {
-                println!(
-                    "[server] Received message from client: {}",
-                    String::from_utf8(text.clone()).unwrap()
-                );
-                message_sender.send(message).await.unwrap();
-            }
-            MessageType::TextMention(message) => {
-                println!("[server] got a mention message");
-                Server::send_to_everyone(
-                    Message::from(MessageType::TextMention(message)),
-                    &connections_handle,
-                )
-                .await;
-            }
-            MessageType::Audio(audio) => {
-                Server::send_to_everyone(
-                    Message::from(MessageType::Audio(audio)),
-                    &connections_handle,
-                )
-                .await;
-            }
-            MessageType::Image(image) => {
-                println!("[server] someone sent an image");
-                Server::send_to_everyone(
-                    Message::from(MessageType::Image(image)),
-                    &connections_handle,
-                )
-                .await;
-            }
-            MessageType::AudioConnection(_user_id) => {
-                println!("[server] audio connected opened");
-            }
-            MessageType::GetRealms(_user_id) => {
-                println!("[server] got request for all realms");
-                Server::send_realms_to_connection_id(
-                    &connections_handle,
-                    connection_id,
-                    &realms_manager,
-                )
-                .await;
-            }
-            MessageType::JoinChannel(_join_msg) => {
-                println!("Someone joined a channel...");
-            }
-            MessageType::UserJoinedVoiceChannel(join) => {
-                println!("[server] user joined a voice channel...");
-                Server::send_to_everyone(
-                    Message::from(MessageType::UserJoinedVoiceChannel(join)),
-                    &connections_handle,
-                )
-                .await;
-            }
-            MessageType::UserLeftVoiceChannel(left) => {
-                println!("[server] user left a voice channel...");
-                Server::send_to_everyone(
-                    Message::from(MessageType::UserLeftVoiceChannel(left)),
-                    &connections_handle,
-                )
-                .await;
-            }
-            MessageType::Disconnecting(user_id) => {
-                // Remove this user from our users
-                let mut users = users.lock().await;
-                users.retain(|user| user.get_id() != user_id);
-                drop(users);
-
-                Server::send_to_everyone_except_id(
-                    Message::from(MessageType::UserLeft(user_id)),
-                    connection_id,
-                    &connections_handle,
-                )
-                .await;
-            }
-            MessageType::Disconnect => {
-                Server::disconnect_user(connection_id, &connections_handle).await;
-            }
-            MessageType::Heartbeat => (),
-            _ => (),
-        };
-    }
-
-    async fn disconnect_user(
-        conn_id: ConnectionIdSize,
-        connections: &Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-    ) {
-        let conns = connections.clone();
-        let mut conns = conns.lock().await;
-        if let Some(connection) = conns.get(&conn_id) {
-            connection.close(0u32.into(), b"done");
-        }
-        conns.remove(&conn_id);
-    }
-
-    // Lazily generate a connection ID
-    async fn generate_connection_id(num_conns: Arc<Mutex<ConnectionIdSize>>) -> ConnectionIdSize {
-        let mut num_conns = num_conns.lock().await;
-        let id = *num_conns;
-        *num_conns = *num_conns + 1;
-        id
-    }
-
-    // Lazily generate a user ID
-    async fn generate_user_id(num_users: Arc<Mutex<UserIdSize>>) -> UserIdSize {
-        let mut num_users = num_users.lock().await;
-        let id = *num_users;
-        *num_users = *num_users + 1;
-        id
     }
 
     async fn start_process_thread(
@@ -354,7 +236,7 @@ impl Server {
         let process_handle = tokio::spawn(async move {
             // --- !!! TEST SETUP HERE !!! ---
             // This needs to be replaced with a database at some point in time
-            let mut realms_manager = Server::make_test_realm();
+            let realms_manager = Server::make_test_realms();
             // END SETUP
 
             let mut users: Vec<User> = Vec::new();
@@ -391,7 +273,7 @@ impl Server {
                             Server::send_to_id(&connections, id, message, tx.clone()).await;
 
                             // Send the UserJoined message to everyone
-                            Server::send_to_everyone_new(
+                            Server::send_to_everyone(
                                 &connections,
                                 Message::from(MessageType::UserJoined(User::new(id, username))),
                                 tx.clone(),
@@ -415,17 +297,44 @@ impl Server {
                             // Don't need to remove a connection here since we've never added this one
                         }
                         // The user disconnected or the connection was lost, so remove this connection
-                        ServerMessageType::RemoveConnection(user_id) => {
-                            connections.remove(&user_id);
+                        ServerMessageType::RemoveConnection(connection) => {
+                            let id = connections.iter_mut().find_map(|(key, val)| {
+                                if &val.stable_id() == &connection.stable_id() {
+                                    Some(key.clone())
+                                } else {
+                                    None
+                                }
+                            });
+
+                            // This connection was saved, so remove it and tell everyone the user left
+                            match id {
+                                Some(user_id) => {
+                                    connections.retain(|_, conn| {
+                                        conn.stable_id() != connection.stable_id()
+                                    });
+
+                                    // Now remove this user from our list of users
+                                    users.retain(|user| user.get_id() != user_id);
+
+                                    // Send the UserLeft message to everyone
+                                    Server::send_to_everyone(
+                                        &connections,
+                                        Message::from(MessageType::UserLeft(user_id)),
+                                        tx.clone(),
+                                    )
+                                    .await;
+                                }
+                                None => (),
+                            };
                         }
                         // Process a normal message from a user
                         ServerMessageType::Message(message) => {
                             Server::new_handle_message(
                                 message.1,
-                                message.0,
                                 &mut connections,
                                 tx.clone(),
                                 &realms_manager,
+                                &mut users,
                             )
                             .await;
                         }
@@ -440,12 +349,14 @@ impl Server {
 
     async fn new_handle_message(
         message: Message,
-        connection: Connection,
         connections: &mut HashMap<UserIdSize, Connection>,
         message_sender: Sender<ServerMessage>,
         realms_manager: &RealmsManager,
+        users: &mut Vec<User>,
     ) {
-        println!("[server] what message is this {:?}", message);
+        // Debug print
+        //println!("[server] processing message {:?}", message);
+
         match message.get_message() {
             MessageType::GetRealms(user_id) => {
                 println!("[server] got request for realms");
@@ -453,9 +364,45 @@ impl Server {
                     .await;
             }
             MessageType::TextMention(message) => {
-                Server::send_to_everyone_new(
+                Server::send_to_everyone(
                     connections,
                     Message::from(MessageType::TextMention(message)),
+                    message_sender,
+                )
+                .await;
+            }
+            MessageType::Audio(message) => {
+                Server::send_to_everyone(
+                    connections,
+                    Message::from(MessageType::Audio(message)),
+                    message_sender,
+                )
+                .await;
+            }
+            MessageType::UserJoinedVoiceChannel(message) => {
+                Server::send_to_everyone(
+                    connections,
+                    Message::from(MessageType::UserJoinedVoiceChannel(message)),
+                    message_sender,
+                )
+                .await;
+            }
+            MessageType::UserLeftVoiceChannel(message) => {
+                Server::send_to_everyone(
+                    connections,
+                    Message::from(MessageType::UserLeftVoiceChannel(message)),
+                    message_sender,
+                )
+                .await;
+            }
+            MessageType::Disconnecting(user_id) => {
+                // Remove this user from our list of users
+                users.retain(|user| user.get_id() != user_id);
+
+                Server::send_to_everyone_except_id(
+                    user_id,
+                    connections,
+                    Message::from(MessageType::UserLeft(user_id)),
                     message_sender,
                 )
                 .await;
@@ -477,7 +424,7 @@ impl Server {
                                     .await
                                 {
                                     Ok(_) => match send.finish().await {
-                                        Ok(_) => println!("[server] sent message"),
+                                        Ok(_) => (),
                                         Err(e) => {
                                             eprintln!("[server] error on send.finish() {}", e);
                                         }
@@ -495,122 +442,6 @@ impl Server {
                 }
             }
         });
-    }
-
-    async fn send_to_everyone(
-        message: Message,
-        connections: &Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-    ) {
-        let mut conns = connections.lock().await;
-        for (_id, connection) in conns.iter_mut() {
-            Server::send(message.into_vec_u8().unwrap().as_slice(), connection).await;
-        }
-    }
-
-    async fn send_to_everyone_except_id(
-        message: Message,
-        conn_id: ConnectionIdSize,
-        connections: &Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-    ) {
-        let mut conns = connections.lock().await;
-        for (id, connection) in conns.iter_mut() {
-            if id != &conn_id {
-                Server::send(message.into_vec_u8().unwrap().as_slice(), connection).await;
-            }
-        }
-    }
-
-    async fn send(buffer: &[u8], connection: &mut Connection) {
-        match connection.open_bi().await {
-            Ok((mut send, _recv)) => match send.write_all(buffer).await {
-                Ok(_) => match send.finish().await {
-                    Ok(_) => (),
-                    Err(_) => (),
-                },
-                Err(e) => eprintln!("[server] error on send.finish() {}", e),
-            },
-            Err(e) => {
-                eprintln!("Error sending to connection? {}", e);
-            }
-        }
-    }
-
-    async fn send_to_connection_id(
-        connections: &Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-        connection_id: ConnectionIdSize,
-        buffer: &[u8],
-    ) {
-        let mut conns = connections.lock().await;
-        if let Some(conn) = conns.get_mut(&connection_id) {
-            Server::send(buffer, conn).await;
-        } else {
-            eprintln!("[server] error sending to connection id {}", connection_id);
-        }
-    }
-
-    async fn authenticate_user(
-        connections: &Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-        connection_id: ConnectionIdSize,
-        username: String,
-        users: Arc<Mutex<Vec<User>>>,
-        num_users: Arc<Mutex<UserIdSize>>,
-    ) {
-        // For now, authenticate everyone
-        //let conns = connections.lock().await;
-        let id = Server::generate_user_id(num_users).await;
-
-        // Create a new user and add it to our vec of users
-        let new_user = User::new(id, username.clone());
-        let users_handle = users.clone();
-        let mut users_handle = users_handle.lock().await;
-        users_handle.push(new_user.clone());
-        drop(users_handle);
-
-        // Respond to the user that the login was successful
-        let message = Message::new(id, MessageType::LoginSuccess(new_user));
-        Server::send_to_connection_id(
-            connections,
-            connection_id,
-            message.into_vec_u8().unwrap().as_slice(),
-        )
-        .await;
-
-        // There may be users in the channel that the new user doesn't
-        // know about yet, so let's send them an update with everyone
-        let users = users.lock().await;
-        let all_users = users.clone();
-        let message = Message::from(MessageType::AllUsers(all_users));
-        Server::send_to_connection_id(
-            connections,
-            connection_id,
-            message.into_vec_u8().unwrap().as_slice(),
-        )
-        .await;
-
-        // Send the UserJoined message to everyone
-        Server::send_to_everyone(
-            Message::from(MessageType::UserJoined(User::new(id, username))),
-            connections,
-        )
-        .await;
-    }
-
-    async fn send_realms_to_connection_id(
-        connections: &Arc<Mutex<HashMap<ConnectionIdSize, Connection>>>,
-        connection_id: ConnectionIdSize,
-        realms_manager: &Arc<Mutex<RealmsManager>>,
-    ) {
-        // Make our RealmsDescription message
-        let rm = realms_manager.lock().await;
-
-        let message = Message::from(MessageType::RealmsManager(rm.clone()));
-
-        Server::send_to_connection_id(
-            connections,
-            connection_id,
-            message.into_vec_u8().unwrap().as_slice(),
-        )
-        .await;
     }
 
     async fn send_realms_to_id(
@@ -632,13 +463,13 @@ impl Server {
         sender: Sender<ServerMessage>,
     ) {
         if let Some(conn) = connections.get(&user_id) {
-            Server::send_new(message, conn.clone(), sender).await;
+            Server::send(message, conn.clone(), sender).await;
         } else {
             eprintln!("[server] error sending to connection id {}", user_id);
         }
     }
 
-    async fn send_new(message: Message, connection: Connection, sender: Sender<ServerMessage>) {
+    async fn send(message: Message, connection: Connection, sender: Sender<ServerMessage>) {
         match sender
             .send(ServerMessage::new(ServerMessageType::Message((
                 connection, message,
@@ -646,19 +477,32 @@ impl Server {
             .await
         {
             Ok(_) => (),
-            Err(e) => {
+            Err(_) => {
                 eprintln!("[server] failed to send");
             }
         }
     }
 
-    async fn send_to_everyone_new(
+    async fn send_to_everyone(
         connections: &HashMap<UserIdSize, Connection>,
         message: Message,
         sender: Sender<ServerMessage>,
     ) {
         for (_id, connection) in connections.iter() {
-            Server::send_new(message.clone(), connection.clone(), sender.clone()).await;
+            Server::send(message.clone(), connection.clone(), sender.clone()).await;
+        }
+    }
+
+    async fn send_to_everyone_except_id(
+        user_id: UserIdSize,
+        connections: &HashMap<UserIdSize, Connection>,
+        message: Message,
+        sender: Sender<ServerMessage>,
+    ) {
+        for (id, connection) in connections.iter() {
+            if id != &user_id {
+                Server::send(message.clone(), connection.clone(), sender.clone()).await;
+            }
         }
     }
 }
