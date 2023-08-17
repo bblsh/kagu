@@ -116,7 +116,6 @@ impl Client {
     }
 
     async fn login(self: &Self, username: String) {
-        println!("Logging in...");
         let login_message = Message::from(MessageType::LoginAttempt(username));
 
         // Try to log in
