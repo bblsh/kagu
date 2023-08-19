@@ -188,13 +188,13 @@ impl AudioManager {
         }
     }
 
-    pub async fn start_recording(self: &mut Self) {
+    pub async fn start_recording(self: &mut Self, header: MessageHeader) {
         // Generate a sender and receiver to start or stop recording
         let (tx, _rx): (Sender<AudioCommand>, Receiver<AudioCommand>) = channel(100);
 
         // Keep the message sender, and give the receiver to the recording thread
         self.record_command_sender = Some(tx);
-        self.record();
+        self.record(header);
     }
 
     pub async fn start_listening(self: &mut Self) {
@@ -325,7 +325,7 @@ impl AudioManager {
         }
     }
 
-    fn record(&mut self) {
+    fn record(&mut self, header: MessageHeader) {
         // First we have to get our host
         let host = &self.host;
 
@@ -346,7 +346,7 @@ impl AudioManager {
                 let stream = input_device
                     .build_input_stream(
                         &config,
-                        move |data, _: &_| pack_and_send_data::<f32>(data, conn.clone()),
+                        move |data, _: &_| pack_and_send_data::<f32>(data, conn.clone(), header),
                         err_fn,
                         None,
                     )
@@ -458,7 +458,7 @@ impl AudioManager {
     }
 }
 
-fn pack_and_send_data<T>(input: &[T], connection: Connection)
+fn pack_and_send_data<T>(input: &[T], connection: Connection, header: MessageHeader)
 where
     T: Sample,
     f32: FromSample<T>,
@@ -475,7 +475,7 @@ where
 
     // // Pack the data
     // let message = Message::from(MessageType::Audio(audio));
-    let message = Message::from(MessageType::Audio((MessageHeader::new(0, 0, 0), audio)));
+    let message = Message::from(MessageType::Audio((header, audio)));
 
     // Create the runtime
     let rt = tokio::runtime::Runtime::new().unwrap();

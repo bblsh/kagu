@@ -411,7 +411,7 @@ impl Client {
         }
     }
 
-    pub async fn connect_voice(&mut self, _realm_id: RealmIdSize, _channel_id: ChannelIdSize) {
+    pub async fn connect_voice(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
         if let Some(user_id) = self.get_user_id().await {
             let mut am = self.audio_manager.lock().await;
             match *am {
@@ -420,7 +420,9 @@ impl Client {
                     manager.set_user_id(user_id);
 
                     // Start recording for broadcasting
-                    manager.start_recording().await;
+                    manager
+                        .start_recording(MessageHeader::new(user_id, realm_id, channel_id))
+                        .await;
                     manager.start_listening().await;
                 }
                 None => (),
