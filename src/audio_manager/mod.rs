@@ -5,6 +5,7 @@ use quinn::{Connection, Endpoint};
 use ringbuf::{Consumer, SharedRb};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
+use std::time::Instant;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
 use crate::message::{Message, MessageHeader, MessageType};
@@ -216,7 +217,7 @@ impl AudioManager {
 
         let config = self.config.clone();
 
-        let buffer_size = 2560 * 100;
+        let buffer_size = 4096 * 10;
         let ring = SharedRb::<f32, Vec<_>>::new(buffer_size);
         let (mut producer, mut consumer) = ring.split();
 
@@ -241,6 +242,10 @@ impl AudioManager {
                 // This buffer holds audio from each user
                 let mut audio_buffers: HashMap<UserIdSize, VecDeque<f32>> = HashMap::new();
 
+                // Timer for mixing audio
+                // Mix all audio captured within 20ms and release that to the playback buffer
+                let mut time = Instant::now();
+
                 loop {
                     match receiver.recv().await {
                         Some((user_id, audio)) => {
@@ -249,19 +254,55 @@ impl AudioManager {
                                 .map(|x| f32::from_le_bytes(x.try_into().unwrap()))
                                 .collect();
 
-                            // Push this to our buffer
                             if let Some(buffer) = audio_buffers.get_mut(&user_id) {
                                 for _ in 0..audio.len() {
                                     buffer.push_back(audio.pop_front().unwrap());
-                                }
-
-                                for _ in 0..buffer.len() {
-                                    let _ = producer.push(buffer.pop_front().unwrap());
                                 }
                             }
                             // User doesn't exist, so make a buffer for that user
                             else {
                                 audio_buffers.insert(user_id, audio);
+                            }
+
+                            // Now that we have this audio in memory, check to see if 20ms have passed
+                            // If 20ms have passed, add all of the audio from each buffer and push
+                            // the added buffer to the output buffer for playback
+                            if time.elapsed().as_millis() > 60 {
+                                // Place to hold mixed audio
+                                let mut mixed: VecDeque<f32> = VecDeque::new();
+
+                                // Let's first get the size of the longest buffer
+                                let mut max_len: u32 = 0;
+                                for buffer in audio_buffers.iter() {
+                                    if buffer.1.len() as u32 > max_len {
+                                        max_len = buffer.1.len() as u32;
+                                    }
+                                }
+
+                                // Now that we have the max buffer length, push that many
+                                // values to our mixed audio
+                                for _ in 0..max_len {
+                                    mixed.push_back(0.0);
+                                }
+
+                                // We have a buffer ready to fit all mixed audio
+                                // Let's add it all up now
+                                for buffer in audio_buffers.iter_mut() {
+                                    for i in 0..buffer.1.len() {
+                                        mixed[i] = mixed[i] + buffer.1[i];
+                                    }
+
+                                    // Now that we've added this, clear the buffer
+                                    buffer.1.clear();
+                                }
+
+                                // Now that we have a mixed buffer, push that for playback
+                                for _ in 0..mixed.len() {
+                                    let _ = producer.push(mixed.pop_front().unwrap());
+                                }
+
+                                // Now reset the timer
+                                time = Instant::now();
                             }
                         }
                         None => (),
