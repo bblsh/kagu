@@ -3,6 +3,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, Host, Sample, Stream, StreamConfig, SupportedStreamConfigRange};
 use quinn::{Connection, Endpoint};
 use ringbuf::{Consumer, SharedRb};
+use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
@@ -65,7 +66,7 @@ impl AudioManager {
         let config = StreamConfig {
             sample_rate: cpal::SampleRate(44100),
             channels: 1,
-            buffer_size: cpal::BufferSize::Fixed(256),
+            buffer_size: cpal::BufferSize::Fixed(4096),
         };
 
         AudioManager {
@@ -215,7 +216,8 @@ impl AudioManager {
 
         let config = self.config.clone();
 
-        let ring = SharedRb::<f32, Vec<_>>::new(256 * 2);
+        let buffer_size = 2560 * 100;
+        let ring = SharedRb::<f32, Vec<_>>::new(buffer_size);
         let (mut producer, mut consumer) = ring.split();
 
         let output_stream = output_device
@@ -236,17 +238,31 @@ impl AudioManager {
         if self.audio_receiver.is_some() {
             let mut receiver = self.audio_receiver.take().unwrap();
             let _handle = tokio::spawn(async move {
+                // This buffer holds audio from each user
+                let mut audio_buffers: HashMap<UserIdSize, VecDeque<f32>> = HashMap::new();
+
                 loop {
                     match receiver.recv().await {
-                        Some(audio_message) => {
-                            let audio: Vec<f32> = audio_message
-                                .1
+                        Some((user_id, audio)) => {
+                            let mut audio: VecDeque<f32> = audio
                                 .chunks_exact(4)
                                 .map(|x| f32::from_le_bytes(x.try_into().unwrap()))
                                 .collect();
 
-                            // Push to our ring buffer
-                            producer.push_slice(audio.as_slice());
+                            // Push this to our buffer
+                            if let Some(buffer) = audio_buffers.get_mut(&user_id) {
+                                for _ in 0..audio.len() {
+                                    buffer.push_back(audio.pop_front().unwrap());
+                                }
+
+                                for _ in 0..buffer.len() {
+                                    let _ = producer.push(buffer.pop_front().unwrap());
+                                }
+                            }
+                            // User doesn't exist, so make a buffer for that user
+                            else {
+                                audio_buffers.insert(user_id, audio);
+                            }
                         }
                         None => (),
                     };
@@ -408,16 +424,16 @@ where
 {
     let mut audio: Vec<u8> = Vec::new();
     for &sample in input.iter() {
-        // Samples are in memory as f32s, but we want each sample as a u16 to match the RTP spec
-        // let sample_i16 = (f32::from_sample(sample) * 32767.0) as i16;
-        // let sample_u16 = sample_i16 as u16;
+        //     // Samples are in memory as f32s, but we want each sample as a u16 to match the RTP spec
+        //     // let sample_i16 = (f32::from_sample(sample) * 32767.0) as i16;
+        //     // let sample_u16 = sample_i16 as u16;
 
-        // audio.extend_from_slice(&sample_u16.to_be_bytes());
+        //     // audio.extend_from_slice(&sample_u16.to_be_bytes());
         audio.extend_from_slice(&f32::from_sample(sample).to_le_bytes());
     }
 
-    // Pack the data
-    //let message = Message::from(MessageType::Audio(audio));
+    // // Pack the data
+    // let message = Message::from(MessageType::Audio(audio));
     let message = Message::from(MessageType::Audio((MessageHeader::new(0, 0, 0), audio)));
 
     // Create the runtime
