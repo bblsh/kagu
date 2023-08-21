@@ -11,8 +11,8 @@ pub struct VoiceChannel {
 impl VoiceChannel {
     pub fn new(id: ChannelIdSize, name: String) -> VoiceChannel {
         VoiceChannel {
-            id: id,
-            name: name,
+            id,
+            name,
             connected_users: Vec::new(),
         }
     }

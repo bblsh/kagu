@@ -24,7 +24,7 @@ pub struct Realm {
 impl Realm {
     pub fn new(id: RealmIdSize, realm_name: String) -> Realm {
         Realm {
-            id: id,
+            id,
             name: realm_name,
             users: HashMap::new(),
             text_channels: HashMap::new(),

@@ -21,25 +21,25 @@ impl RealmDescription {
     pub fn new(
         id: RealmIdSize,
         name: String,
-        text_channels: &HashMap<ChannelIdSize, TextChannel>,
-        voice_channels: &HashMap<ChannelIdSize, VoiceChannel>,
+        text_channels_map: &HashMap<ChannelIdSize, TextChannel>,
+        voice_channels_map: &HashMap<ChannelIdSize, VoiceChannel>,
     ) -> RealmDescription {
-        let mut t_channels = Vec::new();
-        let mut v_channels = Vec::new();
+        let mut text_channels = Vec::new();
+        let mut voice_channels = Vec::new();
 
-        for (_id, tc) in text_channels {
-            t_channels.push((tc.get_id().clone(), tc.get_name().clone()))
+        for tc in text_channels_map.values() {
+            text_channels.push((*tc.get_id(), tc.get_name().clone()))
         }
 
-        for (_id, vc) in voice_channels {
-            v_channels.push((vc.get_id().clone(), vc.get_name().clone()))
+        for vc in voice_channels_map.values() {
+            voice_channels.push((*vc.get_id(), vc.get_name().clone()))
         }
 
         RealmDescription {
-            id: id,
-            name: name,
-            text_channels: t_channels,
-            voice_channels: v_channels,
+            id,
+            name,
+            text_channels,
+            voice_channels,
         }
     }
 

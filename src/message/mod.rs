@@ -19,9 +19,9 @@ impl MessageHeader {
         channel_id: ChannelIdSize,
     ) -> MessageHeader {
         MessageHeader {
-            user_id: user_id,
-            realm_id: realm_id,
-            channel_id: channel_id,
+            user_id,
+            realm_id,
+            channel_id,
         }
     }
 }
@@ -125,10 +125,10 @@ impl From<Vec<u8>> for Message {
 impl Message {
     pub fn new(user_id: UserIdSize, message: MessageType) -> Message {
         Message {
-            user_id: user_id,
+            user_id,
             realm_id: 0,
             channel_id: 0,
-            message: message,
+            message,
         }
     }
 
@@ -162,11 +162,11 @@ impl Message {
         }
     }
 
-    pub fn get_user_id(self: Self) -> UserIdSize {
-        self.user_id.clone()
+    pub fn get_user_id(self) -> UserIdSize {
+        self.user_id
     }
 
-    pub fn into_vec_u8(self: &Self) -> Result<Vec<u8>, bincode::Error> {
+    pub fn into_vec_u8(&self) -> Result<Vec<u8>, bincode::Error> {
         bincode::serialize(self)
     }
 

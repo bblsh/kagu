@@ -30,7 +30,7 @@ pub struct NetworkManager {
 }
 
 impl NetworkManager {
-    pub async fn new(address: String, server_or_client: ServerOrClient) -> Endpoint {
+    pub async fn connect_endpoint(address: String, server_or_client: ServerOrClient) -> Endpoint {
         // Parse this address into a SocketAddr
         let address: SocketAddr = address.parse().unwrap();
 
@@ -78,7 +78,7 @@ impl NetworkManager {
         }
     }
 
-    pub fn disconnect(self: &mut Self) {
+    pub fn disconnect(&mut self) {
         if let Ok(mut connections) = self.connections.lock() {
             // Close each connection in our connections HashMap
             for (_id, conn) in connections.iter_mut() {
@@ -91,16 +91,13 @@ impl NetworkManager {
             connections.clear();
 
             // Remove all of our connection senders, because we've disconnected
-            for (_id, sender) in &self.connection_senders {
-                match sender.send(NetworkCommand::StopReceiving) {
-                    Ok(_) => (),
-                    Err(_) => (),
-                }
+            for sender in self.connection_senders.values() {
+                let _ = sender.send(NetworkCommand::StopReceiving);
             }
         }
     }
 
-    pub async fn send(self: &Self, buffer: &[u8]) {
+    pub async fn send(&self, buffer: &[u8]) {
         // Don't try to send anything if there's aren't any existing connections
         if let Ok(mut connections) = self.connections.lock() {
             if connections.is_empty() {
@@ -120,7 +117,7 @@ impl NetworkManager {
 
     // Receive data from all existing connections
     pub async fn receive_data(
-        self: &mut Self,
+        &mut self,
         handle_data: fn(Vec<u8>, connections: Arc<Mutex<HashMap<u32, Connection>>>),
     ) {
         // Listen for any connections
@@ -159,7 +156,7 @@ impl NetworkManager {
                     }
 
                     let stream = connection.accept_bi().await;
-                    let _stream = match stream {
+                    match stream {
                         Ok((_send_stream, mut read_stream)) => {
                             let message = read_stream.read_to_end(2048).await.unwrap();
 
@@ -173,13 +170,13 @@ impl NetworkManager {
                             println!("Stream error: {}", e);
                             break;
                         }
-                    };
+                    }
                 }
             });
         }
     }
 
-    fn generate_connection_id(self: &Self) -> u32 {
+    fn generate_connection_id(&self) -> u32 {
         self.connection_senders.len() as u32
     }
 }

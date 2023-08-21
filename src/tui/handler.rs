@@ -35,10 +35,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.input_mode = InputMode::Editing;
                 app.current_pane = Pane::InputPane;
             }
-            KeyCode::Up => match app.current_pane {
-                Pane::InputPane => app.current_pane = Pane::ChatPane,
-                _ => (),
-            },
+            KeyCode::Up => {
+                if let Pane::InputPane = app.current_pane {
+                    app.current_pane = Pane::ChatPane;
+                }
+            }
             KeyCode::Down => match app.current_pane {
                 Pane::ChannelsPane | Pane::ChatPane | Pane::MembersPane | Pane::RealmsPane => {
                     app.current_pane = Pane::InputPane;
@@ -70,10 +71,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             },
             _ => (),
         },
-        InputMode::Popup => match key_event.code {
-            KeyCode::Enter => app.dismiss_popup(),
-            _ => (),
-        },
+        InputMode::Popup => {
+            if let KeyCode::Enter = key_event.code {
+                app.dismiss_popup()
+            }
+        }
         InputMode::ChannelType => match key_event.code {
             KeyCode::Enter => match app.ui_element {
                 UiElement::TextChannelLabel => {
@@ -181,35 +183,32 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         },
         InputMode::Editing if key_event.kind == KeyEventKind::Press => match key_event.code {
             KeyCode::Enter => {
-                if &app.input_buffer.input.len() > &0 {
-                    if app.is_mentioning {
-                        if app.mention_list.items.len() > 0 {
-                            let selected_id = app.mention_list.state.selected().unwrap();
-                            let user_id = app.mention_list.items.get(selected_id).unwrap().0;
-                            let user_name =
-                                app.mention_list.items.get(selected_id).unwrap().1.clone();
+                if !app.input_buffer.input.is_empty() {
+                    if app.is_mentioning && !app.mention_list.items.is_empty() {
+                        let selected_id = app.mention_list.state.selected().unwrap();
+                        let user_id = app.mention_list.items.get(selected_id).unwrap().0;
+                        let user_name = app.mention_list.items.get(selected_id).unwrap().1.clone();
 
-                            if !app.users_mentioned.contains(&user_id) {
-                                app.users_mentioned.push(user_id);
-                            }
+                        if !app.users_mentioned.contains(&user_id) {
+                            app.users_mentioned.push(user_id);
+                        }
 
-                            // Push the remainder of this user's name to the input buffer
-                            if let Some(input) = app.input_buffer.input.last_mut() {
-                                for _ in 0..app.mention_buffer.len() {
-                                    input.0.pop();
-                                }
-
-                                // Remove @ character
+                        // Push the remainder of this user's name to the input buffer
+                        if let Some(input) = app.input_buffer.input.last_mut() {
+                            for _ in 0..app.mention_buffer.len() {
                                 input.0.pop();
                             }
 
-                            app.input_buffer.input.push((
-                                user_name.prepend_str("@"),
-                                Style::default().fg(Color::Yellow),
-                                Some(user_id),
-                            ));
-                            app.input_buffer.is_mentioning = true;
+                            // Remove @ character
+                            input.0.pop();
                         }
+
+                        app.input_buffer.input.push((
+                            user_name.prepend_str("@"),
+                            Style::default().fg(Color::Yellow),
+                            Some(user_id),
+                        ));
+                        app.input_buffer.is_mentioning = true;
                     }
 
                     app.handle_input().await;
@@ -244,7 +243,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             }
             KeyCode::Char('/') => {
                 // Only start commanding if this is the first character
-                if app.input_buffer.get_input_string().len() == 0 {
+                if app.input_buffer.get_input_string().is_empty() {
                     app.is_commanding = true;
                     if let Some(input) = app.input_buffer.input.last_mut() {
                         input.0.push('/');
@@ -297,7 +296,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             KeyCode::Backspace => {
                 let num_chunks = app.input_buffer.input.len();
                 if let Some(input) = app.input_buffer.input.last_mut() {
-                    if input.0.len() == 0 {
+                    if input.0.is_empty() {
                         if app.input_buffer.is_commanding {
                             app.input_buffer.input.pop();
                             app.input_buffer.input.pop();
@@ -323,7 +322,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 }
 
                 if app.is_mentioning {
-                    if app.mention_buffer.len() == 0 {
+                    if app.mention_buffer.is_empty() {
                         app.is_mentioning = false;
                         // Clear our mention list
                         app.mention_list.items.clear();
@@ -332,7 +331,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         app.mention_buffer.pop();
                     }
                 } else if app.is_commanding {
-                    if app.command_buffer.len() == 0 {
+                    if app.command_buffer.is_empty() {
                         app.is_commanding = false;
                         // Clear our command list
                         app.command_list.items.clear();
@@ -374,7 +373,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             }
             KeyCode::Tab => {
                 if app.is_mentioning {
-                    if app.mention_list.items.len() > 0 {
+                    if !app.mention_list.items.is_empty() {
                         let selected_id = app.mention_list.state.selected().unwrap();
                         let user_id = app.mention_list.items.get(selected_id).unwrap().0;
                         let user_name = app.mention_list.items.get(selected_id).unwrap().1.clone();
@@ -416,51 +415,49 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
 
                         app.is_mentioning = false;
                     }
-                } else if app.is_commanding {
-                    if app.command_list.items.len() > 0 {
-                        let selected_id = app.command_list.state.selected().unwrap();
-                        let command = app.command_list.items.get(selected_id).unwrap().0;
+                } else if app.is_commanding && !app.command_list.items.is_empty() {
+                    let selected_id = app.command_list.state.selected().unwrap();
+                    let command = app.command_list.items.get(selected_id).unwrap().0;
 
-                        app.current_command = Some(command.clone());
+                    app.current_command = Some(command);
 
-                        // Push the remainder of this command's name to the input buffer
-                        // Remove current chars from buffer
-                        if let Some(input) = app.input_buffer.input.last_mut() {
-                            for _ in 0..app.command_buffer.len() {
-                                input.0.pop();
-                            }
-
-                            // Remove @ character
+                    // Push the remainder of this command's name to the input buffer
+                    // Remove current chars from buffer
+                    if let Some(input) = app.input_buffer.input.last_mut() {
+                        for _ in 0..app.command_buffer.len() {
                             input.0.pop();
                         }
 
-                        // Insert /image in blue text
-                        app.input_buffer.input.push((
-                            command.to_str().prepend_str("/"),
-                            Style::default().fg(Color::LightBlue),
-                            None,
-                        ));
-
-                        // Insert gray text with "file path" to tell the user what to enter
-                        app.input_buffer.input.push((
-                            String::from(" file path: "),
-                            Style::default().fg(Color::Gray),
-                            None,
-                        ));
-
-                        app.input_buffer.is_commanding = true;
-
-                        // Add a new element to represent a new span after the span with a mention
-                        app.input_buffer
-                            .input
-                            .push((String::new(), Style::default(), None));
-
-                        app.command_buffer.clear();
-                        app.command_list.items.clear();
-                        app.command_list.unselect();
-
-                        app.is_commanding = false;
+                        // Remove @ character
+                        input.0.pop();
                     }
+
+                    // Insert /image in blue text
+                    app.input_buffer.input.push((
+                        command.to_str().prepend_str("/"),
+                        Style::default().fg(Color::LightBlue),
+                        None,
+                    ));
+
+                    // Insert gray text with "file path" to tell the user what to enter
+                    app.input_buffer.input.push((
+                        String::from(" file path: "),
+                        Style::default().fg(Color::Gray),
+                        None,
+                    ));
+
+                    app.input_buffer.is_commanding = true;
+
+                    // Add a new element to represent a new span after the span with a mention
+                    app.input_buffer
+                        .input
+                        .push((String::new(), Style::default(), None));
+
+                    app.command_buffer.clear();
+                    app.command_list.items.clear();
+                    app.command_list.unselect();
+
+                    app.is_commanding = false;
                 }
             }
             _ => (),

@@ -3,7 +3,7 @@ use tui::style::Style;
 use tui::text::{Line, Span};
 use unicode_width::UnicodeWidthStr;
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct InputBuffer {
     pub input: Vec<(String, Style, Option<UserIdSize>)>,
     pub is_mentioning: bool,
@@ -11,14 +11,6 @@ pub struct InputBuffer {
 }
 
 impl InputBuffer {
-    pub fn new() -> InputBuffer {
-        InputBuffer {
-            input: vec![(String::new(), Style::default(), None)],
-            is_mentioning: false,
-            is_commanding: false,
-        }
-    }
-
     pub fn get_input_line(&self) -> Line<'_> {
         let mut spans = Vec::new();
 
@@ -33,7 +25,7 @@ impl InputBuffer {
         let mut length = 0;
 
         for span in &self.input {
-            length = length + span.0.width() as u16;
+            length += span.0.width() as u16;
         }
 
         length

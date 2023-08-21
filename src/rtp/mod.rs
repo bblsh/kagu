@@ -18,6 +18,24 @@ pub struct Rtp {
     pub payload: Vec<u8>,
 }
 
+impl Default for Rtp {
+    fn default() -> Self {
+        Self {
+            version: 2,
+            padding: 0,
+            extension: 0,
+            csrc_count: 0,
+            marker: 0,
+            payload_type: 11,
+            sequence: 0,
+            timestamp: 0,
+            ssrc: 55,
+            csrc_list: None,
+            payload: Vec::new(),
+        }
+    }
+}
+
 impl Rtp {
     pub fn new() -> Rtp {
         Rtp {
@@ -35,7 +53,7 @@ impl Rtp {
         }
     }
 
-    pub fn serialize_to_vec_u8(self: Self) -> Vec<u8> {
+    pub fn serialize_to_vec_u8(self) -> Vec<u8> {
         // The packed header
         #[derive(Serialize, Debug)]
         struct PackedRtp<'a> {
@@ -48,14 +66,14 @@ impl Rtp {
         }
 
         // Shift together the first byte
-        let mut b1: u8 = (self.version << 6) | 0;
-        b1 = (self.padding << 5) | b1;
-        b1 = (self.extension << 4) | b1;
-        b1 = (self.csrc_count) | b1;
+        let mut b1: u8 = self.version << 6;
+        b1 |= self.padding << 5;
+        b1 |= self.extension << 4;
+        b1 |= self.csrc_count;
 
         // Shift together the second byte
-        let mut b2: u8 = (self.marker << 7) | 0;
-        b2 = (self.payload_type) | b2;
+        let mut b2: u8 = self.marker << 7;
+        b2 |= self.payload_type;
 
         // Pack our packet
         let packed = PackedRtp {
@@ -68,14 +86,14 @@ impl Rtp {
         };
 
         // Begin serialization
-        let mut serialized: Vec<u8> = Vec::with_capacity(RTP_HEADER_LENGTH + &self.payload.len());
+        let mut serialized: Vec<u8> = Vec::with_capacity(RTP_HEADER_LENGTH + self.payload.len());
 
         serialized.push(packed.byte_1);
         serialized.push(packed.byte_2);
         serialized.extend_from_slice(&packed.seq_num.to_be_bytes());
         serialized.extend_from_slice(&packed.timestamp.to_be_bytes());
         serialized.extend_from_slice(&packed.ssrc.to_be_bytes());
-        serialized.extend_from_slice(&packed.payload);
+        serialized.extend_from_slice(packed.payload);
 
         serialized
     }
@@ -90,24 +108,18 @@ impl Rtp {
     }
 }
 
+#[derive(Default)]
 pub struct RtpManager {
     pub sequence_num: u16,
     pub timestamp: u32,
 }
 
 impl RtpManager {
-    pub fn new() -> RtpManager {
-        RtpManager {
-            sequence_num: 0,
-            timestamp: 0,
-        }
-    }
-
-    pub fn get_and_inc_vals(self: &mut Self) -> (u16, u32) {
+    pub fn get_and_inc_vals(&mut self) -> (u16, u32) {
         let vals = (self.sequence_num, self.timestamp);
 
-        self.sequence_num = self.sequence_num + 1;
-        self.timestamp = self.timestamp + 256;
+        self.sequence_num += 1;
+        self.timestamp += 256;
 
         vals
     }
