@@ -510,6 +510,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             }
             KeyCode::Enter => {
                 // Enter this realm
+                if let Some(selected_id) = app.realms.state.selected() {
+                    if let Some(realm) = app.realms.items.get(selected_id) {
+                        app.enter_realm(realm.0).await;
+                    }
+                }
             }
             _ => (),
         },
