@@ -58,7 +58,7 @@ impl RealmsManager {
     // Super lazy generation of realm id
     pub fn generate_realm_id(&mut self) -> RealmIdSize {
         let id = self.num_realms;
-        self.num_realms += self.num_realms;
+        self.num_realms += 1;
         id
     }
 
