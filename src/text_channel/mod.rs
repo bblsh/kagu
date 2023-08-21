@@ -1,6 +1,5 @@
-use crate::types::{ChannelIdSize, UserIdSize};
+use crate::types::{ChannelIdSize, TextMessageChunks, UserIdSize};
 use serde::{Deserialize, Serialize};
-
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct TextChannel {
     id: ChannelIdSize,
@@ -12,7 +11,7 @@ pub struct TextChannel {
         // Optional Vec<u8> to hold images
         Option<Vec<u8>>,
         // Vec to hold chunks of strings with id mentions
-        Vec<(String, Option<UserIdSize>)>,
+        TextMessageChunks,
     )>,
 }
 

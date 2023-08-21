@@ -308,7 +308,7 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
 
     if app.is_viewing_member {
         // Get the id of the selected user
-        if app.users_online.items.len() > 0 {
+        if !app.users_online.items.is_empty() {
             if let Some(selected_id) = app.users_online.state.selected() {
                 if let Some(user) = app.users_online.items.get(selected_id) {
                     // We have our user ID and user here
