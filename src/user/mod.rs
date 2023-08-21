@@ -10,7 +10,11 @@ pub struct User {
 
 impl User {
     pub fn new(id: UserIdSize, username: String) -> User {
-        User { id, username, String::new() }
+        User {
+            id,
+            username,
+            about: String::new(),
+        }
     }
 
     pub fn get_id(&self) -> UserIdSize {
