@@ -66,6 +66,10 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.input_mode = InputMode::ChannelType;
                     app.ui_element = UiElement::TextChannelLabel;
                 }
+                Pane::MembersPane => {
+                    app.input_mode = InputMode::Members;
+                    app.users_online.next();
+                }
                 _ => (),
             },
             _ => (),
@@ -462,6 +466,30 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         app.is_commanding = false;
                     }
                 }
+            }
+            _ => (),
+        },
+        InputMode::Members if key_event.kind == KeyEventKind::Press => match key_event.code {
+            KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
+                // Stop inspecting this member
+                if app.is_viewing_member {
+                    app.is_viewing_member = false;
+                }
+                // We're not looking at a member, so exit member selection
+                else {
+                    app.users_online.unselect();
+                    app.input_mode = InputMode::Normal;
+                }
+            }
+            KeyCode::Up => {
+                app.users_online.previous();
+            }
+            KeyCode::Down => {
+                app.users_online.next();
+            }
+            KeyCode::Enter => {
+                // Display user information
+                app.is_viewing_member = true;
             }
             _ => (),
         },

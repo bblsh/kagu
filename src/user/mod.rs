@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct User {
     id: UserIdSize,
     username: String,
+    about: String,
 }
 
 impl User {
@@ -12,6 +13,7 @@ impl User {
         User {
             id: id,
             username: username,
+            about: String::new(),
         }
     }
 

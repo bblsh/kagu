@@ -41,6 +41,7 @@ pub enum InputMode {
     ChannelType,
     TextChannel,
     VoiceChannel,
+    Members,
     Loading,
     Popup,
 }
@@ -161,6 +162,8 @@ pub struct App<'a> {
     pub popup_text: String,
     /// Title for the popup window
     pub popup_title: String,
+    /// State for showing member information
+    pub is_viewing_member: bool,
 }
 
 impl<'a> App<'a> {
@@ -203,6 +206,7 @@ impl<'a> App<'a> {
             is_popup_shown: false,
             popup_text: String::new(),
             popup_title: String::new(),
+            is_viewing_member: false,
         }
     }
 
