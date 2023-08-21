@@ -171,7 +171,7 @@ impl<'a> App<'a> {
     /// Constructs a new instance of [`App`].
     pub fn new(client: Client) -> Self {
         // There's likely a better way to populate these commands
-        let mut commands_list = StatefulList::new();
+        let mut commands_list = StatefulList::default();
         commands_list
             .items
             .push((Command::Image, Command::Image.to_str()));
@@ -182,14 +182,14 @@ impl<'a> App<'a> {
             ui_element: UiElement::None,
             current_pane: Pane::ChatPane,
             running: true,
-            client: client,
+            client,
             chat_history: Vec::new(),
             user_id_to_username: HashMap::new(),
-            realms_manager: RealmsManager::new(),
-            users_online: StatefulList::new(),
-            realms: StatefulList::new(),
-            text_channels: StatefulList::new(),
-            voice_channels: StatefulList::new(),
+            realms_manager: RealmsManager::default(),
+            users_online: StatefulList::default(),
+            realms: StatefulList::default(),
+            text_channels: StatefulList::default(),
+            voice_channels: StatefulList::default(),
             is_voice_connected: false,
             current_realm_id: None,
             current_text_channel: None,
@@ -201,9 +201,9 @@ impl<'a> App<'a> {
             current_command: None,
             is_mentioning: false,
             mention_buffer: String::new(),
-            mention_list: StatefulList::new(),
+            mention_list: StatefulList::default(),
             users_mentioned: Vec::new(),
-            input_buffer: InputBuffer::new(),
+            input_buffer: InputBuffer::default(),
             is_popup_shown: false,
             popup_text: String::new(),
             popup_title: String::new(),
@@ -363,7 +363,7 @@ impl<'a> App<'a> {
                                             if let Some(current_channel) =
                                                 &self.current_text_channel
                                             {
-                                                if current_channel.0 != channel.get_id().clone() {
+                                                if current_channel.0 != *channel.get_id() {
                                                     channel.pending_mention = true;
                                                 }
                                             }
@@ -393,14 +393,14 @@ impl<'a> App<'a> {
                         self.realms_manager.clear();
 
                         // Clear our current list of realms and channels
-                        self.realms = StatefulList::new();
+                        self.realms = StatefulList::default();
 
                         for realm in &realms {
                             // Save realm id and names
                             self.realms.items.push((realm.id, realm.name.clone()));
 
                             // Save text channel id and names
-                            self.text_channels = StatefulList::new();
+                            self.text_channels = StatefulList::default();
                             let text_channels = realm.get_text_channels();
                             for (id, mut name) in text_channels {
                                 let hashtag = String::from("# ");
@@ -409,7 +409,7 @@ impl<'a> App<'a> {
                             }
 
                             // Save voice channel id and names
-                            self.voice_channels = StatefulList::new();
+                            self.voice_channels = StatefulList::default();
                             let voice_channels = realm.get_voice_channels();
                             for (id, name) in voice_channels {
                                 self.voice_channels.items.push((id, name, Vec::new()));
@@ -417,7 +417,7 @@ impl<'a> App<'a> {
 
                             // Auto-join the first available text channel if one wasn't already joined
                             if self.current_text_channel.is_none()
-                                && self.text_channels.items.len() > 0
+                                && !self.text_channels.items.is_empty()
                             {
                                 self.join_channel(
                                     realm.id,
@@ -441,11 +441,11 @@ impl<'a> App<'a> {
                         // let's update references to them to be displayed
                         for realm in self.realms_manager.get_realms() {
                             // Update our Realms list
-                            self.realms.items.push((realm.0.clone(), realm.1.clone()));
+                            self.realms.items.push((*realm.0, realm.1.clone()));
                         }
 
                         // For now, let's initally join the first text channel of the first realm
-                        if self.realms.items.len() > 0 {
+                        if !self.realms.items.is_empty() {
                             self.current_realm_id = Some(self.realms.items[0].0);
                             self.enter_realm(self.current_realm_id.unwrap()).await;
                         }
@@ -470,10 +470,10 @@ impl<'a> App<'a> {
         Ok(())
     }
 
-    pub fn get_username_from_id(self: &Self, user_id: UserIdSize) -> String {
+    pub fn get_username_from_id(&self, user_id: UserIdSize) -> String {
         match self.user_id_to_username.get(&user_id) {
             Some(username) => username.to_string(),
-            None => String::from(user_id.to_string()),
+            None => user_id.to_string(),
         }
     }
 
@@ -538,7 +538,7 @@ impl<'a> App<'a> {
                 ));
             }
 
-            if self.text_channels.items.len() > 0 {
+            if !self.text_channels.items.is_empty() {
                 self.join_channel(
                     realm_id,
                     ChannelType::TextChannel,
@@ -558,7 +558,7 @@ impl<'a> App<'a> {
     pub async fn hang_up(&mut self) {
         if let Some(channel) = self.current_voice_channel {
             self.client
-                .hang_up(&self.current_realm_id.as_ref().unwrap(), &channel)
+                .hang_up(self.current_realm_id.as_ref().unwrap(), &channel)
                 .await;
 
             self.is_voice_connected = false;
@@ -600,7 +600,6 @@ impl<'a> App<'a> {
                         String::from("Image Error"),
                         String::from("File size exceeds 10MB"),
                     );
-                    return;
                 } else {
                     let image = std::fs::read(path);
                     match image {

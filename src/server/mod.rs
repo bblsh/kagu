@@ -25,7 +25,7 @@ pub struct ServerMessage {
 
 impl ServerMessage {
     pub fn new(message: ServerMessageType) -> ServerMessage {
-        ServerMessage { message: message }
+        ServerMessage { message }
     }
 }
 
@@ -35,9 +35,10 @@ pub struct Server {
 
 impl Server {
     pub async fn new(server_address: String) -> Server {
-        let endpoint = NetworkManager::new(server_address, ServerOrClient::Server).await;
+        let endpoint =
+            NetworkManager::connect_endpoint(server_address, ServerOrClient::Server).await;
 
-        Server { endpoint: endpoint }
+        Server { endpoint }
     }
 
     pub async fn run_server(&self) {
@@ -60,7 +61,7 @@ impl Server {
     }
 
     fn make_test_realms() -> RealmsManager {
-        let mut realms_manager = RealmsManager::new();
+        let mut realms_manager = RealmsManager::default();
         let id = realms_manager.add_realm(String::from("MshKngdm"));
 
         realms_manager.add_channel(id, ChannelType::TextChannel, String::from("Peach's Castle"));
@@ -101,7 +102,7 @@ impl Server {
     pub async fn start_receive_thread(&self, tx: Sender<ServerMessage>) {
         let endpoint = self.endpoint.clone();
 
-        let _ = tokio::spawn(async move {
+        tokio::spawn(async move {
             // Listen for any connections
             while let Some(conn) = endpoint.accept().await {
                 let connection = conn.await.unwrap();
@@ -120,7 +121,7 @@ impl Server {
 
                     loop {
                         let stream = connection.accept_bi().await;
-                        let _stream = match stream {
+                        match stream {
                             Ok((_send_stream, mut read_stream)) => {
                                 let buffer = read_stream.read_to_end(12000000).await.unwrap();
 
@@ -221,7 +222,7 @@ impl Server {
 
                                 break;
                             }
-                        };
+                        }
                     }
                 });
             }
@@ -233,7 +234,7 @@ impl Server {
         mut rx: Receiver<ServerMessage>,
         tx: Sender<ServerMessage>,
     ) -> JoinHandle<()> {
-        let process_handle = tokio::spawn(async move {
+        tokio::spawn(async move {
             // --- !!! TEST SETUP HERE !!! ---
             // This needs to be replaced with a database at some point in time
             let realms_manager = Server::make_test_realms();
@@ -244,8 +245,8 @@ impl Server {
             let mut connections: HashMap<UserIdSize, Connection> = HashMap::new();
 
             loop {
-                match rx.recv().await {
-                    Some(message) => match message.message {
+                if let Some(message) = rx.recv().await {
+                    match message.message {
                         // User successfully logged in
                         ServerMessageType::SuccessfulLogin((username, connection)) => {
                             println!("[server] registering {}", &username);
@@ -260,7 +261,7 @@ impl Server {
                             connections.insert(id, connection);
 
                             // For generating new user ids
-                            num_users = num_users + 1;
+                            num_users += 1;
 
                             // Build a ServerMessage to send to the send thread
                             let message = Message::from(MessageType::LoginSuccess(user.clone()));
@@ -299,33 +300,29 @@ impl Server {
                         // The user disconnected or the connection was lost, so remove this connection
                         ServerMessageType::RemoveConnection(connection) => {
                             let id = connections.iter_mut().find_map(|(key, val)| {
-                                if &val.stable_id() == &connection.stable_id() {
-                                    Some(key.clone())
+                                if val.stable_id() == connection.stable_id() {
+                                    Some(*key)
                                 } else {
                                     None
                                 }
                             });
 
                             // This connection was saved, so remove it and tell everyone the user left
-                            match id {
-                                Some(user_id) => {
-                                    connections.retain(|_, conn| {
-                                        conn.stable_id() != connection.stable_id()
-                                    });
+                            if let Some(user_id) = id {
+                                connections
+                                    .retain(|_, conn| conn.stable_id() != connection.stable_id());
 
-                                    // Now remove this user from our list of users
-                                    users.retain(|user| user.get_id() != user_id);
+                                // Now remove this user from our list of users
+                                users.retain(|user| user.get_id() != user_id);
 
-                                    // Send the UserLeft message to everyone
-                                    Server::send_to_everyone(
-                                        &connections,
-                                        Message::from(MessageType::UserLeft(user_id)),
-                                        tx.clone(),
-                                    )
-                                    .await;
-                                }
-                                None => (),
-                            };
+                                // Send the UserLeft message to everyone
+                                Server::send_to_everyone(
+                                    &connections,
+                                    Message::from(MessageType::UserLeft(user_id)),
+                                    tx.clone(),
+                                )
+                                .await;
+                            }
                         }
                         // Process a normal message from a user
                         ServerMessageType::Message(message) => {
@@ -338,13 +335,10 @@ impl Server {
                             )
                             .await;
                         }
-                    },
-                    None => (),
+                    }
                 }
             }
-        });
-
-        process_handle
+        })
     }
 
     async fn new_handle_message(
@@ -415,33 +409,29 @@ impl Server {
     }
 
     async fn start_send_thread(&self, mut rx: Receiver<ServerMessage>) {
-        let _ = tokio::spawn(async move {
+        tokio::spawn(async move {
             loop {
-                match rx.recv().await {
-                    Some(message) => match message.message {
-                        ServerMessageType::Message((connection, message)) => {
-                            match connection.open_bi().await {
-                                // Try sending the message
-                                Ok((mut send, _recv)) => match send
-                                    .write_all(message.into_vec_u8().unwrap().as_slice())
-                                    .await
-                                {
-                                    Ok(_) => match send.finish().await {
-                                        Ok(_) => (),
-                                        Err(e) => {
-                                            eprintln!("[server] error on send.finish() {}", e);
-                                        }
-                                    },
-                                    Err(e) => eprintln!("[server] error on send.write_all() {}", e),
+                if let Some(message) = rx.recv().await {
+                    if let ServerMessageType::Message((connection, message)) = message.message {
+                        match connection.open_bi().await {
+                            // Try sending the message
+                            Ok((mut send, _recv)) => match send
+                                .write_all(message.into_vec_u8().unwrap().as_slice())
+                                .await
+                            {
+                                Ok(_) => match send.finish().await {
+                                    Ok(_) => (),
+                                    Err(e) => {
+                                        eprintln!("[server] error on send.finish() {}", e);
+                                    }
                                 },
-                                Err(e) => {
-                                    eprintln!("[server] error sending to connection? {}", e);
-                                }
+                                Err(e) => eprintln!("[server] error on send.write_all() {}", e),
+                            },
+                            Err(e) => {
+                                eprintln!("[server] error sending to connection? {}", e);
                             }
                         }
-                        _ => (),
-                    },
-                    None => (),
+                    }
                 }
             }
         });

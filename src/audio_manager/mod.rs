@@ -30,7 +30,7 @@ pub enum AudioCommand {
 
 impl std::fmt::Debug for AudioManager {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f, "{}", "DEBUG WRITE NOT IMPLEMENTED")
+        write!(f, "DEBUG WRITE NOT IMPLEMENTED")
     }
 }
 
@@ -51,9 +51,9 @@ pub struct AudioManager {
     output_stream: Option<Stream>,
 }
 
-impl AudioManager {
+impl Default for AudioManager {
     /// Generates and returns a new `AudioManager` with default values
-    pub fn new() -> AudioManager {
+    fn default() -> AudioManager {
         let host = cpal::default_host();
 
         let input_device = host
@@ -77,8 +77,8 @@ impl AudioManager {
             audio_receiver: None,
             input_device: input_device.name().unwrap(),
             output_device: output_device.name().unwrap(),
-            host: host,
-            config: config,
+            host,
+            config,
             record_command_sender: None,
             record_command_receiver: None,
             play_command_sender: None,
@@ -87,7 +87,9 @@ impl AudioManager {
             output_stream: None,
         }
     }
+}
 
+impl AudioManager {
     pub fn endpoint(mut self, endpoint: Endpoint) -> Self {
         self.endpoint = Some(endpoint);
         self
@@ -115,7 +117,7 @@ impl AudioManager {
     pub fn set_config(&mut self, sample_rate: u32, channels: u16, buffer_size: u32) {
         self.config = StreamConfig {
             sample_rate: cpal::SampleRate(sample_rate),
-            channels: channels,
+            channels,
             buffer_size: cpal::BufferSize::Fixed(buffer_size),
         };
     }
@@ -188,7 +190,7 @@ impl AudioManager {
         }
     }
 
-    pub async fn start_recording(self: &mut Self, header: MessageHeader) {
+    pub async fn start_recording(&mut self, header: MessageHeader) {
         // Generate a sender and receiver to start or stop recording
         let (tx, _rx): (Sender<AudioCommand>, Receiver<AudioCommand>) = channel(100);
 
@@ -197,7 +199,7 @@ impl AudioManager {
         self.record(header);
     }
 
-    pub async fn start_listening(self: &mut Self) {
+    pub async fn start_listening(&mut self) {
         self.start_listen_thread().await;
     }
 
@@ -247,66 +249,64 @@ impl AudioManager {
                 let mut time = Instant::now();
 
                 loop {
-                    match receiver.recv().await {
-                        Some((user_id, audio)) => {
-                            let mut audio: VecDeque<f32> = audio
-                                .chunks_exact(4)
-                                .map(|x| f32::from_le_bytes(x.try_into().unwrap()))
-                                .collect();
+                    if let Some((user_id, audio)) = receiver.recv().await {
+                        let mut audio: VecDeque<f32> = audio
+                            .chunks_exact(4)
+                            .map(|x| f32::from_le_bytes(x.try_into().unwrap()))
+                            .collect();
 
-                            if let Some(buffer) = audio_buffers.get_mut(&user_id) {
-                                for _ in 0..audio.len() {
-                                    buffer.push_back(audio.pop_front().unwrap());
-                                }
-                            }
-                            // User doesn't exist, so make a buffer for that user
-                            else {
-                                audio_buffers.insert(user_id, audio);
-                            }
-
-                            // Now that we have this audio in memory, check to see if 20ms have passed
-                            // If 20ms have passed, add all of the audio from each buffer and push
-                            // the added buffer to the output buffer for playback
-                            if time.elapsed().as_millis() > 60 {
-                                // Place to hold mixed audio
-                                let mut mixed: VecDeque<f32> = VecDeque::new();
-
-                                // Let's first get the size of the longest buffer
-                                let mut max_len: u32 = 0;
-                                for buffer in audio_buffers.iter() {
-                                    if buffer.1.len() as u32 > max_len {
-                                        max_len = buffer.1.len() as u32;
-                                    }
-                                }
-
-                                // Now that we have the max buffer length, push that many
-                                // values to our mixed audio
-                                for _ in 0..max_len {
-                                    mixed.push_back(0.0);
-                                }
-
-                                // We have a buffer ready to fit all mixed audio
-                                // Let's add it all up now
-                                for buffer in audio_buffers.iter_mut() {
-                                    for i in 0..buffer.1.len() {
-                                        mixed[i] = mixed[i] + buffer.1[i];
-                                    }
-
-                                    // Now that we've added this, clear the buffer
-                                    buffer.1.clear();
-                                }
-
-                                // Now that we have a mixed buffer, push that for playback
-                                for _ in 0..mixed.len() {
-                                    let _ = producer.push(mixed.pop_front().unwrap());
-                                }
-
-                                // Now reset the timer
-                                time = Instant::now();
+                        if let Some(buffer) = audio_buffers.get_mut(&user_id) {
+                            for _ in 0..audio.len() {
+                                buffer.push_back(audio.pop_front().unwrap());
                             }
                         }
-                        None => (),
-                    };
+                        // User doesn't exist, so make a buffer for that user
+                        else {
+                            audio_buffers.insert(user_id, audio);
+                        }
+
+                        // Now that we have this audio in memory, check to see if 20ms have passed
+                        // If 20ms have passed, add all of the audio from each buffer and push
+                        // the added buffer to the output buffer for playback
+                        if time.elapsed().as_millis() > 60 {
+                            // Place to hold mixed audio
+                            let mut mixed: VecDeque<f32> = VecDeque::new();
+
+                            // Let's first get the size of the longest buffer
+                            let mut max_len: u32 = 0;
+                            for buffer in audio_buffers.iter() {
+                                if buffer.1.len() as u32 > max_len {
+                                    max_len = buffer.1.len() as u32;
+                                }
+                            }
+
+                            // Now that we have the max buffer length, push that many
+                            // values to our mixed audio
+                            for _ in 0..max_len {
+                                mixed.push_back(0.0);
+                            }
+
+                            // We have a buffer ready to fit all mixed audio
+                            // Let's add it all up now
+                            for buffer in audio_buffers.iter_mut() {
+                                #[allow(clippy::needless_range_loop)]
+                                for i in 0..buffer.1.len() {
+                                    mixed[i] += buffer.1[i];
+                                }
+
+                                // Now that we've added this, clear the buffer
+                                buffer.1.clear();
+                            }
+
+                            // Now that we have a mixed buffer, push that for playback
+                            for _ in 0..mixed.len() {
+                                let _ = producer.push(mixed.pop_front().unwrap());
+                            }
+
+                            // Now reset the timer
+                            time = Instant::now();
+                        }
+                    }
                 }
             });
         }
@@ -318,10 +318,7 @@ impl AudioManager {
         consumer: &mut Consumer<f32, Arc<SharedRb<f32, Vec<MaybeUninit<f32>>>>>,
     ) {
         for sample in data {
-            *sample = match consumer.pop() {
-                Some(s) => s,
-                None => 0.0,
-            };
+            *sample = consumer.pop().unwrap_or_default();
         }
     }
 
@@ -341,23 +338,20 @@ impl AudioManager {
 
         let config = self.config.clone();
 
-        match self.connection.clone() {
-            Some(conn) => {
-                let stream = input_device
-                    .build_input_stream(
-                        &config,
-                        move |data, _: &_| pack_and_send_data::<f32>(data, conn.clone(), header),
-                        err_fn,
-                        None,
-                    )
-                    .unwrap();
+        if let Some(conn) = self.connection.clone() {
+            let stream = input_device
+                .build_input_stream(
+                    &config,
+                    move |data, _: &_| pack_and_send_data::<f32>(data, conn.clone(), header),
+                    err_fn,
+                    None,
+                )
+                .unwrap();
 
-                stream.play().unwrap();
+            stream.play().unwrap();
 
-                self.input_stream = Some(stream);
-            }
-            None => (),
-        };
+            self.input_stream = Some(stream);
+        }
     }
 
     pub async fn disconnect(&mut self) {
@@ -365,7 +359,7 @@ impl AudioManager {
         //self.stop_listening().await;
     }
 
-    pub async fn stop_listening(self: &Self) {
+    pub async fn stop_listening(&self) {
         match &self.play_command_sender {
             Some(sender) => match sender.send(AudioCommand::StopListening).await {
                 Ok(_) => (),
@@ -399,8 +393,6 @@ impl AudioManager {
                     .unwrap()
                     .supported_input_configs()
                     .unwrap()
-                    .into_iter()
-                    .map(|config| config)
                     .collect();
 
                 input_configs.append(&mut configs);
@@ -415,8 +407,6 @@ impl AudioManager {
                     .unwrap()
                     .supported_output_configs()
                     .unwrap()
-                    .into_iter()
-                    .map(|config| config)
                     .collect();
 
                 output_configs.append(&mut configs);

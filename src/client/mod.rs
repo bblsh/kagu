@@ -26,7 +26,8 @@ pub enum AudioCommand {
 
 #[derive(Debug)]
 pub struct Client {
-    _endpoint: Endpoint,
+    #[allow(unused)]
+    endpoint: Endpoint,
     connection: Connection,
     connection_sender: Arc<Mutex<Option<Sender<ConnectionCommand>>>>,
     messages: Arc<Mutex<VecDeque<Message>>>,
@@ -52,7 +53,8 @@ pub struct Client {
 
 impl Client {
     pub async fn new(server_address: String, username: String) -> Client {
-        let endpoint = NetworkManager::new(server_address.clone(), ServerOrClient::Client).await;
+        let endpoint =
+            NetworkManager::connect_endpoint(server_address.clone(), ServerOrClient::Client).await;
         let address: std::net::SocketAddr = server_address.parse().unwrap();
 
         // Here "localhost" should match the server cert (but this is ignored right now)
@@ -72,32 +74,29 @@ impl Client {
         };
 
         // Generate a sender and receiver for audio data
-        let (audio_to_am_tx, audio_to_am_rx): (
-            Sender<(UserIdSize, Vec<u8>)>,
-            Receiver<(UserIdSize, Vec<u8>)>,
-        ) = channel(1000);
+        let (audio_to_am_tx, audio_to_am_rx) = channel(1000);
 
         // Make our AudioManager and give it our client's endpoint
-        let audio_manager = AudioManager::new()
+        let audio_manager = AudioManager::default()
             .endpoint(endpoint.clone())
             .connection(connection.clone())
             .audio_receiver(audio_to_am_rx);
 
         Client {
-            _endpoint: endpoint,
-            connection: connection,
+            endpoint,
+            connection,
             audio_sender: Some(audio_to_am_tx),
             connection_sender: Arc::new(Mutex::new(None)),
             messages: Arc::new(Mutex::new(VecDeque::new())),
             user: Arc::new(Mutex::new(None)),
-            username: username,
+            username,
             realms: Arc::new(Mutex::new(Vec::new())),
             audio_manager: Arc::new(Mutex::new(Some(audio_manager))),
             is_logged_in: Arc::new(Mutex::new(false)),
         }
     }
 
-    pub async fn get_new_messages(self: &Self) -> Vec<Message> {
+    pub async fn get_new_messages(&self) -> Vec<Message> {
         let mut new_messages: Vec<Message> = Vec::new();
 
         let messages = self.messages.clone();
@@ -110,12 +109,12 @@ impl Client {
         new_messages
     }
 
-    pub async fn run_client(self: &Self) {
+    pub async fn run_client(&self) {
         self.receive_data().await;
         self.login(self.username.clone()).await;
     }
 
-    async fn login(self: &Self, username: String) {
+    async fn login(&self, username: String) {
         let login_message = Message::from(MessageType::LoginAttempt(username));
 
         // Try to log in
@@ -126,7 +125,7 @@ impl Client {
         .await;
     }
 
-    pub async fn get_realms(self: &Self) -> Vec<RealmDescription> {
+    pub async fn get_realms(&self) -> Vec<RealmDescription> {
         let mut realms = self.realms.lock().await;
 
         let mut new_realms = Vec::new();
@@ -138,16 +137,18 @@ impl Client {
         new_realms
     }
 
-    pub async fn get_user_id(self: &Self) -> Option<UserIdSize> {
+    pub async fn get_user_id(&self) -> Option<UserIdSize> {
         let guard = self.user.lock().await;
+        #[allow(clippy::manual_map)]
         match *guard {
             Some(ref user) => Some(user.get_id()),
             None => None,
         }
     }
 
-    pub async fn get_username(self: &Self) -> Option<String> {
+    pub async fn get_username(&self) -> Option<String> {
         let guard = self.user.lock().await;
+        #[allow(clippy::manual_map)]
         match *guard {
             Some(ref user) => Some(user.get_username().to_string()),
             None => None,
@@ -156,12 +157,10 @@ impl Client {
 
     pub async fn is_logged_in(&self) -> bool {
         let logged_in = self.is_logged_in.lock().await;
-        let is_logged_in = *logged_in;
-
-        is_logged_in
+        *logged_in
     }
 
-    async fn receive_data(self: &Self) {
+    async fn receive_data(&self) {
         let connection = self.connection.clone();
         let messages = self.messages.clone();
 
@@ -201,7 +200,7 @@ impl Client {
 
                 let connection = connection.clone();
                 let stream = connection.accept_bi().await;
-                let _stream = match stream {
+                match stream {
                     Ok((_send_stream, mut read_stream)) => {
                         let message = read_stream.read_to_end(12000000).await.unwrap();
 
@@ -254,7 +253,7 @@ impl Client {
                         eprintln!("[client] unhandled stream error");
                         break;
                     }
-                };
+                }
             }
         });
     }
@@ -305,8 +304,8 @@ impl Client {
             let message = Message::from(MessageType::Image((
                 MessageHeader {
                     user_id: user.get_id(),
-                    realm_id: realm_id,
-                    channel_id: channel_id,
+                    realm_id,
+                    channel_id,
                 },
                 image,
             )));
@@ -376,16 +375,13 @@ impl Client {
     }
 
     async fn send(buffer: &[u8], connection: Connection) {
-        match connection.open_bi().await {
-            Ok((mut send, _recv)) => {
-                send.write_all(buffer).await.unwrap();
-                send.finish().await.unwrap();
-            }
-            Err(_) => (),
+        if let Ok((mut send, _recv)) = connection.open_bi().await {
+            send.write_all(buffer).await.unwrap();
+            send.finish().await.unwrap();
         }
     }
 
-    pub async fn disconnect(self: &mut Self) {
+    pub async fn disconnect(&mut self) {
         // Tell the server we are disconnecting
         // Get our user id
         let guard = self.user.lock().await;
@@ -404,28 +400,22 @@ impl Client {
         let connection_sender = self.connection_sender.clone();
         let mut conn_sender = connection_sender.lock().await;
         if let Some(conn_sender) = conn_sender.take() {
-            match conn_sender.send(ConnectionCommand::StopReceiving).await {
-                Ok(_) => {}
-                Err(_) => {}
-            }
+            let _ = conn_sender.send(ConnectionCommand::StopReceiving).await;
         }
     }
 
     pub async fn connect_voice(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
         if let Some(user_id) = self.get_user_id().await {
             let mut am = self.audio_manager.lock().await;
-            match *am {
-                Some(ref mut manager) => {
-                    // Set our user id before recording and broadcasting
-                    manager.set_user_id(user_id);
+            if let Some(ref mut manager) = *am {
+                // Set our user id before recording and broadcasting
+                manager.set_user_id(user_id);
 
-                    // Start recording for broadcasting
-                    manager
-                        .start_recording(MessageHeader::new(user_id, realm_id, channel_id))
-                        .await;
-                    manager.start_listening().await;
-                }
-                None => (),
+                // Start recording for broadcasting
+                manager
+                    .start_recording(MessageHeader::new(user_id, realm_id, channel_id))
+                    .await;
+                manager.start_listening().await;
             }
         }
     }

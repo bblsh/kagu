@@ -14,7 +14,7 @@ impl Clone for RealmsManager {
     }
 }
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 pub struct RealmsManager {
     // Map holding all of the server realms
     realms: HashMap<RealmIdSize, Realm>,
@@ -25,16 +25,9 @@ pub struct RealmsManager {
 }
 
 impl RealmsManager {
-    pub fn new() -> RealmsManager {
-        RealmsManager {
-            realms: HashMap::new(),
-            num_realms: 0,
-        }
-    }
-
     pub fn add_realm(&mut self, realm_name: String) -> RealmIdSize {
         let id = self.generate_realm_id();
-        self.add_realm_with_id(id.clone(), realm_name);
+        self.add_realm_with_id(id, realm_name);
 
         id
     }
@@ -65,15 +58,15 @@ impl RealmsManager {
     // Super lazy generation of realm id
     pub fn generate_realm_id(&mut self) -> RealmIdSize {
         let id = self.num_realms;
-        self.num_realms = self.num_realms + 1;
+        self.num_realms += self.num_realms;
         id
     }
 
     pub fn get_realm_descriptions(&self) -> Vec<RealmDescription> {
         let mut realm_descriptions = Vec::new();
-        for (_id, realm) in &self.realms {
+        for realm in self.realms.values() {
             realm_descriptions.push(RealmDescription::new(
-                realm.get_id().clone(),
+                *realm.get_id(),
                 realm.get_name().clone(),
                 &realm.text_channels,
                 &realm.voice_channels,
@@ -85,7 +78,7 @@ impl RealmsManager {
 
     pub fn get_realms(&self) -> Vec<(&RealmIdSize, &String)> {
         let mut realms = Vec::new();
-        for (_id, realm) in &self.realms {
+        for realm in self.realms.values() {
             realms.push((realm.get_id(), realm.get_name()));
         }
         realms

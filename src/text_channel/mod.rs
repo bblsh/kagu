@@ -19,8 +19,8 @@ pub struct TextChannel {
 impl TextChannel {
     pub fn new(id: ChannelIdSize, name: String) -> TextChannel {
         TextChannel {
-            id: id,
-            name: name,
+            id,
+            name,
             pending_mention: false,
             chat_history: Vec::new(),
         }

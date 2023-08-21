@@ -10,18 +10,14 @@ pub struct User {
 
 impl User {
     pub fn new(id: UserIdSize, username: String) -> User {
-        User {
-            id: id,
-            username: username,
-            about: String::new(),
-        }
+        User { id, username, String::new() }
     }
 
-    pub fn get_id(self: &Self) -> UserIdSize {
+    pub fn get_id(&self) -> UserIdSize {
         self.id
     }
 
-    pub fn get_username(self: &Self) -> &str {
+    pub fn get_username(&self) -> &str {
         &self.username
     }
 }

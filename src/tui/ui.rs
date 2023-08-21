@@ -248,10 +248,8 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     if app.is_mentioning {
         let matched_members = &mut app.mention_list;
         for member in &app.users_online.items {
-            if member.1.contains(&app.mention_buffer) {
-                if !matched_members.items.contains(member) {
-                    matched_members.items.push(member.clone());
-                }
+            if member.1.contains(&app.mention_buffer) && !matched_members.items.contains(member) {
+                matched_members.items.push(member.clone());
             }
         }
 
@@ -272,15 +270,12 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     } else if app.is_commanding {
         let matched_commands = &mut app.command_list;
         for command in &app.commands {
-            if command.to_str().contains(&app.command_buffer) {
-                if !matched_commands
+            if command.to_str().contains(&app.command_buffer)
+                && !matched_commands
                     .items
-                    .contains(&(command.clone(), command.to_str()))
-                {
-                    matched_commands
-                        .items
-                        .push((command.clone(), command.to_str()));
-                }
+                    .contains(&(*command, command.to_str()))
+            {
+                matched_commands.items.push((*command, command.to_str()));
             }
         }
 
@@ -304,7 +299,7 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         let mut title = String::from(&*app.popup_title);
         title.push_str(" (Enter to dismiss)");
 
-        let alert_block = Paragraph::new(&*app.popup_text.as_str())
+        let alert_block = Paragraph::new(app.popup_text.as_str())
             .block(Block::default().title(title).borders(Borders::ALL));
         let area = centered_popup(60, 20, frame.size());
         frame.render_widget(Clear, area);
