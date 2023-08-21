@@ -42,6 +42,7 @@ pub enum InputMode {
     TextChannel,
     VoiceChannel,
     Members,
+    Realms,
     Loading,
     Popup,
 }

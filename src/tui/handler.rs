@@ -70,6 +70,10 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.input_mode = InputMode::Members;
                     app.users_online.next();
                 }
+                Pane::RealmsPane => {
+                    app.input_mode = InputMode::Realms;
+                    app.realms.next();
+                }
                 _ => (),
             },
             _ => (),
@@ -490,6 +494,22 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             KeyCode::Enter => {
                 // Display user information
                 app.is_viewing_member = true;
+            }
+            _ => (),
+        },
+        InputMode::Realms if key_event.kind == KeyEventKind::Press => match key_event.code {
+            KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
+                app.realms.unselect();
+                app.input_mode = InputMode::Normal;
+            }
+            KeyCode::Up => {
+                app.realms.previous();
+            }
+            KeyCode::Down => {
+                app.realms.next();
+            }
+            KeyCode::Enter => {
+                // Enter this realm
             }
             _ => (),
         },
