@@ -1,13 +1,8 @@
 use anyhow::Result;
-use quinn::{ClientConfig, Connection, Endpoint, ServerConfig};
-use std::collections::HashMap;
+use quinn::{ClientConfig, Endpoint, ServerConfig};
 use std::error::Error;
 use std::net::SocketAddr;
-use std::sync::mpsc::TryRecvError;
-use std::sync::{mpsc, Arc, Mutex};
-
-type Tx = mpsc::Sender<NetworkCommand>;
-type Rx = mpsc::Receiver<NetworkCommand>;
+use std::sync::Arc;
 
 #[derive(Debug)]
 pub enum ConnectionCommand {
@@ -18,16 +13,9 @@ pub enum ServerOrClient {
     Server,
     Client,
 }
-enum NetworkCommand {
-    StopReceiving,
-}
 
 #[derive(Debug)]
-pub struct NetworkManager {
-    endpoint: Endpoint,
-    connections: Arc<Mutex<HashMap<u32, Connection>>>,
-    connection_senders: HashMap<u32, Tx>,
-}
+pub struct NetworkManager {}
 
 impl NetworkManager {
     pub async fn connect_endpoint(address: String, server_or_client: ServerOrClient) -> Endpoint {
@@ -76,108 +64,6 @@ impl NetworkManager {
                 endpoint
             }
         }
-    }
-
-    pub fn disconnect(&mut self) {
-        if let Ok(mut connections) = self.connections.lock() {
-            // Close each connection in our connections HashMap
-            for (_id, conn) in connections.iter_mut() {
-                println!("Closing connection...");
-                conn.close(0u32.into(), b"done");
-                println!("Closed connection");
-            }
-
-            // Clear our Connections because they've all been disconnected
-            connections.clear();
-
-            // Remove all of our connection senders, because we've disconnected
-            for sender in self.connection_senders.values() {
-                let _ = sender.send(NetworkCommand::StopReceiving);
-            }
-        }
-    }
-
-    pub async fn send(&self, buffer: &[u8]) {
-        // Don't try to send anything if there's aren't any existing connections
-        if let Ok(mut connections) = self.connections.lock() {
-            if connections.is_empty() {
-                println!("No connection to server made. Can't send a messaage yet.");
-                return;
-            }
-
-            // Send this message to each connection (clients should only have one connection)
-            for (_id, conn) in connections.iter_mut() {
-                let (mut send, _recv) = conn.open_bi().await.unwrap();
-
-                send.write_all(buffer).await.unwrap();
-                send.finish().await.unwrap();
-            }
-        }
-    }
-
-    // Receive data from all existing connections
-    pub async fn receive_data(
-        &mut self,
-        handle_data: fn(Vec<u8>, connections: Arc<Mutex<HashMap<u32, Connection>>>),
-    ) {
-        // Listen for any connections
-        while let Some(conn) = self.endpoint.accept().await {
-            let connection = conn.await.unwrap();
-
-            // Save connection somewhere, start transferring, receiving data, see DataTransfer tutorial.
-            println!(
-                "[server] incoming connection: addr={}",
-                connection.remote_address()
-            );
-
-            let (tx, rx): (Tx, Rx) = mpsc::channel();
-
-            self.connection_senders
-                .insert(self.generate_connection_id(), tx);
-
-            let connections = self.connections.clone();
-
-            // Spawn a tokio thread to listen for data
-            tokio::spawn(async move {
-                loop {
-                    // Listen for channel messages to stop listening on this channel
-                    match rx.try_recv() {
-                        Ok(command) => match command {
-                            NetworkCommand::StopReceiving => {
-                                break;
-                            }
-                        },
-                        Err(TryRecvError::Empty) => (), // Do nothing here, nothing to receive yet
-                        Err(TryRecvError::Disconnected) => {
-                            eprintln!("No sender available to receive from");
-                            drop(rx);
-                            break;
-                        }
-                    }
-
-                    let stream = connection.accept_bi().await;
-                    match stream {
-                        Ok((_send_stream, mut read_stream)) => {
-                            let message = read_stream.read_to_end(2048).await.unwrap();
-
-                            handle_data(message, connections.clone());
-                        }
-                        Err(quinn::ConnectionError::ApplicationClosed { .. }) => {
-                            println!("Connection closed");
-                            break;
-                        }
-                        Err(e) => {
-                            println!("Stream error: {}", e);
-                            break;
-                        }
-                    }
-                }
-            });
-        }
-    }
-
-    fn generate_connection_id(&self) -> u32 {
-        self.connection_senders.len() as u32
     }
 }
 
