@@ -41,6 +41,8 @@ pub enum InputMode {
     ChannelType,
     TextChannel,
     VoiceChannel,
+    Members,
+    Realms,
     Loading,
     Popup,
 }
@@ -161,6 +163,8 @@ pub struct App<'a> {
     pub popup_text: String,
     /// Title for the popup window
     pub popup_title: String,
+    /// State for showing member information
+    pub is_viewing_member: bool,
 }
 
 impl<'a> App<'a> {
@@ -203,6 +207,7 @@ impl<'a> App<'a> {
             is_popup_shown: false,
             popup_text: String::new(),
             popup_title: String::new(),
+            is_viewing_member: false,
         }
     }
 
@@ -515,6 +520,7 @@ impl<'a> App<'a> {
     pub async fn enter_realm(&mut self, realm_id: RealmIdSize) {
         if let Some(realm) = self.realms_manager.get_realm(realm_id) {
             // Update our text channels list
+            self.text_channels.items.clear();
             for text_channel in realm.get_text_channels() {
                 self.text_channels.items.push((
                     *text_channel.0,
@@ -523,6 +529,7 @@ impl<'a> App<'a> {
             }
 
             // Update our voice channels list
+            self.voice_channels.items.clear();
             for voice_channel in realm.get_voice_channels() {
                 self.voice_channels.items.push((
                     *voice_channel.0,
@@ -539,6 +546,8 @@ impl<'a> App<'a> {
                 )
                 .await;
             }
+
+            self.current_realm_id = Some(realm_id);
         }
     }
 

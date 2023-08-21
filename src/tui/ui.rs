@@ -306,6 +306,22 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         frame.render_widget(alert_block, area);
     }
 
+    if app.is_viewing_member {
+        // Get the id of the selected user
+        if app.users_online.items.len() > 0 {
+            if let Some(selected_id) = app.users_online.state.selected() {
+                if let Some(user) = app.users_online.items.get(selected_id) {
+                    // We have our user ID and user here
+                    let member_block = Paragraph::new(user.1.clone())
+                        .block(Block::default().title("Member Info").borders(Borders::ALL));
+                    let area = build_member_popup(frame.size(), selected_id);
+                    frame.render_widget(Clear, area);
+                    frame.render_widget(member_block, area);
+                }
+            }
+        }
+    }
+
     // Move the cursor to the end of the text (if in edit mode)
     match app.input_mode {
         InputMode::Normal =>
@@ -324,6 +340,32 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         }
         _ => (),
     }
+}
+
+fn build_member_popup(r: Rect, selected_index: usize) -> Rect {
+    let member_popup = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Max(2 + selected_index as u16),
+                Constraint::Max(10),
+                Constraint::Max(r.height - 2 + selected_index as u16 - 10),
+            ]
+            .as_ref(),
+        )
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Max(r.width - 15 - 10),
+                Constraint::Max(15),
+                Constraint::Max(10),
+            ]
+            .as_ref(),
+        )
+        .split(member_popup[1])[1]
 }
 
 fn build_mention_command_popup(r: Rect, input_length: &u16, num_items: usize) -> Rect {

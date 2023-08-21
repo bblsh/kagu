@@ -5,11 +5,12 @@ use serde::{Deserialize, Serialize};
 pub struct User {
     id: UserIdSize,
     username: String,
+    about: String,
 }
 
 impl User {
     pub fn new(id: UserIdSize, username: String) -> User {
-        User { id, username }
+        User { id, username, String::new() }
     }
 
     pub fn get_id(&self) -> UserIdSize {

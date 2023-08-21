@@ -13,6 +13,7 @@ impl Clone for RealmsManager {
         }
     }
 }
+
 #[derive(Default, Serialize, Deserialize, PartialEq, Debug)]
 pub struct RealmsManager {
     // Map holding all of the server realms
