@@ -283,6 +283,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             KeyCode::Char(c) => {
                 if let Some(input) = app.input_buffer.input.last_mut() {
                     input.0.push(c);
+                } else {
+                    app.input_buffer
+                        .input
+                        .push((String::new(), Style::default(), None));
+                    app.input_buffer.input[0].0.push(c);
                 }
 
                 if app.is_mentioning {
@@ -470,7 +475,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             }
             _ => (),
         },
-        InputMode::Members if key_event.kind == KeyEventKind::Press => match key_event.code {
+        InputMode::Members => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
                 // Stop inspecting this member
                 if app.is_viewing_member {
@@ -494,7 +499,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             }
             _ => (),
         },
-        InputMode::Realms if key_event.kind == KeyEventKind::Press => match key_event.code {
+        InputMode::Realms => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
                 app.realms.unselect();
                 app.input_mode = InputMode::Normal;
