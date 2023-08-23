@@ -52,10 +52,18 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(server_address: String, username: String) -> Client {
-        let endpoint =
-            NetworkManager::connect_endpoint(server_address.clone(), ServerOrClient::Client).await;
-        let address: std::net::SocketAddr = server_address.parse().unwrap();
+    pub async fn new(server_address: String, server_port: u16, username: String) -> Client {
+        let endpoint = NetworkManager::connect_endpoint(
+            server_address.clone(),
+            server_port,
+            ServerOrClient::Client,
+        )
+        .await;
+
+        let mut address = server_address;
+        address.push(':');
+        address.push_str(server_port.to_string().as_str());
+        let address: std::net::SocketAddr = address.parse().unwrap();
 
         // Here "localhost" should match the server cert (but this is ignored right now)
         let connect = endpoint.connect(address, "localhost").unwrap();

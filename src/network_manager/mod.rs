@@ -18,7 +18,14 @@ pub enum ServerOrClient {
 pub struct NetworkManager {}
 
 impl NetworkManager {
-    pub async fn connect_endpoint(address: String, server_or_client: ServerOrClient) -> Endpoint {
+    pub async fn connect_endpoint(
+        mut address: String,
+        port: u16,
+        server_or_client: ServerOrClient,
+    ) -> Endpoint {
+        address.push(':');
+        address.push_str(port.to_string().as_str());
+
         // Parse this address into a SocketAddr
         let address: SocketAddr = address.parse().unwrap();
 
@@ -26,27 +33,6 @@ impl NetworkManager {
             // Configure this NetworkManager for a client
             ServerOrClient::Client => {
                 let endpoint = make_client_endpoint("0.0.0.0:0".parse().unwrap()).unwrap();
-
-                // // Here "localhost" should match the server cert (but this is ignored right now)
-                // let connect = endpoint.connect(address, "localhost").unwrap();
-                // let connection = connect.await;
-
-                // let connection = match connection {
-                //     Ok(conn) => conn,
-                //     Err(ConnectionError::TimedOut) => {
-                //         eprintln!("[NetworkManager] Connection timed out. Is the server IP and port correct?");
-                //         std::process::exit(1);
-                //     }
-                //     Err(e) => {
-                //         eprintln!("[NetworkManager] Error while connecting: {}", e);
-                //         std::process::exit(1);
-                //     }
-                // };
-
-                // let mut conns = HashMap::new();
-                // conns.insert(0, connection);
-
-                // let conns = Arc::new(Mutex::new(conns));
 
                 endpoint
             }

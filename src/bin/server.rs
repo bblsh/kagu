@@ -1,18 +1,23 @@
+use clap::Parser;
 use rustcord::server::Server;
+
+#[derive(Parser, Debug)]
+#[command(author, version, about, long_about = None)]
+struct Args {
+    /// Ip address to use
+    #[arg(short, long, default_value = "0.0.0.0")]
+    address: String,
+
+    /// Port to listen on
+    #[arg(short, long)]
+    port: u16,
+}
 
 #[tokio::main]
 async fn main() {
-    // Get the port to bind to
-    let mut args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        eprintln!("server: a port for the server is needed");
-        eprintln!("usage: server 5000");
-        std::process::exit(1);
-    }
+    // Collect arguments
+    let args = Args::parse();
 
-    let mut address = String::from("0.0.0.0:");
-    address.push_str(args.remove(1).as_str());
-
-    let server = Server::new(address).await;
+    let server = Server::new(args.address, args.port).await;
     server.run_server().await;
 }

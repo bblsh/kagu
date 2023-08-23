@@ -34,9 +34,10 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn new(server_address: String) -> Server {
+    pub async fn new(server_address: String, server_port: u16) -> Server {
         let endpoint =
-            NetworkManager::connect_endpoint(server_address, ServerOrClient::Server).await;
+            NetworkManager::connect_endpoint(server_address, server_port, ServerOrClient::Server)
+                .await;
 
         Server { endpoint }
     }
