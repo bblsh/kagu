@@ -29,9 +29,10 @@ use super::input_buffer::InputBuffer;
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Debug)]
-pub enum CurrentScreen {
+pub enum Screen {
     Main,
     Settings,
+    Personal,
 }
 
 #[derive(Debug)]
@@ -111,6 +112,8 @@ pub struct App<'a> {
     pub ui_element: UiElement,
     /// Current pane in focus
     pub current_pane: Pane,
+    /// Current screen type to draw
+    pub current_screen: Screen,
     /// Is the application running?
     pub running: bool,
     /// counter
@@ -179,6 +182,7 @@ impl<'a> App<'a> {
         Self {
             user_id: None,
             input_mode: InputMode::Normal,
+            current_screen: Screen::Main,
             ui_element: UiElement::None,
             current_pane: Pane::ChatPane,
             running: true,
