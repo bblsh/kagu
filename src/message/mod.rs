@@ -52,6 +52,11 @@ pub enum MessageType {
     // Users
     AllUsers(Vec<User>),
 
+    // Friend actions
+    NewFriendRequest((MessageHeader, UserIdSize)),
+    FriendRequestAccepted((MessageHeader, UserIdSize)),
+    FriendRequestRejected((MessageHeader, UserIdSize)),
+
     // Realms
     RealmsManager(RealmsManager),
     Realms(Vec<RealmDescription>),
@@ -106,6 +111,15 @@ impl From<MessageType> for Message {
                 Message::new(0, MessageType::Disconnecting(user_id))
             }
             MessageType::AllUsers(users) => Message::new(0, MessageType::AllUsers(users)),
+            MessageType::NewFriendRequest(request) => {
+                Message::new(0, MessageType::NewFriendRequest(request))
+            }
+            MessageType::FriendRequestAccepted(accepted) => {
+                Message::new(0, MessageType::FriendRequestAccepted(accepted))
+            }
+            MessageType::FriendRequestRejected(rejected) => {
+                Message::new(0, MessageType::FriendRequestRejected(rejected))
+            }
             MessageType::GetRealms(user_id) => {
                 Message::new(user_id, MessageType::GetRealms(user_id))
             }
@@ -153,6 +167,13 @@ impl Message {
                 MessageType::UserLeftVoiceChannel(leave_info)
             }
             MessageType::AllUsers(users) => MessageType::AllUsers(users),
+            MessageType::NewFriendRequest(request) => MessageType::NewFriendRequest(request),
+            MessageType::FriendRequestAccepted(accepted) => {
+                MessageType::FriendRequestAccepted(accepted)
+            }
+            MessageType::FriendRequestRejected(rejected) => {
+                MessageType::FriendRequestRejected(rejected)
+            }
             MessageType::RealmsManager(rm) => MessageType::RealmsManager(rm),
             MessageType::Realms(realms) => MessageType::Realms(realms),
             MessageType::GetRealms(user_id) => MessageType::GetRealms(user_id),

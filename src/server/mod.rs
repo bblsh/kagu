@@ -354,7 +354,7 @@ impl Server {
 
         match message.get_message() {
             MessageType::GetRealms(user_id) => {
-                println!("[server] got request for realms");
+                //println!("[server] got request for realms");
                 Server::send_realms_to_id(connections, user_id, realms_manager, message_sender)
                     .await;
             }
