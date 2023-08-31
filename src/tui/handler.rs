@@ -1,4 +1,4 @@
-use crate::tui::app::{Pane, RustcordFormatting};
+use crate::tui::app::{Pane, RustcordFormatting, Screen};
 use crate::{
     realms::realm::ChannelType,
     tui::app::{App, AppResult, InputMode, UiElement},
@@ -19,6 +19,22 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         KeyCode::Char('d') | KeyCode::Char('D') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
                 app.hang_up().await;
+                return Ok(());
+            }
+        }
+        _ => (),
+    }
+
+    match key_event.code {
+        KeyCode::Char('q') => {
+            if key_event.modifiers == KeyModifiers::CONTROL {
+                app.current_screen = Screen::Main;
+                return Ok(());
+            }
+        }
+        KeyCode::Char('s') => {
+            if key_event.modifiers == KeyModifiers::CONTROL {
+                app.current_screen = Screen::Settings;
                 return Ok(());
             }
         }

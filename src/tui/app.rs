@@ -116,7 +116,7 @@ pub struct App<'a> {
     pub current_screen: Screen,
     /// Is the application running?
     pub running: bool,
-    /// counter
+    /// Client to handle all interactions with the server
     pub client: Client,
     /// Chat history
     pub chat_history: Vec<Line<'a>>,
