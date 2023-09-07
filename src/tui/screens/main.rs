@@ -8,7 +8,7 @@ use tui::{
     Frame,
 };
 
-use crate::tui::app::{App, InputMode, Pane, RustcordFormatting, UiElement};
+use crate::tui::app::{App, InputMode, KaguFormatting, Pane, UiElement};
 
 pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     let back_panel = Layout::default()

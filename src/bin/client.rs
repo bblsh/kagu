@@ -1,6 +1,6 @@
 use clap::Parser;
-use rustcord::client::Client;
-use rustcord::tui::app::{App, AppResult};
+use kagu::client::Client;
+use kagu::tui::app::{App, AppResult};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

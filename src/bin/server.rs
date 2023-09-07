@@ -1,5 +1,5 @@
 use clap::Parser;
-use rustcord::server::Server;
+use kagu::server::Server;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]

@@ -1,4 +1,4 @@
-use crate::tui::app::{Pane, RustcordFormatting, Screen};
+use crate::tui::app::{KaguFormatting, Pane, Screen};
 use crate::{
     realms::realm::ChannelType,
     tui::app::{App, AppResult, InputMode, UiElement},

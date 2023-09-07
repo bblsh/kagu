@@ -78,13 +78,13 @@ impl Pane {
     }
 }
 
-pub trait RustcordFormatting {
+pub trait KaguFormatting {
     fn with_focus(self) -> Self;
     fn add_hashtag(self) -> Self;
     fn prepend_str(self, text: &str) -> Self;
 }
 
-impl RustcordFormatting for String {
+impl KaguFormatting for String {
     fn with_focus(mut self) -> Self {
         self.insert(0, '[');
         self.push(']');

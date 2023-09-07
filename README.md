@@ -1,8 +1,8 @@
-# Rustcord
+# Kagu
 
-Rustcord aims to be a fast, private, self-hosted and lightweight alternative to a familiar chat service.
+Kagu aims to be a fast, private, self-hosted and lightweight alternative to a familiar chat service.
 
-Rustcord is powered by:
+Kagu is powered by:
 - 🚀 [rust] for stability, speed and security
 - 🔊 [cpal] for audio playback and recording
 - 👟 [quinn] to leverage the speed and reliability of QUIC
@@ -20,10 +20,10 @@ Follow these instructions.
 ### Clone the repo
 
 ```
-git clone https://github.com/bblsh/rustcord.git
+git clone https://github.com/bblsh/kagu.git
 ```
 
-### Running Rustcord
+### Running Kagu
 
 To run the client, run:
 
@@ -66,12 +66,12 @@ Pressing `Esc` will exit edit mode.
 
 ## Notes
 
-* Rustcord was used as motivation to learn Rust, so it is currently *very* unoptimized.
+* Kagu was used as motivation to learn Rust, so it is currently *very* unoptimized.
 * There are many pieces of the code that are not consistent since new methods of doing things were learned as development progressed.
 * Realms and channels are currently hardcoded as a proof of concept until a database is introduced to save and serve this data.
 * Due to the current server design, audio is also echoed back to the user speaking.
 * There's currently no option to choose an audio input and output (coming soonTM), so the defaults will be used.
-* Any and all feedback or pull requests to improve Rustcord in any way is welcome!
+* Any and all feedback or pull requests to improve Kagu in any way is welcome!
 * This was tested on macOS, and `cpal` may have issues building or running on other platforms.
 * Windows has not been tested yet.
 
