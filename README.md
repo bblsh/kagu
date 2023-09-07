@@ -1,3 +1,5 @@
+<h1 align="center"><img width="500" src="kagu.png" /></h1>
+
 # Kagu
 
 Kagu aims to be a fast, private, self-hosted and lightweight alternative to a familiar chat service.
