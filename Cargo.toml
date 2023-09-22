@@ -24,7 +24,7 @@ rustls = { version = "*", features = ["dangerous_configuration", "quic"] }
 tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
 local-ip-address = "0.5.3"
 crossterm = "0.26.1"
-tui = { package = "ratatui", version = "0.22.0" }
+tui = { package = "ratatui", version = "0.23.0" }
 unicode-width = "0.1"
 image = "0.24.7"
 clap = { version = "4.3.23", features = ["derive"] }
