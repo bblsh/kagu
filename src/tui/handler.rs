@@ -38,6 +38,12 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 return Ok(());
             }
         }
+        KeyCode::Char('p') => {
+            if key_event.modifiers == KeyModifiers::CONTROL {
+                app.current_screen = Screen::Personal;
+                return Ok(());
+            }
+        }
         _ => (),
     }
 
