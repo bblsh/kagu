@@ -2,6 +2,7 @@ pub mod app;
 pub mod command;
 pub mod event;
 pub mod handler;
+pub mod handlers;
 pub mod input_buffer;
 pub mod screens;
 pub mod stateful_list;

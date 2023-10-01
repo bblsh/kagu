@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
-use crate::tui::app::App;
+use crate::tui::app::{App, KaguFormatting, Pane};
+
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
@@ -32,11 +33,26 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         .split(back_panel[0]);
 
     let kagu_button = Paragraph::new("K").block(Block::default().borders(Borders::ALL));
-    let realms_list =
-        Paragraph::new("Realms go here").block(Block::default().borders(Borders::ALL));
-
     frame.render_widget(kagu_button, left_panel[0]);
-    frame.render_widget(realms_list, left_panel[1]);
+
+    let realms_list: Vec<ListItem> = app
+        .realms
+        .items
+        .iter()
+        .map(|i| ListItem::new(i.1.clone()).style(Style::default().fg(Color::LightBlue)))
+        .collect();
+    let realms = List::new(realms_list)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(match app.current_pane {
+                    Pane::RealmsPane => Pane::to_str(&app.current_pane).with_focus(),
+                    _ => Pane::to_str(&Pane::RealmsPane),
+                }),
+        )
+        .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+        .highlight_symbol(">");
+    frame.render_stateful_widget(realms, left_panel[1], &mut app.realms.state);
 
     let middle_panel = Layout::default()
         .direction(Direction::Vertical)
