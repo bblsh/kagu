@@ -22,10 +22,10 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         .margin(0)
         .constraints(
             [
-                Constraint::Max(10),
-                Constraint::Max(frame.size().width - 10 - 20 - 15),
-                Constraint::Max(20),
-                Constraint::Max(15),
+                Constraint::Max(10),                                // Kagu logo
+                Constraint::Max(20),                                // Voice status
+                Constraint::Max(frame.size().width - 10 - 20 - 15), // Blank space
+                Constraint::Max(15),                                // Current time
             ]
             .as_ref(),
         )
