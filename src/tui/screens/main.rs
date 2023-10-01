@@ -22,8 +22,9 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         .margin(0)
         .constraints(
             [
-                Constraint::Max(6),
-                Constraint::Max(frame.size().width - 6 - 15),
+                Constraint::Max(10),
+                Constraint::Max(frame.size().width - 10 - 20 - 15),
+                Constraint::Max(20),
                 Constraint::Max(15),
             ]
             .as_ref(),
@@ -32,8 +33,13 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
 
     let kagu_logo = Paragraph::new("Kagu");
     let time = Paragraph::new(app.get_current_time_string()).alignment(Alignment::Right);
+    let connected_label = Paragraph::new(match app.is_voice_connected {
+        true => Span::styled("Voice connected", Style::default().fg(Color::LightGreen)),
+        false => Span::styled("Voice off", Style::default()),
+    });
     frame.render_widget(kagu_logo, kagu_bar[0]);
-    frame.render_widget(time, kagu_bar[2]);
+    frame.render_widget(connected_label, kagu_bar[1]);
+    frame.render_widget(time, kagu_bar[3]);
 
     let back_panel = Layout::default()
         .direction(Direction::Horizontal)
@@ -102,7 +108,6 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
             Constraint::Percentage(45),
             Constraint::Max(1),
             Constraint::Percentage(40),
-            Constraint::Max(3),
         ])
         .split(top_blocks[0]);
 
@@ -175,14 +180,9 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
     let voice_channels = List::new(voice_channels_list)
-        .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+        .block(Block::default().borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
-    let connected_label = Paragraph::new(match app.is_voice_connected {
-        true => Span::styled("Voice connected", Style::default().fg(Color::LightGreen)),
-        false => Span::styled("Voice off", Style::default()),
-    })
-    .block(Block::default().borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM));
 
     // Render everything related to channels
     frame.render_widget(text_channels_label, channels_layout[0]);
@@ -197,7 +197,6 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         channels_layout[3],
         &mut app.voice_channels.state,
     );
-    frame.render_widget(connected_label, channels_layout[4]);
 
     let chat_paragraph = Paragraph::new(get_lines_from_text_channel(app))
         .style(match app.input_mode {
