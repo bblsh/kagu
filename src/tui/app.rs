@@ -25,6 +25,8 @@ use tui::style::Style;
 
 use super::input_buffer::InputBuffer;
 
+use chrono::Local;
+
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
@@ -644,5 +646,10 @@ impl<'a> App<'a> {
         self.current_pane = Pane::ChatPane;
         self.popup_title = String::new();
         self.popup_text = String::new();
+    }
+
+    pub fn get_current_time_string(&self) -> String {
+        let local_time = Local::now();
+        local_time.format("%H:%M").to_string()
     }
 }

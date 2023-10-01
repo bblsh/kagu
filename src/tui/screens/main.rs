@@ -1,7 +1,7 @@
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
-    prelude::Rect,
+    prelude::{Alignment, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
@@ -11,6 +11,30 @@ use tui::{
 use crate::tui::app::{App, InputMode, KaguFormatting, Pane, UiElement};
 
 pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
+    let top_and_bottom_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(0)
+        .constraints([Constraint::Max(1), Constraint::Max(frame.size().width - 1)].as_ref())
+        .split(frame.size());
+
+    let kagu_bar = Layout::default()
+        .direction(Direction::Horizontal)
+        .margin(0)
+        .constraints(
+            [
+                Constraint::Max(6),
+                Constraint::Max(frame.size().width - 6 - 15),
+                Constraint::Max(15),
+            ]
+            .as_ref(),
+        )
+        .split(top_and_bottom_layout[0]);
+
+    let kagu_logo = Paragraph::new("Kagu");
+    let time = Paragraph::new(app.get_current_time_string()).alignment(Alignment::Right);
+    frame.render_widget(kagu_logo, kagu_bar[0]);
+    frame.render_widget(time, kagu_bar[2]);
+
     let back_panel = Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)
@@ -21,16 +45,13 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
             ]
             .as_ref(),
         )
-        .split(frame.size());
+        .split(top_and_bottom_layout[1]);
 
     let left_panel = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints([Constraint::Max(3), Constraint::Max(frame.size().height - 4)].as_ref())
+        .constraints([Constraint::Max(frame.size().height - 4)].as_ref())
         .split(back_panel[0]);
-
-    let kagu_button = Paragraph::new("Kagu").block(Block::default().borders(Borders::ALL));
-    frame.render_widget(kagu_button, left_panel[0]);
 
     let realms_list: Vec<ListItem> = app
         .realms
@@ -49,12 +70,12 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         )
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
-    frame.render_stateful_widget(realms, left_panel[1], &mut app.realms.state);
+    frame.render_stateful_widget(realms, left_panel[0], &mut app.realms.state);
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints([Constraint::Max(frame.size().height - 3), Constraint::Max(3)].as_ref())
+        .constraints([Constraint::Max(frame.size().height - 4), Constraint::Max(3)].as_ref())
         .split(back_panel[1]);
 
     let top_blocks = Layout::default()
@@ -221,8 +242,6 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         .highlight_symbol(">");
     frame.render_stateful_widget(members, top_blocks[2], &mut app.users_online.state);
 
-    // This Paragraph represents the text input, AND the border around it
-    //let input = Paragraph::new(app.input.as_str())
     let input = Paragraph::new(app.input_buffer.get_input_line())
         .style(match app.input_mode {
             InputMode::Normal => Style::default(),
