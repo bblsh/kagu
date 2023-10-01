@@ -32,7 +32,7 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         .constraints([Constraint::Max(3), Constraint::Max(frame.size().height - 4)].as_ref())
         .split(back_panel[0]);
 
-    let kagu_button = Paragraph::new("K").block(Block::default().borders(Borders::ALL));
+    let kagu_button = Paragraph::new("Kagu").block(Block::default().borders(Borders::ALL));
     frame.render_widget(kagu_button, left_panel[0]);
 
     let realms_list: Vec<ListItem> = app

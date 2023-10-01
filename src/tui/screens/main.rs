@@ -23,6 +23,15 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         )
         .split(frame.size());
 
+    let left_panel = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(0)
+        .constraints([Constraint::Max(3), Constraint::Max(frame.size().height - 4)].as_ref())
+        .split(back_panel[0]);
+
+    let kagu_button = Paragraph::new("Kagu").block(Block::default().borders(Borders::ALL));
+    frame.render_widget(kagu_button, left_panel[0]);
+
     let realms_list: Vec<ListItem> = app
         .realms
         .items
@@ -40,7 +49,7 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         )
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
-    frame.render_stateful_widget(realms, back_panel[0], &mut app.realms.state);
+    frame.render_stateful_widget(realms, left_panel[1], &mut app.realms.state);
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
