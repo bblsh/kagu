@@ -5,7 +5,7 @@ use crate::tui::app::{App, KaguFormatting, Pane};
 use tui::{
     backend::Backend,
     layout::{Constraint, Direction, Layout},
-    prelude::Rect,
+    prelude::{Alignment, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget, Wrap},
@@ -13,6 +13,36 @@ use tui::{
 };
 
 pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
+    let top_and_bottom_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .margin(0)
+        .constraints([Constraint::Max(1), Constraint::Max(frame.size().width - 1)].as_ref())
+        .split(frame.size());
+
+    let kagu_bar = Layout::default()
+        .direction(Direction::Horizontal)
+        .margin(0)
+        .constraints(
+            [
+                Constraint::Max(10),                                // Kagu logo
+                Constraint::Max(20),                                // Voice status
+                Constraint::Max(frame.size().width - 10 - 20 - 15), // Blank space
+                Constraint::Max(15),                                // Current time
+            ]
+            .as_ref(),
+        )
+        .split(top_and_bottom_layout[0]);
+
+    let kagu_logo = Paragraph::new("Kagu");
+    let time = Paragraph::new(app.get_current_time_string()).alignment(Alignment::Right);
+    let connected_label = Paragraph::new(match app.is_voice_connected {
+        true => Span::styled("Voice connected", Style::default().fg(Color::LightGreen)),
+        false => Span::styled("Voice off", Style::default()),
+    });
+    frame.render_widget(kagu_logo, kagu_bar[0]);
+    frame.render_widget(connected_label, kagu_bar[1]);
+    frame.render_widget(time, kagu_bar[3]);
+
     let back_panel = Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)
@@ -24,16 +54,13 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
             ]
             .as_ref(),
         )
-        .split(frame.size());
+        .split(top_and_bottom_layout[1]);
 
     let left_panel = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
         .constraints([Constraint::Max(3), Constraint::Max(frame.size().height - 4)].as_ref())
         .split(back_panel[0]);
-
-    let kagu_button = Paragraph::new("Kagu");
-    frame.render_widget(kagu_button, left_panel[0]);
 
     let realms_list: Vec<ListItem> = app
         .realms
