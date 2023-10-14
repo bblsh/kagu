@@ -37,10 +37,19 @@ impl RealmsManager {
             .insert(realm_id, Realm::new(realm_id, realm_name));
     }
 
-    pub fn add_channel(&mut self, realm_id: RealmIdSize, channel_type: ChannelType, name: String) {
+    pub fn add_channel(
+        &mut self,
+        realm_id: RealmIdSize,
+        channel_type: ChannelType,
+        name: String,
+    ) -> (ChannelIdSize, String) {
+        let mut channel = (0, String::from(""));
+
         if let Some(realm) = self.realms.get_mut(&realm_id) {
-            realm.add_channel(channel_type, name);
+            channel = realm.add_channel(channel_type, name);
         }
+
+        channel
     }
 
     pub fn add_user(&mut self, realm_id: RealmIdSize, user: User) {

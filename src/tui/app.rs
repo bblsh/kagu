@@ -678,7 +678,10 @@ impl<'a> App<'a> {
         local_time.format("%H:%M").to_string()
     }
 
-    pub fn add_channel(&mut self, channel_type: ChannelType, channel_name: String) {
+    pub async fn add_channel(&mut self, channel_type: ChannelType, channel_name: String) {
         // Tell client to add the channel (send a AddChannel message)
+        self.client
+            .add_channel(self.current_realm_id.unwrap(), channel_type, channel_name)
+            .await;
     }
 }

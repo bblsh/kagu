@@ -241,7 +241,7 @@ impl Client {
                                 audio_sender.send((audio.0.user_id, audio.1)).await.unwrap();
                             }
                             _ => {
-                                //println!("{:?}", Message::from_vec_u8(message).unwrap());
+                                //println!("{:?}", Message::from_vec_u8(message.clone()).unwrap());
                                 messages.push_back(Message::from_vec_u8(message).unwrap());
                             }
                         }
@@ -425,6 +425,24 @@ impl Client {
                     .await;
                 manager.start_listening().await;
             }
+        }
+    }
+
+    pub async fn add_channel(
+        &self,
+        realm_id: RealmIdSize,
+        channel_type: ChannelType,
+        channel_name: String,
+    ) {
+        if let Some(user_id) = self.get_user_id().await {
+            // Send our add channel message
+            let message = Message::from(MessageType::AddChannel((
+                MessageHeader::new(user_id, realm_id, 0),
+                channel_type,
+                channel_name,
+            )));
+            let serialized = message.into_vec_u8().unwrap();
+            Client::send(serialized.as_slice(), self.connection.clone()).await;
         }
     }
 }

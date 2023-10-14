@@ -238,7 +238,7 @@ impl Server {
         tokio::spawn(async move {
             // --- !!! TEST SETUP HERE !!! ---
             // This needs to be replaced with a database at some point in time
-            let realms_manager = Server::make_test_realms();
+            let mut realms_manager = Server::make_test_realms();
             // END SETUP
 
             let mut users: Vec<User> = Vec::new();
@@ -327,11 +327,11 @@ impl Server {
                         }
                         // Process a normal message from a user
                         ServerMessageType::Message(message) => {
-                            Server::new_handle_message(
+                            Server::handle_message(
                                 message.1,
                                 &mut connections,
                                 tx.clone(),
-                                &realms_manager,
+                                &mut realms_manager,
                                 &mut users,
                             )
                             .await;
@@ -342,15 +342,15 @@ impl Server {
         })
     }
 
-    async fn new_handle_message(
+    async fn handle_message(
         message: Message,
         connections: &mut HashMap<UserIdSize, Connection>,
         message_sender: Sender<ServerMessage>,
-        realms_manager: &RealmsManager,
+        realms_manager: &mut RealmsManager,
         users: &mut Vec<User>,
     ) {
         // Debug print
-        //println!("[server] processing message {:?}", message);
+        println!("[server] processing message {:?}", message);
 
         match message.get_message() {
             MessageType::GetRealms(user_id) => {
@@ -386,6 +386,24 @@ impl Server {
                 Server::send_to_everyone(
                     connections,
                     Message::from(MessageType::UserLeftVoiceChannel(message)),
+                    message_sender,
+                )
+                .await;
+            }
+            MessageType::AddChannel(message) => {
+                // Add the channel to our realms manager
+                let channel =
+                    realms_manager.add_channel(message.0.realm_id, message.1.clone(), message.2);
+
+                // Send the new channel to everyone
+                Server::send_to_everyone(
+                    connections,
+                    Message::from(MessageType::ChannelAdded((
+                        message.0.realm_id,
+                        message.1,
+                        channel.0,
+                        channel.1,
+                    ))),
                     message_sender,
                 )
                 .await;

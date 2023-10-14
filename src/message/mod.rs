@@ -62,6 +62,13 @@ pub enum MessageType {
     Realms(Vec<RealmDescription>),
     GetRealms(UserIdSize),
 
+    // Channels
+    AddChannel((MessageHeader, ChannelType, String)),
+    RemoveChannel((MessageHeader, ChannelType)),
+    RenameChannel((MessageHeader, ChannelType)),
+    ChannelAdded((RealmIdSize, ChannelType, ChannelIdSize, String)),
+    ChannelRemoved((RealmIdSize, ChannelType, ChannelIdSize)),
+
     // User disconnects
     Disconnect,
 
@@ -125,6 +132,11 @@ impl From<MessageType> for Message {
             }
             MessageType::Realms(realms) => Message::new(0, MessageType::Realms(realms)),
             MessageType::RealmsManager(rm) => Message::new(0, MessageType::RealmsManager(rm)),
+            MessageType::AddChannel(ac) => Message::new(0, MessageType::AddChannel(ac)),
+            MessageType::RemoveChannel(rc) => Message::new(0, MessageType::RemoveChannel(rc)),
+            MessageType::RenameChannel(rc) => Message::new(0, MessageType::RenameChannel(rc)),
+            MessageType::ChannelAdded(ca) => Message::new(0, MessageType::ChannelAdded(ca)),
+            MessageType::ChannelRemoved(cr) => Message::new(0, MessageType::ChannelRemoved(cr)),
             _ => Message::new(0, MessageType::Heartbeat),
         }
     }
@@ -177,6 +189,11 @@ impl Message {
             MessageType::RealmsManager(rm) => MessageType::RealmsManager(rm),
             MessageType::Realms(realms) => MessageType::Realms(realms),
             MessageType::GetRealms(user_id) => MessageType::GetRealms(user_id),
+            MessageType::AddChannel(ac) => MessageType::AddChannel(ac),
+            MessageType::RemoveChannel(rc) => MessageType::RemoveChannel(rc),
+            MessageType::RenameChannel(rc) => MessageType::RenameChannel(rc),
+            MessageType::ChannelAdded(ca) => MessageType::ChannelAdded(ca),
+            MessageType::ChannelRemoved(cr) => MessageType::ChannelRemoved(cr),
             MessageType::Disconnect => MessageType::Disconnect,
             MessageType::Disconnecting(user_id) => MessageType::Disconnecting(user_id),
             MessageType::Heartbeat => MessageType::Heartbeat,

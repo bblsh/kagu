@@ -32,19 +32,27 @@ impl Realm {
         }
     }
 
-    pub fn add_channel(&mut self, channel_type: ChannelType, name: String) {
+    pub fn add_channel(
+        &mut self,
+        channel_type: ChannelType,
+        name: String,
+    ) -> (ChannelIdSize, String) {
         match channel_type {
             ChannelType::TextChannel => {
                 self.text_channels.insert(
                     self.text_channels.len() as ChannelIdSize,
-                    TextChannel::new(self.text_channels.len() as ChannelIdSize, name),
+                    TextChannel::new(self.text_channels.len() as ChannelIdSize, name.clone()),
                 );
+
+                (self.text_channels.len() as ChannelIdSize, name)
             }
             ChannelType::VoiceChannel => {
                 self.voice_channels.insert(
                     self.voice_channels.len() as ChannelIdSize,
-                    VoiceChannel::new(self.voice_channels.len() as ChannelIdSize, name),
+                    VoiceChannel::new(self.voice_channels.len() as ChannelIdSize, name.clone()),
                 );
+
+                (self.voice_channels.len() as ChannelIdSize, name)
             }
         }
     }
