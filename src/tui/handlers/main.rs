@@ -1,4 +1,4 @@
-use crate::tui::app::{KaguFormatting, Pane, Screen};
+use crate::tui::app::{KaguFormatting, Pane, PopupType};
 use crate::{
     realms::realm::ChannelType,
     tui::app::{App, AppResult, InputMode, UiElement},
@@ -61,9 +61,29 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             },
             _ => (),
         },
+        // Keys are handled differently depending on the popup type
         InputMode::Popup => {
-            if let KeyCode::Enter = key_event.code {
-                app.dismiss_popup()
+            match app.popup_type {
+                PopupType::General => {
+                    if let KeyCode::Enter = key_event.code {
+                        app.dismiss_popup();
+                    }
+                }
+                PopupType::YesNo => {
+                    // Handle moving between yes and no and enter (not yet drawn)
+                }
+                PopupType::AddChannel => match key_event.code {
+                    KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        app.dismiss_popup();
+                    }
+                    KeyCode::Up => {
+                        // Move focus to next line
+                    }
+                    KeyCode::Down => {
+                        // Move focus to next line
+                    }
+                    _ => (),
+                },
             }
         }
         InputMode::ChannelType => match key_event.code {
@@ -96,6 +116,12 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.ui_element = UiElement::None;
                 app.input_mode = InputMode::Editing;
                 app.current_pane = Pane::InputPane;
+            }
+            KeyCode::Char('a') | KeyCode::Char('A') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    app.show_add_channel_popup();
+                    return Ok(());
+                }
             }
             _ => (),
         },

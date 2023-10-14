@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use crate::tui::app::{App, KaguFormatting, Pane};
 
 use tui::{

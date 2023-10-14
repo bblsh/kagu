@@ -8,7 +8,7 @@ use tui::{
     Frame,
 };
 
-use crate::tui::app::{App, InputMode, KaguFormatting, Pane, UiElement};
+use crate::tui::app::{App, InputMode, KaguFormatting, Pane, PopupType, UiElement};
 
 pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     let top_and_bottom_layout = Layout::default()
@@ -314,15 +314,30 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         frame.render_stateful_widget(commands, area, &mut app.command_list.state);
     }
 
+    // Draw any popups
     if app.is_popup_shown {
-        let mut title = String::from(&*app.popup_title);
-        title.push_str(" (Enter to dismiss)");
+        match app.popup_type {
+            PopupType::General => {
+                let mut title = String::from(&*app.popup_title);
+                title.push_str(" (Enter to dismiss)");
 
-        let alert_block = Paragraph::new(app.popup_text.as_str())
-            .block(Block::default().title(title).borders(Borders::ALL));
-        let area = centered_popup(60, 20, frame.size());
-        frame.render_widget(Clear, area);
-        frame.render_widget(alert_block, area);
+                let alert_block = Paragraph::new(app.popup_text.as_str())
+                    .block(Block::default().title(title).borders(Borders::ALL));
+                let area = centered_popup(60, 20, frame.size());
+                frame.render_widget(Clear, area);
+                frame.render_widget(alert_block, area);
+            }
+            PopupType::AddChannel => {
+                let title = String::from(&*app.popup_title);
+
+                let alert_block = Paragraph::new(app.popup_text.as_str())
+                    .block(Block::default().title(title).borders(Borders::ALL));
+                let area = centered_popup(60, 60, frame.size());
+                frame.render_widget(Clear, area);
+                frame.render_widget(alert_block, area);
+            }
+            PopupType::YesNo => (),
+        }
     }
 
     if app.is_viewing_member {

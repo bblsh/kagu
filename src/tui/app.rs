@@ -31,6 +31,13 @@ use chrono::Local;
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Debug)]
+pub enum PopupType {
+    General,
+    YesNo,
+    AddChannel,
+}
+
+#[derive(Debug)]
 pub enum Screen {
     Main,
     Settings,
@@ -164,6 +171,8 @@ pub struct App<'a> {
     pub input_buffer: InputBuffer,
     /// If we are showing a popup to the user
     pub is_popup_shown: bool,
+    /// Type of popup to render
+    pub popup_type: PopupType,
     /// Text shown in popup
     pub popup_text: String,
     /// Title for the popup window
@@ -211,6 +220,7 @@ impl<'a> App<'a> {
             users_mentioned: Vec::new(),
             input_buffer: InputBuffer::default(),
             is_popup_shown: false,
+            popup_type: PopupType::General,
             popup_text: String::new(),
             popup_title: String::new(),
             is_viewing_member: false,
@@ -603,6 +613,7 @@ impl<'a> App<'a> {
                 let metadata = std::fs::metadata(path).unwrap();
                 if metadata.len() > 10000000 {
                     self.show_popup(
+                        PopupType::General,
                         String::from("Image Error"),
                         String::from("File size exceeds 10MB"),
                     );
@@ -619,6 +630,7 @@ impl<'a> App<'a> {
                                 .await;
                         }
                         Err(_) => self.show_popup(
+                            PopupType::General,
                             String::from("Image Error"),
                             String::from("Failed to load file"),
                         ),
@@ -626,6 +638,7 @@ impl<'a> App<'a> {
                 }
             } else {
                 self.show_popup(
+                    PopupType::General,
                     String::from("Image Error"),
                     format!("{} does not exist", path),
                 );
@@ -633,7 +646,8 @@ impl<'a> App<'a> {
         }
     }
 
-    pub fn show_popup(&mut self, popup_title: String, popup_text: String) {
+    pub fn show_popup(&mut self, popup_type: PopupType, popup_title: String, popup_text: String) {
+        self.popup_type = popup_type;
         self.popup_title = popup_title;
         self.popup_text = popup_text;
         self.input_mode = InputMode::Popup;
@@ -644,12 +658,27 @@ impl<'a> App<'a> {
         self.is_popup_shown = false;
         self.input_mode = InputMode::Normal;
         self.current_pane = Pane::ChatPane;
+        self.popup_type = PopupType::General;
         self.popup_title = String::new();
         self.popup_text = String::new();
+    }
+
+    pub fn show_yes_no_popup(&mut self) {}
+
+    pub fn show_add_channel_popup(&mut self) {
+        self.show_popup(
+            PopupType::AddChannel,
+            String::from("Add Channel"),
+            String::from(""),
+        );
     }
 
     pub fn get_current_time_string(&self) -> String {
         let local_time = Local::now();
         local_time.format("%H:%M").to_string()
+    }
+
+    pub fn add_channel(&mut self, channel_type: ChannelType, channel_name: String) {
+        // Tell client to add the channel (send a AddChannel message)
     }
 }
