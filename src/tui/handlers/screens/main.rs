@@ -61,31 +61,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             },
             _ => (),
         },
-        // Keys are handled differently depending on the popup type
-        InputMode::Popup => {
-            match app.popup_type {
-                PopupType::General => {
-                    if let KeyCode::Enter = key_event.code {
-                        app.dismiss_popup();
-                    }
-                }
-                PopupType::YesNo => {
-                    // Handle moving between yes and no and enter (not yet drawn)
-                }
-                PopupType::AddChannel => match key_event.code {
-                    KeyCode::Char('q') | KeyCode::Char('Q') => {
-                        app.dismiss_popup();
-                    }
-                    KeyCode::Up => {
-                        // Move focus to next line
-                    }
-                    KeyCode::Down => {
-                        // Move focus to next line
-                    }
-                    _ => (),
-                },
-            }
-        }
         InputMode::ChannelType => match key_event.code {
             KeyCode::Enter => match app.ui_element {
                 UiElement::TextChannelLabel => {

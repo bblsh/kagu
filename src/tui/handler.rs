@@ -1,5 +1,5 @@
-use crate::tui::app::Screen;
 use crate::tui::app::{App, AppResult};
+use crate::tui::app::{PopupType, Screen};
 use crate::tui::handlers;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
@@ -44,15 +44,26 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         _ => (),
     }
 
+    // If there's a popup shown, send input to that popup
+    if app.is_popup_shown {
+        match app.popup_type {
+            PopupType::General => {
+                return handlers::popups::general::handle_key_events(key_event, app)
+            }
+            PopupType::YesNo => (),
+            PopupType::AddChannel => (),
+        }
+    }
+
     // Send each key event to that screen's handler
     match app.current_screen {
-        Screen::Main => handlers::main::handle_key_events(key_event, app)
+        Screen::Main => handlers::screens::main::handle_key_events(key_event, app)
             .await
             .unwrap(),
-        Screen::Personal => handlers::personal::handle_key_events(key_event, app)
+        Screen::Personal => handlers::screens::personal::handle_key_events(key_event, app)
             .await
             .unwrap(),
-        Screen::Settings => handlers::settings::handle_key_events(key_event, app)
+        Screen::Settings => handlers::screens::settings::handle_key_events(key_event, app)
             .await
             .unwrap(),
     }

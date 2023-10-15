@@ -9,6 +9,7 @@ use tui::{
 };
 
 use crate::tui::app::{App, InputMode, KaguFormatting, Pane, PopupType, UiElement};
+use crate::tui::popups::general_popup::GeneralPopup;
 
 pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     let top_and_bottom_layout = Layout::default()
@@ -318,25 +319,10 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     if app.is_popup_shown {
         match app.popup_type {
             PopupType::General => {
-                let mut title = String::from(&*app.popup_title);
-                title.push_str(" (Enter to dismiss)");
-
-                let alert_block = Paragraph::new(app.popup_text.as_str())
-                    .block(Block::default().title(title).borders(Borders::ALL));
-                let area = centered_popup(60, 20, frame.size());
-                frame.render_widget(Clear, area);
-                frame.render_widget(alert_block, area);
-            }
-            PopupType::AddChannel => {
-                let title = String::from(&*app.popup_title);
-
-                let alert_block = Paragraph::new(app.popup_text.as_str())
-                    .block(Block::default().title(title).borders(Borders::ALL));
-                let area = centered_popup(60, 60, frame.size());
-                frame.render_widget(Clear, area);
-                frame.render_widget(alert_block, area);
+                app.general_popup.render(frame);
             }
             PopupType::YesNo => (),
+            PopupType::AddChannel => (),
         }
     }
 
@@ -428,31 +414,31 @@ fn build_mention_command_popup(r: Rect, input_length: &u16, num_items: usize) ->
         .split(popup_layout[1])[1]
 }
 
-fn centered_popup(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-    let popup_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Percentage((100 - percent_y) / 2),
-                Constraint::Percentage(percent_y),
-                Constraint::Percentage((100 - percent_y) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(r);
+// fn centered_popup(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+//     let popup_layout = Layout::default()
+//         .direction(Direction::Vertical)
+//         .constraints(
+//             [
+//                 Constraint::Percentage((100 - percent_y) / 2),
+//                 Constraint::Percentage(percent_y),
+//                 Constraint::Percentage((100 - percent_y) / 2),
+//             ]
+//             .as_ref(),
+//         )
+//         .split(r);
 
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Percentage((100 - percent_x) / 2),
-                Constraint::Percentage(percent_x),
-                Constraint::Percentage((100 - percent_x) / 2),
-            ]
-            .as_ref(),
-        )
-        .split(popup_layout[1])[1]
-}
+//     Layout::default()
+//         .direction(Direction::Horizontal)
+//         .constraints(
+//             [
+//                 Constraint::Percentage((100 - percent_x) / 2),
+//                 Constraint::Percentage(percent_x),
+//                 Constraint::Percentage((100 - percent_x) / 2),
+//             ]
+//             .as_ref(),
+//         )
+//         .split(popup_layout[1])[1]
+// }
 
 fn get_lines_from_text_channel<'a>(app: &App) -> Vec<Line<'a>> {
     let mut lines: Vec<Line<'_>> = Vec::new();

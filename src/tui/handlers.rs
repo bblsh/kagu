@@ -1,3 +1,2 @@
-pub mod main;
-pub mod personal;
-pub mod settings;
+pub mod popups;
+pub mod screens;

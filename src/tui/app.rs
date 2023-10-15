@@ -24,6 +24,7 @@ use crate::types::{ChannelIdSize, RealmIdSize, UserIdSize};
 use tui::style::Style;
 
 use super::input_buffer::InputBuffer;
+use crate::tui::popups::general_popup::GeneralPopup;
 
 use chrono::Local;
 
@@ -179,6 +180,8 @@ pub struct App<'a> {
     pub popup_title: String,
     /// State for showing member information
     pub is_viewing_member: bool,
+    /// General popup
+    pub general_popup: GeneralPopup,
 }
 
 impl<'a> App<'a> {
@@ -224,6 +227,7 @@ impl<'a> App<'a> {
             popup_text: String::new(),
             popup_title: String::new(),
             is_viewing_member: false,
+            general_popup: GeneralPopup::default(),
         }
     }
 
@@ -647,9 +651,16 @@ impl<'a> App<'a> {
     }
 
     pub fn show_popup(&mut self, popup_type: PopupType, popup_title: String, popup_text: String) {
+        match popup_type {
+            PopupType::General => {
+                self.general_popup.title = popup_title;
+                self.general_popup.message = popup_text;
+            }
+            PopupType::YesNo => (),
+            PopupType::AddChannel => (),
+        }
+
         self.popup_type = popup_type;
-        self.popup_title = popup_title;
-        self.popup_text = popup_text;
         self.input_mode = InputMode::Popup;
         self.is_popup_shown = true;
     }
