@@ -51,7 +51,9 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 return handlers::popups::general::handle_key_events(key_event, app)
             }
             PopupType::YesNo => (),
-            PopupType::AddChannel => (),
+            PopupType::AddChannel => {
+                return handlers::popups::add_channel::handle_key_events(key_event, app)
+            }
         }
     }
 

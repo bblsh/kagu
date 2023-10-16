@@ -4,11 +4,13 @@ use tui::{
     prelude::{Alignment, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, BorderType, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
 };
 
 use crate::tui::app::{App, InputMode, KaguFormatting, Pane, PopupType, UiElement};
+
+use crate::tui::popups::popup_traits::PopupTraits;
 
 #[derive(Debug, Default)]
 pub enum AddChannelUiElement {
@@ -22,6 +24,21 @@ pub struct AddChannelPopup {
     pub current_ui_element: AddChannelUiElement,
 }
 
+impl PopupTraits for AddChannelPopup {
+    fn reset(&mut self) {
+        self.current_ui_element = AddChannelUiElement::TextOrVoice;
+    }
+}
+
 impl AddChannelPopup {
-    pub fn render<B: Backend>(frame: &mut Frame<'_, B>) {}
+    pub fn render<B: Backend>(&self, frame: &mut Frame<'_, B>) {
+        let back_block = Block::default()
+            .title(" Create Channel ")
+            .borders(Borders::ALL)
+            .border_type(BorderType::Rounded);
+
+        let area = self.fixed_size_middle_popup(28, 16, frame.size());
+        frame.render_widget(Clear, area);
+        frame.render_widget(back_block, area);
+    }
 }

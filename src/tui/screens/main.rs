@@ -9,7 +9,6 @@ use tui::{
 };
 
 use crate::tui::app::{App, InputMode, KaguFormatting, Pane, PopupType, UiElement};
-use crate::tui::popups::general_popup::GeneralPopup;
 
 pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     let top_and_bottom_layout = Layout::default()
@@ -318,11 +317,9 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     // Draw any popups
     if app.is_popup_shown {
         match app.popup_type {
-            PopupType::General => {
-                app.general_popup.render(frame);
-            }
+            PopupType::General => app.general_popup.render(frame),
             PopupType::YesNo => (),
-            PopupType::AddChannel => (),
+            PopupType::AddChannel => app.add_channel_popup.render(frame),
         }
     }
 
@@ -367,9 +364,9 @@ fn build_member_popup(r: Rect, selected_index: usize) -> Rect {
         .direction(Direction::Vertical)
         .constraints(
             [
-                Constraint::Max(2 + selected_index as u16),
+                Constraint::Max(3 + selected_index as u16),
                 Constraint::Max(10),
-                Constraint::Max(r.height - 2 + selected_index as u16 - 10),
+                Constraint::Max(r.height - 3 + selected_index as u16 - 10),
             ]
             .as_ref(),
         )

@@ -1,4 +1,4 @@
-use crate::tui::app::{KaguFormatting, Pane, PopupType};
+use crate::tui::app::{KaguFormatting, Pane};
 use crate::{
     realms::realm::ChannelType,
     tui::app::{App, AppResult, InputMode, UiElement},
