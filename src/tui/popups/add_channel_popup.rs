@@ -15,20 +15,31 @@ use crate::tui::popups::popup_traits::PopupTraits;
 #[derive(Debug, Default)]
 pub enum AddChannelUiElement {
     #[default]
-    TextOrVoice,
+    TextOption,
+    VoiceOption,
     ChannelName,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct AddChannelPopup {
     pub current_ui_element: AddChannelUiElement,
     is_text_channel: bool, // Voice channel if false
     channel_name_buffer: String,
 }
 
+impl Default for AddChannelPopup {
+    fn default() -> Self {
+        AddChannelPopup {
+            current_ui_element: AddChannelUiElement::TextOption,
+            is_text_channel: true,
+            channel_name_buffer: String::new(),
+        }
+    }
+}
+
 impl PopupTraits for AddChannelPopup {
     fn reset(&mut self) {
-        self.current_ui_element = AddChannelUiElement::TextOrVoice;
+        self.current_ui_element = AddChannelUiElement::TextOption;
         self.is_text_channel = true;
         self.channel_name_buffer = String::new();
     }
@@ -45,22 +56,61 @@ impl AddChannelPopup {
             .border_type(BorderType::Rounded);
         let inner_content_area = back_block.inner(cleared_area);
 
-        let [is_text, is_voice, channel_name] = *Layout::default()
+        let [is_text, is_voice, _filler, channel_name] = *Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Max(1), Constraint::Max(1), Constraint::Max(3)])
+            .constraints([
+                Constraint::Max(1),
+                Constraint::Max(1),
+                Constraint::Max(1),
+                Constraint::Max(3),
+            ])
             .margin(1)
             .split(inner_content_area)
         else {
             return;
         };
 
-        let text_channel_selection = Paragraph::new("__ text");
-        let voice_channel_selection = Paragraph::new("__ voice");
+        let text_status = match self.is_text_channel {
+            true => vec![Line::from(vec![
+                Span::styled(
+                    "X",
+                    Style::add_modifier(Style::default(), Modifier::UNDERLINED),
+                ),
+                Span::styled(" Text", Style::default()),
+            ])],
+            false => vec![Line::from(vec![
+                Span::styled(
+                    " ",
+                    Style::add_modifier(Style::default(), Modifier::UNDERLINED),
+                ),
+                Span::styled(" Text", Style::default()),
+            ])],
+        };
+
+        let voice_status = match self.is_text_channel {
+            true => vec![Line::from(vec![
+                Span::styled(
+                    " ",
+                    Style::add_modifier(Style::default(), Modifier::UNDERLINED),
+                ),
+                Span::styled(" Voice", Style::default()),
+            ])],
+            false => vec![Line::from(vec![
+                Span::styled(
+                    "X",
+                    Style::add_modifier(Style::default(), Modifier::UNDERLINED),
+                ),
+                Span::styled(" Voice", Style::default()),
+            ])],
+        };
+
+        let text_channel_selection = Paragraph::new(text_status);
+        let voice_channel_selection = Paragraph::new(voice_status);
         let channel_name_paragraph = Paragraph::new("NAME GOES HERE!!!").block(
             Block::default()
                 .border_type(BorderType::Rounded)
                 .borders(Borders::ALL)
-                .title("Channel Name"),
+                .title(" Channel Name "),
         );
 
         frame.render_widget(Clear, cleared_area);
