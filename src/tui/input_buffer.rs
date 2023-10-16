@@ -42,7 +42,6 @@ impl InputBuffer {
     }
 
     pub fn get_input_without_style(&self) -> Vec<(String, Option<UserIdSize>)> {
-        //: Vec<(&String, Option<&UserIdSize>)> = Vec::new();
         let input: Vec<(String, Option<UserIdSize>)> = self
             .input
             .iter()
