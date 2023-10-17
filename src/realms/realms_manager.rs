@@ -37,6 +37,18 @@ impl RealmsManager {
             .insert(realm_id, Realm::new(realm_id, realm_name));
     }
 
+    pub fn add_channel_with_id(
+        &mut self,
+        realm_id: RealmIdSize,
+        channel_id: ChannelIdSize,
+        channel_type: ChannelType,
+        name: String,
+    ) {
+        if let Some(realm) = self.realms.get_mut(&realm_id) {
+            realm.add_channel_with_id(channel_type, channel_id, name);
+        }
+    }
+
     pub fn add_channel(
         &mut self,
         realm_id: RealmIdSize,

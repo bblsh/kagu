@@ -480,6 +480,23 @@ impl<'a> App<'a> {
                             self.enter_realm(self.current_realm_id.unwrap()).await;
                         }
                     }
+                    MessageType::ChannelAdded(ca) => {
+                        // Add this new channel to the proper realm
+                        self.realms_manager.add_channel_with_id(
+                            ca.0,
+                            ca.2,
+                            ca.1.clone(),
+                            ca.3.clone(),
+                        );
+
+                        // Refresh this realm if we're in it
+                        // Otherwise the realm will be refreshed when it is joined again
+                        if let Some(realm_id) = self.current_realm_id {
+                            if realm_id == ca.0 {
+                                self.refresh_realm(realm_id);
+                            }
+                        }
+                    }
                     _ => (),
                 };
             }
@@ -543,6 +560,29 @@ impl<'a> App<'a> {
 
                 // Let the voices be heard
                 self.connect_voice(realm_id, channel_id).await;
+            }
+        }
+    }
+
+    pub fn refresh_realm(&mut self, realm_id: RealmIdSize) {
+        if let Some(realm) = self.realms_manager.get_realm(realm_id) {
+            // Update our text channels list
+            self.text_channels.items.clear();
+            for text_channel in realm.get_text_channels() {
+                self.text_channels.items.push((
+                    *text_channel.0,
+                    text_channel.1.get_name().to_string().add_hashtag(),
+                ));
+            }
+
+            // Update our voice channels list
+            self.voice_channels.items.clear();
+            for voice_channel in realm.get_voice_channels() {
+                self.voice_channels.items.push((
+                    *voice_channel.0,
+                    voice_channel.1.get_name().to_string(),
+                    voice_channel.1.get_connected_users().clone(),
+                ));
             }
         }
     }
