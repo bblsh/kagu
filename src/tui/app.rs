@@ -92,12 +92,19 @@ pub trait KaguFormatting {
     fn with_focus(self) -> Self;
     fn add_hashtag(self) -> Self;
     fn prepend_str(self, text: &str) -> Self;
+    fn with_pre_post_spaces(self) -> Self;
 }
 
 impl KaguFormatting for String {
     fn with_focus(mut self) -> Self {
         self.insert(0, '[');
         self.push(']');
+        self
+    }
+
+    fn with_pre_post_spaces(mut self) -> Self {
+        self.insert(0, ' ');
+        self.push(' ');
         self
     }
 
