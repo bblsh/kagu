@@ -1,10 +1,13 @@
-use crate::tui::{
-    app::{App, AppResult},
-    popups::add_channel_popup::{AddChannelInputMode, AddChannelUiElement},
+use crate::{
+    realms::realm::ChannelType,
+    tui::{
+        app::{App, AppResult},
+        popups::add_channel_popup::{AddChannelInputMode, AddChannelUiElement},
+    },
 };
 use crossterm::event::{KeyCode, KeyEvent};
 
-pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match app.add_channel_popup.input_mode {
         AddChannelInputMode::Normal => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') => {
@@ -54,6 +57,19 @@ pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()
             KeyCode::Esc => app.add_channel_popup.input_mode = AddChannelInputMode::Normal,
             KeyCode::Backspace => {
                 app.add_channel_popup.channel_name_buffer.pop();
+            }
+            KeyCode::Enter => {
+                app.add_channel(
+                    match app.add_channel_popup.is_text_channel {
+                        true => ChannelType::TextChannel,
+                        false => ChannelType::VoiceChannel,
+                    },
+                    app.add_channel_popup.channel_name_buffer.clone(),
+                )
+                .await;
+
+                app.add_channel_popup.reset_popup();
+                app.dismiss_popup();
             }
             _ => (),
         },

@@ -56,6 +56,10 @@ impl PopupTraits for AddChannelPopup {
 }
 
 impl AddChannelPopup {
+    pub fn reset_popup(&mut self) {
+        self.reset();
+    }
+
     pub fn render<B: Backend>(&self, frame: &mut Frame<'_, B>) {
         // Clear out our space to
         let cleared_area = self.fixed_size_middle_popup(28, 10, frame.size());
