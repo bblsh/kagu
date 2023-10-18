@@ -125,8 +125,10 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         Block::default()
             .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
             .title(match app.current_pane {
-                Pane::ChannelsPane => Pane::to_str(&app.current_pane).with_focus(),
-                _ => Pane::to_str(&Pane::ChannelsPane),
+                Pane::ChannelsPane => Pane::to_str(&app.current_pane)
+                    .with_focus()
+                    .with_pre_post_spaces(),
+                _ => Pane::to_str(&Pane::ChannelsPane).with_pre_post_spaces(),
             }),
     );
 
@@ -209,12 +211,14 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
                 .borders(Borders::ALL)
                 .title(match &app.current_text_channel {
                     Some(channel) => match &app.current_pane {
-                        Pane::ChatPane => channel.1.clone().with_focus(),
-                        _ => channel.1.clone(),
+                        Pane::ChatPane => channel.1.clone().with_focus().with_pre_post_spaces(),
+                        _ => channel.1.clone().with_pre_post_spaces(),
                     },
                     None => match &app.current_pane {
-                        Pane::ChatPane => Pane::to_str(&app.current_pane).with_focus(),
-                        _ => Pane::to_str(&Pane::ChatPane),
+                        Pane::ChatPane => Pane::to_str(&app.current_pane)
+                            .with_focus()
+                            .with_pre_post_spaces(),
+                        _ => Pane::to_str(&Pane::ChatPane).with_pre_post_spaces(),
                     },
                 })
                 .border_style(Style::default()),
@@ -233,8 +237,10 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
             Block::default()
                 .borders(Borders::ALL)
                 .title(match app.current_pane {
-                    Pane::MembersPane => Pane::to_str(&app.current_pane).with_focus(),
-                    _ => Pane::to_str(&Pane::MembersPane),
+                    Pane::MembersPane => Pane::to_str(&app.current_pane)
+                        .with_focus()
+                        .with_pre_post_spaces(),
+                    _ => Pane::to_str(&Pane::MembersPane).with_pre_post_spaces(),
                 }),
         )
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
@@ -251,8 +257,10 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
             Block::default()
                 .borders(Borders::ALL)
                 .title(match app.current_pane {
-                    Pane::InputPane => Pane::to_str(&app.current_pane).with_focus(),
-                    _ => Pane::to_str(&Pane::InputPane),
+                    Pane::InputPane => Pane::to_str(&app.current_pane)
+                        .with_focus()
+                        .with_pre_post_spaces(),
+                    _ => Pane::to_str(&Pane::InputPane).with_pre_post_spaces(),
                 })
                 .border_style(match app.input_mode {
                     InputMode::Normal => Style::default(),
