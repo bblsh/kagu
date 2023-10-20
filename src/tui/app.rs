@@ -24,7 +24,9 @@ use crate::types::{ChannelIdSize, RealmIdSize, UserIdSize};
 use tui::style::Style;
 
 use super::input_buffer::InputBuffer;
-use crate::tui::popups::{add_channel_popup::AddChannelPopup, general_popup::GeneralPopup};
+use crate::tui::popups::{
+    add_channel_popup::AddChannelPopup, general_popup::GeneralPopup, member_popup::MemberPopup,
+};
 
 use chrono::Local;
 
@@ -36,6 +38,7 @@ pub enum PopupType {
     General,
     YesNo,
     AddChannel,
+    Member,
 }
 
 #[derive(Debug)]
@@ -90,6 +93,7 @@ impl Pane {
 
 pub trait KaguFormatting {
     fn with_focus(self) -> Self;
+    fn add_hashtag_with_space(self) -> Self;
     fn add_hashtag(self) -> Self;
     fn prepend_str(self, text: &str) -> Self;
     fn with_pre_post_spaces(self) -> Self;
@@ -108,8 +112,13 @@ impl KaguFormatting for String {
         self
     }
 
-    fn add_hashtag(mut self) -> Self {
+    fn add_hashtag_with_space(mut self) -> Self {
         self.insert_str(0, "# ");
+        self
+    }
+
+    fn add_hashtag(mut self) -> Self {
+        self.insert(0, '#');
         self
     }
 
@@ -185,12 +194,12 @@ pub struct App<'a> {
     pub popup_text: String,
     /// Title for the popup window
     pub popup_title: String,
-    /// State for showing member information
-    pub is_viewing_member: bool,
     /// General popup
     pub general_popup: GeneralPopup,
     /// Add channel popup
     pub add_channel_popup: AddChannelPopup,
+    /// Member info popup
+    pub member_popup: MemberPopup,
 }
 
 impl<'a> App<'a> {
@@ -235,9 +244,9 @@ impl<'a> App<'a> {
             popup_type: PopupType::General,
             popup_text: String::new(),
             popup_title: String::new(),
-            is_viewing_member: false,
             general_popup: GeneralPopup::default(),
             add_channel_popup: AddChannelPopup::default(),
+            member_popup: MemberPopup::default(),
         }
     }
 
@@ -571,7 +580,11 @@ impl<'a> App<'a> {
             for text_channel in realm.get_text_channels() {
                 self.text_channels.items.push((
                     *text_channel.0,
-                    text_channel.1.get_name().to_string().add_hashtag(),
+                    text_channel
+                        .1
+                        .get_name()
+                        .to_string()
+                        .add_hashtag_with_space(),
                 ));
             }
 
@@ -594,7 +607,11 @@ impl<'a> App<'a> {
             for text_channel in realm.get_text_channels() {
                 self.text_channels.items.push((
                     *text_channel.0,
-                    text_channel.1.get_name().to_string().add_hashtag(),
+                    text_channel
+                        .1
+                        .get_name()
+                        .to_string()
+                        .add_hashtag_with_space(),
                 ));
             }
 
@@ -720,10 +737,14 @@ impl<'a> App<'a> {
     pub fn show_yes_no_popup(&mut self) {}
 
     pub fn show_add_channel_popup(&mut self) {
+        self.show_popup(PopupType::AddChannel, String::from(""), String::from(""));
+    }
+
+    pub fn show_member_popup(&mut self) {
         self.show_popup(
-            PopupType::AddChannel,
-            String::from("Add Channel"),
-            String::from(""),
+            PopupType::Member,
+            String::from("Member Info"),
+            String::new(),
         );
     }
 

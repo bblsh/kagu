@@ -3,7 +3,6 @@ use crate::tui::app::{PopupType, Screen};
 use crate::tui::handlers;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-/// Handles the key events and updates the state of [`App`].
 pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match key_event.code {
         // Regardless of mode or screen, exit application on `Ctrl-C`
@@ -53,6 +52,9 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             PopupType::YesNo => (),
             PopupType::AddChannel => {
                 return handlers::popups::add_channel::handle_key_events(key_event, app).await
+            }
+            PopupType::Member => {
+                return handlers::popups::member::handle_key_events(key_event, app).await
             }
         }
     }

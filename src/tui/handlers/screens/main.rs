@@ -460,15 +460,8 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         },
         InputMode::Members => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
-                // Stop inspecting this member
-                if app.is_viewing_member {
-                    app.is_viewing_member = false;
-                }
-                // We're not looking at a member, so exit member selection
-                else {
-                    app.users_online.unselect();
-                    app.input_mode = InputMode::Normal;
-                }
+                app.users_online.unselect();
+                app.input_mode = InputMode::Normal;
             }
             KeyCode::Up => {
                 app.users_online.previous();
@@ -477,8 +470,19 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.users_online.next();
             }
             KeyCode::Enter => {
-                // Display user information
-                app.is_viewing_member = true;
+                // Get the id of the selected user
+                if !app.users_online.items.is_empty() {
+                    if let Some(selected_id) = app.users_online.state.selected() {
+                        if let Some(user) = app.users_online.items.get(selected_id) {
+                            app.member_popup.selected_index = selected_id;
+                            app.member_popup.user_id = user.0;
+                            app.member_popup.username = user.1.clone();
+
+                            // Display user information
+                            app.show_member_popup();
+                        }
+                    }
+                }
             }
             _ => (),
         },

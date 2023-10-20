@@ -328,22 +328,7 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
             PopupType::General => app.general_popup.render(frame),
             PopupType::YesNo => (),
             PopupType::AddChannel => app.add_channel_popup.render(frame),
-        }
-    }
-
-    if app.is_viewing_member {
-        // Get the id of the selected user
-        if !app.users_online.items.is_empty() {
-            if let Some(selected_id) = app.users_online.state.selected() {
-                if let Some(user) = app.users_online.items.get(selected_id) {
-                    // We have our user ID and user here
-                    let member_block = Paragraph::new(user.1.clone())
-                        .block(Block::default().title("Member Info").borders(Borders::ALL));
-                    let area = build_member_popup(frame.size(), selected_id);
-                    frame.render_widget(Clear, area);
-                    frame.render_widget(member_block, area);
-                }
-            }
+            PopupType::Member => app.member_popup.render(frame),
         }
     }
 
@@ -365,32 +350,6 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
         }
         _ => (),
     }
-}
-
-fn build_member_popup(r: Rect, selected_index: usize) -> Rect {
-    let member_popup = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Max(3 + selected_index as u16),
-                Constraint::Max(10),
-                Constraint::Max(r.height - 3 + selected_index as u16 - 10),
-            ]
-            .as_ref(),
-        )
-        .split(r);
-
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Max(r.width - 15 - 10),
-                Constraint::Max(15),
-                Constraint::Max(10),
-            ]
-            .as_ref(),
-        )
-        .split(member_popup[1])[1]
 }
 
 fn build_mention_command_popup(r: Rect, input_length: &u16, num_items: usize) -> Rect {
@@ -418,32 +377,6 @@ fn build_mention_command_popup(r: Rect, input_length: &u16, num_items: usize) ->
         )
         .split(popup_layout[1])[1]
 }
-
-// fn centered_popup(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
-//     let popup_layout = Layout::default()
-//         .direction(Direction::Vertical)
-//         .constraints(
-//             [
-//                 Constraint::Percentage((100 - percent_y) / 2),
-//                 Constraint::Percentage(percent_y),
-//                 Constraint::Percentage((100 - percent_y) / 2),
-//             ]
-//             .as_ref(),
-//         )
-//         .split(r);
-
-//     Layout::default()
-//         .direction(Direction::Horizontal)
-//         .constraints(
-//             [
-//                 Constraint::Percentage((100 - percent_x) / 2),
-//                 Constraint::Percentage(percent_x),
-//                 Constraint::Percentage((100 - percent_x) / 2),
-//             ]
-//             .as_ref(),
-//         )
-//         .split(popup_layout[1])[1]
-// }
 
 fn get_lines_from_text_channel<'a>(app: &App) -> Vec<Line<'a>> {
     let mut lines: Vec<Line<'_>> = Vec::new();
