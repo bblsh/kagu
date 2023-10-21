@@ -749,8 +749,16 @@ impl<'a> App<'a> {
         self.show_popup(PopupType::AddChannel);
     }
 
-    pub fn show_member_popup(&mut self) {
+    pub fn show_member_popup(
+        &mut self,
+        user_id: UserIdSize,
+        username: String,
+        selected_index: usize,
+    ) {
         self.member_popup.setup(None, None);
+        self.member_popup.selected_index = selected_index;
+        self.member_popup.user_id = user_id;
+        self.member_popup.username = username;
         self.show_popup(PopupType::Member);
     }
 

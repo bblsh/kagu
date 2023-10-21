@@ -1,4 +1,5 @@
 use crate::tui::app::{KaguFormatting, Pane};
+use crate::tui::popups::popup_traits::PopupTraits;
 use crate::{
     realms::realm::ChannelType,
     tui::app::{App, AppResult, InputMode, UiElement},
@@ -483,12 +484,8 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 if !app.users_online.items.is_empty() {
                     if let Some(selected_id) = app.users_online.state.selected() {
                         if let Some(user) = app.users_online.items.get(selected_id) {
-                            app.member_popup.selected_index = selected_id;
-                            app.member_popup.user_id = user.0;
-                            app.member_popup.username = user.1.clone();
-
                             // Display user information
-                            app.show_member_popup();
+                            app.show_member_popup(user.0, user.1.clone(), selected_id);
                         }
                     }
                 }
