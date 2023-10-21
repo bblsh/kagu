@@ -24,8 +24,10 @@ use crate::types::{ChannelIdSize, RealmIdSize, UserIdSize};
 use tui::style::Style;
 
 use super::input_buffer::InputBuffer;
+use super::popups::popup_traits::PopupTraits;
 use crate::tui::popups::{
     add_channel_popup::AddChannelPopup, general_popup::GeneralPopup, member_popup::MemberPopup,
+    yes_no_popup::YesNoPopup,
 };
 
 use chrono::Local;
@@ -200,6 +202,8 @@ pub struct App<'a> {
     pub add_channel_popup: AddChannelPopup,
     /// Member info popup
     pub member_popup: MemberPopup,
+    // Yes / No confirmation popup
+    pub yes_no_popup: YesNoPopup,
 }
 
 impl<'a> App<'a> {
@@ -247,6 +251,7 @@ impl<'a> App<'a> {
             general_popup: GeneralPopup::default(),
             add_channel_popup: AddChannelPopup::default(),
             member_popup: MemberPopup::default(),
+            yes_no_popup: YesNoPopup::default(),
         }
     }
 
@@ -683,11 +688,11 @@ impl<'a> App<'a> {
                 // Check the size of the file. Don't send it if it's more than 10MB
                 let metadata = std::fs::metadata(path).unwrap();
                 if metadata.len() > 10000000 {
-                    self.show_popup(
-                        PopupType::General,
-                        String::from("Image Error"),
-                        String::from("File size exceeds 10MB"),
+                    self.general_popup.setup(
+                        Some(String::from("Image Error")),
+                        Some(String::from("File size exceeds 10MB")),
                     );
+                    self.show_popup(PopupType::General);
                 } else {
                     let image = std::fs::read(path);
                     match image {
@@ -700,27 +705,27 @@ impl<'a> App<'a> {
                                 )
                                 .await;
                         }
-                        Err(_) => self.show_popup(
-                            PopupType::General,
-                            String::from("Image Error"),
-                            String::from("Failed to load file"),
-                        ),
+                        Err(_) => {
+                            self.general_popup.setup(
+                                Some(String::from("Image Error")),
+                                Some(String::from("Failed to load file")),
+                            );
+                            self.show_popup(PopupType::General);
+                        }
                     }
                 }
             } else {
-                self.show_popup(
-                    PopupType::General,
-                    String::from("Image Error"),
-                    format!("{} does not exist", path),
+                self.general_popup.setup(
+                    Some(String::from("Image Error")),
+                    Some(format!("{} does not exist", path)),
                 );
+                self.show_popup(PopupType::General);
             }
         }
     }
 
-    pub fn show_popup(&mut self, popup_type: PopupType, popup_title: String, popup_text: String) {
+    pub fn show_popup(&mut self, popup_type: PopupType) {
         self.popup_type = popup_type;
-        self.popup_title = popup_title;
-        self.popup_text = popup_text;
         self.input_mode = InputMode::Popup;
         self.is_popup_shown = true;
     }
@@ -734,18 +739,19 @@ impl<'a> App<'a> {
         self.popup_text = String::new();
     }
 
-    pub fn show_yes_no_popup(&mut self) {}
+    pub fn show_yes_no_popup(&mut self, title: String, message: String) {
+        self.yes_no_popup.setup(Some(title), Some(message));
+        self.show_popup(PopupType::YesNo);
+    }
 
     pub fn show_add_channel_popup(&mut self) {
-        self.show_popup(PopupType::AddChannel, String::from(""), String::from(""));
+        self.add_channel_popup.setup(None, None);
+        self.show_popup(PopupType::AddChannel);
     }
 
     pub fn show_member_popup(&mut self) {
-        self.show_popup(
-            PopupType::Member,
-            String::from("Member Info"),
-            String::new(),
-        );
+        self.member_popup.setup(None, None);
+        self.show_popup(PopupType::Member);
     }
 
     pub fn get_current_time_string(&self) -> String {

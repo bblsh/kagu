@@ -17,6 +17,12 @@ impl PopupTraits for GeneralPopup {
         self.title = String::new();
         self.message = String::new();
     }
+
+    fn setup(&mut self, title: Option<String>, message: Option<String>) {
+        self.reset();
+        self.title = title.unwrap_or(String::from(""));
+        self.message = message.unwrap_or(String::from(""));
+    }
 }
 
 impl GeneralPopup {

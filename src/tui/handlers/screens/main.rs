@@ -98,6 +98,15 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     return Ok(());
                 }
             }
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    app.show_yes_no_popup(
+                        String::from("Remove Channel"),
+                        String::from("Remove this channel?"),
+                    );
+                    return Ok(());
+                }
+            }
             _ => (),
         },
         InputMode::TextChannel => match key_event.code {

@@ -1,6 +1,7 @@
 use tui::prelude::*;
 
 pub trait PopupTraits {
+    fn setup(&mut self, title: Option<String>, message: Option<String>);
     fn reset(&mut self);
 
     fn centered_popup(&self, percent_x: u16, percent_y: u16, r: Rect) -> Rect {

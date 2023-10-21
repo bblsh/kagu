@@ -326,7 +326,7 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
     if app.is_popup_shown {
         match app.popup_type {
             PopupType::General => app.general_popup.render(frame),
-            PopupType::YesNo => (),
+            PopupType::YesNo => app.yes_no_popup.render(frame),
             PopupType::AddChannel => app.add_channel_popup.render(frame),
             PopupType::Member => app.member_popup.render(frame),
         }

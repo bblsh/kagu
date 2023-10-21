@@ -57,6 +57,10 @@ impl PopupTraits for MemberPopup {
         self.current_ui_element = MemberPopupUiElement::Dm;
         self.dm_buffer = String::new();
     }
+
+    fn setup(&mut self, _title: Option<String>, _message: Option<String>) {
+        self.reset();
+    }
 }
 
 impl MemberPopup {
@@ -138,7 +142,6 @@ impl MemberPopup {
                     MemberPopupUiElement::Dm => {
                         String::from("Send DM").with_focus().with_pre_post_spaces()
                     }
-                    _ => String::from("Send DM").with_pre_post_spaces(),
                 })
                 .border_style(match self.input_mode {
                     MemberPopupInputMode::Normal => Style::default(),

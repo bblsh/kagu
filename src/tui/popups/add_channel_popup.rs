@@ -4,7 +4,7 @@ use tui::{
     prelude::{Alignment, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Clear, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, BorderType, Borders, Clear, Paragraph},
     Frame,
 };
 use unicode_width::UnicodeWidthStr;
@@ -52,6 +52,10 @@ impl PopupTraits for AddChannelPopup {
         self.is_text_channel = true;
         self.channel_name_buffer = String::new();
         self.input_mode = AddChannelInputMode::Normal;
+    }
+
+    fn setup(&mut self, _title: Option<String>, _message: Option<String>) {
+        self.reset();
     }
 }
 
