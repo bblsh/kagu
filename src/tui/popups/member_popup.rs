@@ -64,10 +64,6 @@ impl PopupTraits for MemberPopup {
 }
 
 impl MemberPopup {
-    pub fn reset_popup(&mut self) {
-        self.reset();
-    }
-
     fn build_member_popup(&self, r: Rect, selected_index: usize) -> Rect {
         let member_popup = Layout::default()
             .direction(Direction::Vertical)

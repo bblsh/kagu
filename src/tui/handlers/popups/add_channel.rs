@@ -68,7 +68,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 )
                 .await;
 
-                app.add_channel_popup.reset_popup();
                 app.dismiss_popup();
             }
             _ => (),
