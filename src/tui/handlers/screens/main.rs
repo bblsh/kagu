@@ -98,12 +98,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     return Ok(());
                 }
             }
-            KeyCode::Char('r') | KeyCode::Char('R') => {
-                if key_event.modifiers == KeyModifiers::CONTROL {
-                    app.show_remove_channel_popup();
-                    return Ok(());
-                }
-            }
             _ => (),
         },
         InputMode::TextChannel => match key_event.code {
@@ -131,6 +125,18 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.text_channels.items.get(selected_id).unwrap().0,
                 )
                 .await;
+            }
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    let selected_id = app.text_channels.state.selected().unwrap();
+                    let channel_id = app.text_channels.items.get(selected_id).unwrap().0;
+                    app.show_remove_channel_popup(
+                        app.current_realm_id.unwrap(),
+                        ChannelType::TextChannel,
+                        channel_id,
+                    );
+                    return Ok(());
+                }
             }
             _ => (),
         },
@@ -174,6 +180,18 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         channel_id,
                     )
                     .await;
+                }
+            }
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    let selected_id = app.voice_channels.state.selected().unwrap();
+                    let channel_id = app.voice_channels.items.get(selected_id).unwrap().0;
+                    app.show_remove_channel_popup(
+                        app.current_realm_id.unwrap(),
+                        ChannelType::VoiceChannel,
+                        channel_id,
+                    );
+                    return Ok(());
                 }
             }
             _ => (),

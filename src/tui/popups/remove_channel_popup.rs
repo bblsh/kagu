@@ -1,13 +1,18 @@
 use tui::prelude::*;
 use tui::widgets::{Block, BorderType, Borders, Clear, Paragraph};
 
+use crate::realms::realm::ChannelType;
 use crate::tui::app::KaguFormatting;
 use crate::tui::popups::popup_traits::PopupTraits;
+use crate::types::{ChannelIdSize, RealmIdSize};
 
 #[derive(Debug)]
 pub struct RemoveChannelPopup {
     pub title: String,
     pub message: String,
+    pub realm_id: RealmIdSize,
+    pub channel_type: ChannelType,
+    pub channel_id: ChannelIdSize,
     pub current_ui_element: RemoveChannelPopupUiElement,
 }
 
@@ -28,6 +33,9 @@ impl PopupTraits for RemoveChannelPopup {
         self.title = String::new();
         self.message = String::new();
         self.current_ui_element = RemoveChannelPopupUiElement::No;
+        self.realm_id = 0;
+        self.channel_type = ChannelType::TextChannel;
+        self.channel_id = 0;
     }
 
     fn setup(&mut self, title: Option<String>, message: Option<String>) {
@@ -42,6 +50,9 @@ impl Default for RemoveChannelPopup {
         RemoveChannelPopup {
             title: String::new(),
             message: String::new(),
+            realm_id: 0,
+            channel_type: ChannelType::TextChannel,
+            channel_id: 0,
             current_ui_element: RemoveChannelPopupUiElement::No,
         }
     }

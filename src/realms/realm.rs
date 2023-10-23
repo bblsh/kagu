@@ -75,6 +75,17 @@ impl Realm {
         }
     }
 
+    pub fn remove_channel(&mut self, channel_type: ChannelType, channel_id: ChannelIdSize) {
+        match channel_type {
+            ChannelType::TextChannel => {
+                self.text_channels.remove(&channel_id);
+            }
+            ChannelType::VoiceChannel => {
+                self.voice_channels.remove(&channel_id);
+            }
+        }
+    }
+
     pub fn get_name(&self) -> &String {
         &self.name
     }

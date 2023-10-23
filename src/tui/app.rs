@@ -515,6 +515,21 @@ impl<'a> App<'a> {
                             }
                         }
                     }
+                    MessageType::ChannelRemoved(cr) => {
+                        // Need to account for when we're in a voice channel and that channel is removed
+                        // here
+
+                        // Add this new channel to the proper realm
+                        self.realms_manager.remove_channel(cr.0, cr.1, cr.2);
+
+                        // Refresh this realm if we're in it
+                        // Otherwise the realm will be refreshed when it is joined again
+                        if let Some(realm_id) = self.current_realm_id {
+                            if realm_id == cr.0 {
+                                self.refresh_realm(realm_id);
+                            }
+                        }
+                    }
                     _ => (),
                 };
             }
@@ -753,8 +768,16 @@ impl<'a> App<'a> {
         self.show_popup(PopupType::AddChannel);
     }
 
-    pub fn show_remove_channel_popup(&mut self) {
+    pub fn show_remove_channel_popup(
+        &mut self,
+        realm_id: RealmIdSize,
+        channel_type: ChannelType,
+        channel_id: ChannelIdSize,
+    ) {
         self.remove_channel_popup.setup(None, None);
+        self.remove_channel_popup.realm_id = realm_id;
+        self.remove_channel_popup.channel_type = channel_type;
+        self.remove_channel_popup.channel_id = channel_id;
         self.show_popup(PopupType::RemoveChannel)
     }
 
@@ -780,6 +803,13 @@ impl<'a> App<'a> {
         // Tell client to add the channel (send a AddChannel message)
         self.client
             .add_channel(self.current_realm_id.unwrap(), channel_type, channel_name)
+            .await;
+    }
+
+    pub async fn remove_channel(&mut self, channel_type: ChannelType, channel_id: ChannelIdSize) {
+        // Tell client to remove a channel (send a RemoveChannel message)
+        self.client
+            .remove_channel(self.current_realm_id.unwrap(), channel_type, channel_id)
             .await;
     }
 }

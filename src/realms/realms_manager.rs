@@ -5,6 +5,8 @@ use crate::user::User;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use super::realm;
+
 impl Clone for RealmsManager {
     fn clone(&self) -> RealmsManager {
         RealmsManager {
@@ -62,6 +64,17 @@ impl RealmsManager {
         }
 
         channel
+    }
+
+    pub fn remove_channel(
+        &mut self,
+        realm_id: RealmIdSize,
+        channel_type: ChannelType,
+        channel_id: ChannelIdSize,
+    ) {
+        if let Some(realm) = self.realms.get_mut(&realm_id) {
+            realm.remove_channel(channel_type, channel_id);
+        }
     }
 
     pub fn add_user(&mut self, realm_id: RealmIdSize, user: User) {

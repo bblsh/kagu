@@ -445,4 +445,21 @@ impl Client {
             Client::send(serialized.as_slice(), self.connection.clone()).await;
         }
     }
+
+    pub async fn remove_channel(
+        &self,
+        realm_id: RealmIdSize,
+        channel_type: ChannelType,
+        channel_id: ChannelIdSize,
+    ) {
+        if let Some(user_id) = self.get_user_id().await {
+            // Send our add channel message
+            let message = Message::from(MessageType::RemoveChannel((
+                MessageHeader::new(user_id, realm_id, channel_id),
+                channel_type,
+            )));
+            let serialized = message.into_vec_u8().unwrap();
+            Client::send(serialized.as_slice(), self.connection.clone()).await;
+        }
+    }
 }

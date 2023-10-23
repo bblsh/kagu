@@ -408,6 +408,26 @@ impl Server {
                 )
                 .await;
             }
+            MessageType::RemoveChannel(message) => {
+                // Remove this channel from our Realms Manager
+                realms_manager.remove_channel(
+                    message.0.realm_id,
+                    message.1.clone(),
+                    message.0.channel_id,
+                );
+
+                // Send the new channel to everyone
+                Server::send_to_everyone(
+                    connections,
+                    Message::from(MessageType::ChannelRemoved((
+                        message.0.realm_id,
+                        message.1,
+                        message.0.channel_id,
+                    ))),
+                    message_sender,
+                )
+                .await;
+            }
             MessageType::Disconnecting(user_id) => {
                 // Remove this user from our list of users
                 users.retain(|user| user.get_id() != user_id);
