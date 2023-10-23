@@ -10,7 +10,7 @@ use tui::{
     Frame,
 };
 
-pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
+pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let top_and_bottom_layout = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)

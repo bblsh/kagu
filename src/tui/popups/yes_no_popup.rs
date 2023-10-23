@@ -48,7 +48,7 @@ impl Default for YesNoPopup {
 }
 
 impl YesNoPopup {
-    pub fn render<B: Backend>(&self, frame: &mut Frame<'_, B>) {
+    pub fn render(&self, frame: &mut Frame<'_>) {
         // Clear out our space to draw in
         let cleared_area = self.fixed_size_middle_popup(28, 10, frame.size());
 

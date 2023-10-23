@@ -26,7 +26,7 @@ impl PopupTraits for GeneralPopup {
 }
 
 impl GeneralPopup {
-    pub fn render<B: Backend>(&self, frame: &mut Frame<'_, B>) {
+    pub fn render(&self, frame: &mut Frame<'_>) {
         let mut title = self.title.clone();
         title.push_str(" (Enter to dismiss)");
 
