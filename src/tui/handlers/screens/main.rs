@@ -1,5 +1,4 @@
 use crate::tui::app::{KaguFormatting, Pane};
-use crate::tui::popups::popup_traits::PopupTraits;
 use crate::{
     realms::realm::ChannelType,
     tui::app::{App, AppResult, InputMode, UiElement},
@@ -101,10 +100,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             }
             KeyCode::Char('r') | KeyCode::Char('R') => {
                 if key_event.modifiers == KeyModifiers::CONTROL {
-                    app.show_yes_no_popup(
-                        String::from("Remove Channel"),
-                        String::from("Remove this channel?"),
-                    );
+                    app.show_remove_channel_popup();
                     return Ok(());
                 }
             }
@@ -389,8 +385,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         }
 
                         // Push the remainder of this user's name to the input buffer
-                        //app.input
-                        //    .push_str(&user_name.get(app.mention_buffer.len()..).unwrap());
                         // Remove current chars from buffer
                         if let Some(input) = app.input_buffer.input.last_mut() {
                             for _ in 0..app.mention_buffer.len() {

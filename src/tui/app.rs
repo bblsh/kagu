@@ -27,7 +27,7 @@ use super::input_buffer::InputBuffer;
 use super::popups::popup_traits::PopupTraits;
 use crate::tui::popups::{
     add_channel_popup::AddChannelPopup, general_popup::GeneralPopup, member_popup::MemberPopup,
-    yes_no_popup::YesNoPopup,
+    remove_channel_popup::RemoveChannelPopup, yes_no_popup::YesNoPopup,
 };
 
 use chrono::Local;
@@ -40,6 +40,7 @@ pub enum PopupType {
     General,
     YesNo,
     AddChannel,
+    RemoveChannel,
     Member,
 }
 
@@ -204,6 +205,8 @@ pub struct App<'a> {
     pub member_popup: MemberPopup,
     // Yes / No confirmation popup
     pub yes_no_popup: YesNoPopup,
+    /// Remove channel popup
+    pub remove_channel_popup: RemoveChannelPopup,
 }
 
 impl<'a> App<'a> {
@@ -252,6 +255,7 @@ impl<'a> App<'a> {
             add_channel_popup: AddChannelPopup::default(),
             member_popup: MemberPopup::default(),
             yes_no_popup: YesNoPopup::default(),
+            remove_channel_popup: RemoveChannelPopup::default(),
         }
     }
 
@@ -747,6 +751,11 @@ impl<'a> App<'a> {
     pub fn show_add_channel_popup(&mut self) {
         self.add_channel_popup.setup(None, None);
         self.show_popup(PopupType::AddChannel);
+    }
+
+    pub fn show_remove_channel_popup(&mut self) {
+        self.remove_channel_popup.setup(None, None);
+        self.show_popup(PopupType::RemoveChannel)
     }
 
     pub fn show_member_popup(

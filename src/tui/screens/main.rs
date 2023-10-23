@@ -328,6 +328,7 @@ pub fn render<B: Backend>(app: &mut App, frame: &mut Frame<'_, B>) {
             PopupType::General => app.general_popup.render(frame),
             PopupType::YesNo => app.yes_no_popup.render(frame),
             PopupType::AddChannel => app.add_channel_popup.render(frame),
+            PopupType::RemoveChannel => app.remove_channel_popup.render(frame),
             PopupType::Member => app.member_popup.render(frame),
         }
     }
