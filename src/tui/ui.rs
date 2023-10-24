@@ -1,4 +1,4 @@
-use tui::{backend::Backend, Frame};
+use tui::Frame;
 
 use crate::tui::app::{App, Screen};
 use crate::tui::screens;
