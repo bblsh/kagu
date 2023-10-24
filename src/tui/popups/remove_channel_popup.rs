@@ -110,7 +110,10 @@ impl RemoveChannelPopup {
 
         // Display "Remove text channel [name]?"
         let mut message = String::from("Remove ");
-        message.push_str(&self.channel_name[2..]);
+        match self.channel_type {
+            ChannelType::TextChannel => message.push_str(&self.channel_name[2..]),
+            ChannelType::VoiceChannel => message.push_str(&self.channel_name),
+        }
         message.push('?');
 
         let message_paragraph = Paragraph::new(message);

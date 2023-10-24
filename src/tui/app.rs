@@ -511,7 +511,7 @@ impl<'a> App<'a> {
                         // Otherwise the realm will be refreshed when it is joined again
                         if let Some(realm_id) = self.current_realm_id {
                             if realm_id == ca.0 {
-                                self.refresh_realm(realm_id);
+                                self.refresh_realm(realm_id).await;
                             }
                         }
                     }
@@ -526,7 +526,7 @@ impl<'a> App<'a> {
                         // Otherwise the realm will be refreshed when it is joined again
                         if let Some(realm_id) = self.current_realm_id {
                             if realm_id == cr.0 {
-                                self.refresh_realm(realm_id);
+                                self.refresh_realm(realm_id).await;
                             }
                         }
                     }
@@ -597,7 +597,7 @@ impl<'a> App<'a> {
         }
     }
 
-    pub fn refresh_realm(&mut self, realm_id: RealmIdSize) {
+    pub async fn refresh_realm(&mut self, realm_id: RealmIdSize) {
         if let Some(realm) = self.realms_manager.get_realm(realm_id) {
             // Update our text channels list
             self.text_channels.items.clear();
@@ -636,6 +636,22 @@ impl<'a> App<'a> {
                             self.text_channels.items[0].1.clone(),
                         ));
                     } else {
+                        self.current_text_channel = None;
+                    }
+                }
+            }
+
+            if let Some(voice_channel) = &self.current_voice_channel {
+                if !self
+                    .voice_channels
+                    .items
+                    .iter()
+                    .any(|c| &c.0 == voice_channel)
+                {
+                    if !self.voice_channels.items.is_empty() {
+                        self.current_voice_channel = Some(self.voice_channels.items[0].0);
+                    } else {
+                        self.hang_up().await;
                         self.current_text_channel = None;
                     }
                 }
