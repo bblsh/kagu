@@ -130,10 +130,13 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 if key_event.modifiers == KeyModifiers::CONTROL {
                     let selected_id = app.text_channels.state.selected().unwrap();
                     let channel_id = app.text_channels.items.get(selected_id).unwrap().0;
+                    let channel_name = app.text_channels.items.get(selected_id).unwrap().1.clone();
+
                     app.show_remove_channel_popup(
                         app.current_realm_id.unwrap(),
                         ChannelType::TextChannel,
                         channel_id,
+                        channel_name,
                     );
                     return Ok(());
                 }
@@ -186,10 +189,13 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 if key_event.modifiers == KeyModifiers::CONTROL {
                     let selected_id = app.voice_channels.state.selected().unwrap();
                     let channel_id = app.voice_channels.items.get(selected_id).unwrap().0;
+                    let channel_name = app.voice_channels.items.get(selected_id).unwrap().1.clone();
+
                     app.show_remove_channel_popup(
                         app.current_realm_id.unwrap(),
                         ChannelType::VoiceChannel,
                         channel_id,
+                        channel_name,
                     );
                     return Ok(());
                 }

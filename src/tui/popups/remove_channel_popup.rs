@@ -10,6 +10,7 @@ use crate::types::{ChannelIdSize, RealmIdSize};
 pub struct RemoveChannelPopup {
     pub title: String,
     pub message: String,
+    pub channel_name: String,
     pub realm_id: RealmIdSize,
     pub channel_type: ChannelType,
     pub channel_id: ChannelIdSize,
@@ -32,6 +33,7 @@ impl PopupTraits for RemoveChannelPopup {
     fn reset(&mut self) {
         self.title = String::new();
         self.message = String::new();
+        self.channel_name = String::new();
         self.current_ui_element = RemoveChannelPopupUiElement::No;
         self.realm_id = 0;
         self.channel_type = ChannelType::TextChannel;
@@ -50,6 +52,7 @@ impl Default for RemoveChannelPopup {
         RemoveChannelPopup {
             title: String::new(),
             message: String::new(),
+            channel_name: String::new(),
             realm_id: 0,
             channel_type: ChannelType::TextChannel,
             channel_id: 0,
@@ -105,13 +108,18 @@ impl RemoveChannelPopup {
             )])],
         };
 
-        let message = Paragraph::new(self.message.clone());
+        // Display "Remove text channel [name]?"
+        let mut message = String::from("Remove ");
+        message.push_str(&self.channel_name[2..]);
+        message.push('?');
+
+        let message_paragraph = Paragraph::new(message);
         let yes_paragraph = Paragraph::new(yes);
         let no_paragraph = Paragraph::new(no);
 
         frame.render_widget(Clear, cleared_area);
         frame.render_widget(back_block, cleared_area);
-        frame.render_widget(message, message_area);
+        frame.render_widget(message_paragraph, message_area);
         frame.render_widget(yes_paragraph, yes_area);
         frame.render_widget(no_paragraph, no_area);
     }

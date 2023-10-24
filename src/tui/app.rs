@@ -621,6 +621,25 @@ impl<'a> App<'a> {
                     voice_channel.1.get_connected_users().clone(),
                 ));
             }
+
+            // If the channel we're viewing was removed, stop viewing it
+            if let Some(text_channel) = &self.current_text_channel {
+                if !self
+                    .text_channels
+                    .items
+                    .iter()
+                    .any(|c| c.0 == text_channel.0)
+                {
+                    if !self.text_channels.items.is_empty() {
+                        self.current_text_channel = Some((
+                            self.text_channels.items[0].0,
+                            self.text_channels.items[0].1.clone(),
+                        ));
+                    } else {
+                        self.current_text_channel = None;
+                    }
+                }
+            }
         }
     }
 
@@ -773,11 +792,13 @@ impl<'a> App<'a> {
         realm_id: RealmIdSize,
         channel_type: ChannelType,
         channel_id: ChannelIdSize,
+        channel_name: String,
     ) {
         self.remove_channel_popup.setup(None, None);
         self.remove_channel_popup.realm_id = realm_id;
         self.remove_channel_popup.channel_type = channel_type;
         self.remove_channel_popup.channel_id = channel_id;
+        self.remove_channel_popup.channel_name = channel_name;
         self.show_popup(PopupType::RemoveChannel)
     }
 
