@@ -1,11 +1,8 @@
 use crate::tui::app::App;
 use tui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout},
-    prelude::Rect,
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
+    style::{Color, Style},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
 

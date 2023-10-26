@@ -61,6 +61,10 @@ pub enum MessageType {
     RealmsManager(RealmsManager),
     Realms(Vec<RealmDescription>),
     GetRealms(UserIdSize),
+    AddRealm((MessageHeader, String)),
+    RemoveRealm((MessageHeader, RealmIdSize)),
+    RealmAdded((RealmIdSize, String)),
+    RealmRemoved(RealmIdSize),
 
     // Channels
     AddChannel((MessageHeader, ChannelType, String)),
@@ -132,6 +136,10 @@ impl From<MessageType> for Message {
             }
             MessageType::Realms(realms) => Message::new(0, MessageType::Realms(realms)),
             MessageType::RealmsManager(rm) => Message::new(0, MessageType::RealmsManager(rm)),
+            MessageType::AddRealm(ar) => Message::new(0, MessageType::AddRealm(ar)),
+            MessageType::RemoveRealm(rr) => Message::new(0, MessageType::RemoveRealm(rr)),
+            MessageType::RealmAdded(ra) => Message::new(0, MessageType::RealmAdded(ra)),
+            MessageType::RealmRemoved(rr) => Message::new(0, MessageType::RealmRemoved(rr)),
             MessageType::AddChannel(ac) => Message::new(0, MessageType::AddChannel(ac)),
             MessageType::RemoveChannel(rc) => Message::new(0, MessageType::RemoveChannel(rc)),
             MessageType::RenameChannel(rc) => Message::new(0, MessageType::RenameChannel(rc)),
@@ -189,6 +197,10 @@ impl Message {
             MessageType::RealmsManager(rm) => MessageType::RealmsManager(rm),
             MessageType::Realms(realms) => MessageType::Realms(realms),
             MessageType::GetRealms(user_id) => MessageType::GetRealms(user_id),
+            MessageType::AddRealm(ar) => MessageType::AddRealm(ar),
+            MessageType::RemoveRealm(rr) => MessageType::RemoveRealm(rr),
+            MessageType::RealmAdded(ra) => MessageType::RealmAdded(ra),
+            MessageType::RealmRemoved(rr) => MessageType::RealmRemoved(rr),
             MessageType::AddChannel(ac) => MessageType::AddChannel(ac),
             MessageType::RemoveChannel(rc) => MessageType::RemoveChannel(rc),
             MessageType::RenameChannel(rc) => MessageType::RenameChannel(rc),

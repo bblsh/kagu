@@ -1,5 +1,4 @@
 use tui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Rect},
     style::{Color, Modifier, Style},
@@ -330,6 +329,8 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             PopupType::AddChannel => app.add_channel_popup.render(frame),
             PopupType::RemoveChannel => app.remove_channel_popup.render(frame),
             PopupType::Member => app.member_popup.render(frame),
+            PopupType::AddRealm => app.add_realm_popup.render(frame),
+            PopupType::RemoveRealm => app.remove_realm_popup.render(frame),
         }
     }
 

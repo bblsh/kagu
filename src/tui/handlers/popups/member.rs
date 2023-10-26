@@ -1,6 +1,6 @@
 use crate::tui::{
     app::{App, AppResult, InputMode, Pane},
-    popups::member_popup::{MemberPopupInputMode, MemberPopupUiElement},
+    popups::member_popup::MemberPopupInputMode,
 };
 use crossterm::event::{KeyCode, KeyEvent};
 
@@ -26,12 +26,9 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.current_pane = Pane::MembersPane;
                 app.input_mode = InputMode::Members;
             }
-            KeyCode::Enter => match app.member_popup.current_ui_element {
-                MemberPopupUiElement::Dm => {
-                    app.member_popup.input_mode = MemberPopupInputMode::Editing;
-                }
-                _ => (),
-            },
+            KeyCode::Enter => {
+                app.member_popup.input_mode = MemberPopupInputMode::Editing;
+            }
             _ => (),
         },
     };

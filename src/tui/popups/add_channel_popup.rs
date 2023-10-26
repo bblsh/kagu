@@ -1,17 +1,13 @@
+use crate::tui::app::KaguFormatting;
+use crate::tui::popups::popup_traits::PopupTraits;
 use tui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout},
-    prelude::{Alignment, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Clear, Paragraph},
     Frame,
 };
 use unicode_width::UnicodeWidthStr;
-
-use crate::tui::app::{App, InputMode, KaguFormatting, Pane, PopupType, UiElement};
-
-use crate::tui::popups::popup_traits::PopupTraits;
 
 #[derive(Debug, Default)]
 pub enum AddChannelUiElement {

@@ -1,5 +1,4 @@
 use tui::{
-    backend::Backend,
     widgets::{Block, Borders, Clear, Paragraph},
     Frame,
 };

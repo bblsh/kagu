@@ -59,6 +59,12 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             PopupType::Member => {
                 return handlers::popups::member::handle_key_events(key_event, app).await
             }
+            PopupType::AddRealm => {
+                return handlers::popups::add_realm::handle_key_events(key_event, app).await
+            }
+            PopupType::RemoveRealm => {
+                return handlers::popups::remove_realm::handle_key_events(key_event, app).await
+            }
         }
     }
 

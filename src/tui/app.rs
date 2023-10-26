@@ -26,8 +26,10 @@ use tui::style::Style;
 use super::input_buffer::InputBuffer;
 use super::popups::popup_traits::PopupTraits;
 use crate::tui::popups::{
-    add_channel_popup::AddChannelPopup, general_popup::GeneralPopup, member_popup::MemberPopup,
-    remove_channel_popup::RemoveChannelPopup, yes_no_popup::YesNoPopup,
+    add_channel_popup::AddChannelPopup, add_realm_popup::AddRealmPopup,
+    general_popup::GeneralPopup, member_popup::MemberPopup,
+    remove_channel_popup::RemoveChannelPopup, remove_realm_popup::RemoveRealmPopup,
+    yes_no_popup::YesNoPopup,
 };
 
 use chrono::Local;
@@ -42,6 +44,8 @@ pub enum PopupType {
     AddChannel,
     RemoveChannel,
     Member,
+    AddRealm,
+    RemoveRealm,
 }
 
 #[derive(Debug)]
@@ -207,6 +211,10 @@ pub struct App<'a> {
     pub yes_no_popup: YesNoPopup,
     /// Remove channel popup
     pub remove_channel_popup: RemoveChannelPopup,
+    /// Add realm popup
+    pub add_realm_popup: AddRealmPopup,
+    /// Remove realm popup
+    pub remove_realm_popup: RemoveRealmPopup,
 }
 
 impl<'a> App<'a> {
@@ -256,6 +264,8 @@ impl<'a> App<'a> {
             member_popup: MemberPopup::default(),
             yes_no_popup: YesNoPopup::default(),
             remove_channel_popup: RemoveChannelPopup::default(),
+            add_realm_popup: AddRealmPopup::default(),
+            remove_realm_popup: RemoveRealmPopup::default(),
         }
     }
 
@@ -498,6 +508,16 @@ impl<'a> App<'a> {
                             self.enter_realm(self.current_realm_id.unwrap()).await;
                         }
                     }
+                    MessageType::RealmAdded(ra) => {
+                        // Add this realm to our list of realms
+                        self.realms_manager.add_realm_with_id(ra.0, ra.1);
+                        self.refresh_realms_list();
+                    }
+                    MessageType::RealmRemoved(rr) => {
+                        // Remove this realm for our realms
+                        self.realms_manager.remove_realm(rr);
+                        self.refresh_realms_list();
+                    }
                     MessageType::ChannelAdded(ca) => {
                         // Add this new channel to the proper realm
                         self.realms_manager.add_channel_with_id(
@@ -659,6 +679,27 @@ impl<'a> App<'a> {
         }
     }
 
+    pub fn refresh_realms_list(&mut self) {
+        // First clear current realms
+        self.realms.items.clear();
+
+        for realm in self.realms_manager.get_realms() {
+            // Update our Realms list
+            self.realms.items.push((*realm.0, realm.1.clone()));
+        }
+
+        // If we were previously in a realm, stay in that realm
+        if let Some(realm_id) = &self.current_realm_id {
+            if !self.realms.items.iter().any(|c| &c.0 == realm_id) {
+                if !self.realms.items.is_empty() {
+                    self.current_realm_id = Some(self.current_realm_id.unwrap());
+                } else {
+                    self.current_realm_id = None;
+                }
+            }
+        }
+    }
+
     pub async fn enter_realm(&mut self, realm_id: RealmIdSize) {
         if let Some(realm) = self.realms_manager.get_realm(realm_id) {
             // Update our text channels list
@@ -803,6 +844,18 @@ impl<'a> App<'a> {
         self.show_popup(PopupType::AddChannel);
     }
 
+    pub fn show_add_realm_popup(&mut self) {
+        self.add_realm_popup.setup(None, None);
+        self.show_popup(PopupType::AddRealm);
+    }
+
+    pub fn show_remove_realm_popup(&mut self, realm_id: RealmIdSize, realm_name: String) {
+        self.remove_realm_popup.setup(None, None);
+        self.remove_realm_popup.realm_id = realm_id;
+        self.remove_realm_popup.realm_name = realm_name;
+        self.show_popup(PopupType::RemoveRealm);
+    }
+
     pub fn show_remove_channel_popup(
         &mut self,
         realm_id: RealmIdSize,
@@ -848,5 +901,15 @@ impl<'a> App<'a> {
         self.client
             .remove_channel(self.current_realm_id.unwrap(), channel_type, channel_id)
             .await;
+    }
+
+    pub async fn add_realm(&mut self, realm_name: String) {
+        // Tell client to add the realm (send a AddRealm message)
+        self.client.add_realm(realm_name).await;
+    }
+
+    pub async fn remove_realm(&mut self, realm_id: RealmIdSize) {
+        // Tell client to remove the realm (send a RemoveRealm message)
+        self.client.remove_realm(realm_id).await;
     }
 }

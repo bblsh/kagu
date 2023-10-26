@@ -428,6 +428,30 @@ impl Server {
                 )
                 .await;
             }
+            MessageType::AddRealm(message) => {
+                // Add this realm to our Realms Manager
+                let realm_id = realms_manager.add_realm(message.1.clone());
+
+                // Send the new realm to everyone
+                Server::send_to_everyone(
+                    connections,
+                    Message::from(MessageType::RealmAdded((realm_id, message.1))),
+                    message_sender,
+                )
+                .await;
+            }
+            MessageType::RemoveRealm(message) => {
+                // Remove this realm from our Realms Manager
+                realms_manager.remove_realm(message.1);
+
+                // Send the removed realm to everyone
+                Server::send_to_everyone(
+                    connections,
+                    Message::from(MessageType::RealmRemoved(message.1)),
+                    message_sender,
+                )
+                .await;
+            }
             MessageType::Disconnecting(user_id) => {
                 // Remove this user from our list of users
                 users.retain(|user| user.get_id() != user_id);

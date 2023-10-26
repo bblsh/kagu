@@ -462,4 +462,28 @@ impl Client {
             Client::send(serialized.as_slice(), self.connection.clone()).await;
         }
     }
+
+    pub async fn add_realm(&self, realm_name: String) {
+        if let Some(user_id) = self.get_user_id().await {
+            // Send our add realm message
+            let message = Message::from(MessageType::AddRealm((
+                MessageHeader::new(user_id, 0, 0),
+                realm_name,
+            )));
+            let serialized = message.into_vec_u8().unwrap();
+            Client::send(serialized.as_slice(), self.connection.clone()).await;
+        }
+    }
+
+    pub async fn remove_realm(&self, realm_id: RealmIdSize) {
+        if let Some(user_id) = self.get_user_id().await {
+            // Send our remove realm message
+            let message = Message::from(MessageType::RemoveRealm((
+                MessageHeader::new(user_id, 0, 0),
+                realm_id,
+            )));
+            let serialized = message.into_vec_u8().unwrap();
+            Client::send(serialized.as_slice(), self.connection.clone()).await;
+        }
+    }
 }

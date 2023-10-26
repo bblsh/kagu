@@ -515,6 +515,20 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.realms.unselect();
                 app.input_mode = InputMode::Normal;
             }
+            KeyCode::Char('a') | KeyCode::Char('A') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    app.show_add_realm_popup();
+                }
+            }
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    if let Some(selected_id) = app.realms.state.selected() {
+                        if let Some(realm) = app.realms.items.get(selected_id) {
+                            app.show_remove_realm_popup(realm.0, realm.1.clone());
+                        }
+                    }
+                }
+            }
             KeyCode::Up => {
                 app.realms.previous();
             }

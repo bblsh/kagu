@@ -1,7 +1,7 @@
 use crate::{
     realms::realm::ChannelType,
     tui::{
-        app::{App, AppResult},
+        app::{App, AppResult, InputMode, Pane},
         popups::add_channel_popup::{AddChannelInputMode, AddChannelUiElement},
     },
 };
@@ -12,6 +12,8 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         AddChannelInputMode::Normal => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') => {
                 app.dismiss_popup();
+                app.input_mode = InputMode::ChannelType;
+                app.current_pane = Pane::ChannelsPane;
             }
             KeyCode::Char(' ') => match app.add_channel_popup.current_ui_element {
                 AddChannelUiElement::TextOption => {
@@ -44,12 +46,11 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 }
                 AddChannelUiElement::ChannelName => (),
             },
-            KeyCode::Enter => match app.add_channel_popup.current_ui_element {
-                AddChannelUiElement::ChannelName => {
+            KeyCode::Enter => {
+                if let AddChannelUiElement::ChannelName = app.add_channel_popup.current_ui_element {
                     app.add_channel_popup.input_mode = AddChannelInputMode::Editing;
                 }
-                _ => (),
-            },
+            }
             _ => (),
         },
         AddChannelInputMode::Editing => match key_event.code {
@@ -69,6 +70,8 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 .await;
 
                 app.dismiss_popup();
+                app.input_mode = InputMode::ChannelType;
+                app.current_pane = Pane::ChannelsPane;
             }
             _ => (),
         },

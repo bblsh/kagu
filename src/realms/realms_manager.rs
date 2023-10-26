@@ -77,6 +77,10 @@ impl RealmsManager {
         }
     }
 
+    pub fn remove_realm(&mut self, realm_id: RealmIdSize) {
+        self.realms.remove(&realm_id);
+    }
+
     pub fn add_user(&mut self, realm_id: RealmIdSize, user: User) {
         if let Some(realm) = self.realms.get_mut(&realm_id) {
             realm.add_user(user.get_id(), user);

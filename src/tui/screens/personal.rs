@@ -1,12 +1,10 @@
 use crate::tui::app::{App, KaguFormatting, Pane};
-
 use tui::{
-    backend::Backend,
     layout::{Constraint, Direction, Layout},
-    prelude::{Alignment, Rect},
+    prelude::Alignment,
     style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Widget, Wrap},
+    text::Span,
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
 
