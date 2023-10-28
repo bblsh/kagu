@@ -252,7 +252,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             InputMode::Editing => Style::default(),
             _ => Style::default(),
         })
-        .block(
+        .block(if app.current_text_channel.is_some() {
             Block::default()
                 .borders(Borders::ALL)
                 .title(match app.current_pane {
@@ -265,8 +265,18 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                     InputMode::Normal => Style::default(),
                     InputMode::Editing => Style::default().fg(Color::Yellow),
                     _ => Style::default(),
-                }),
-        )
+                })
+        } else {
+            Block::default()
+                .borders(Borders::ALL)
+                .title(match app.current_pane {
+                    Pane::InputPane => String::from("No channel to send to")
+                        .with_focus()
+                        .with_pre_post_spaces(),
+                    _ => String::from("No channel to send to").with_pre_post_spaces(),
+                })
+                .border_style(Style::default().fg(Color::Gray))
+        })
         .wrap(Wrap { trim: false });
     frame.render_widget(input, chunks[1]);
 

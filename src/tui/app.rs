@@ -732,6 +732,8 @@ impl<'a> App<'a> {
                     self.text_channels.items[0].0,
                 )
                 .await;
+            } else {
+                self.current_text_channel = None;
             }
 
             self.current_realm_id = Some(realm_id);

@@ -14,8 +14,10 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 return Ok(());
             }
             KeyCode::Char('i') => {
-                app.input_mode = InputMode::Editing;
-                app.current_pane = Pane::InputPane;
+                if app.current_text_channel.is_some() {
+                    app.input_mode = InputMode::Editing;
+                    app.current_pane = Pane::InputPane;
+                }
             }
             KeyCode::Up => {
                 if let Pane::InputPane = app.current_pane {
@@ -43,7 +45,10 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             },
             KeyCode::Enter => match app.current_pane {
                 Pane::InputPane => {
-                    app.input_mode = InputMode::Editing;
+                    if app.current_text_channel.is_some() {
+                        app.input_mode = InputMode::Editing;
+                        app.current_pane = Pane::InputPane;
+                    }
                 }
                 Pane::ChannelsPane => {
                     app.input_mode = InputMode::ChannelType;
