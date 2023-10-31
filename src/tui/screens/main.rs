@@ -62,7 +62,6 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .realms
         .items
         .iter()
-        //.map(|i| ListItem::new(i.1.clone()).style(Style::default().fg(Color::LightBlue)))
         .map(|i| {
             ListItem::new(i.1.clone()).style(
                 if let Some(realm) = app.realms_manager.get_realm(i.0) {
