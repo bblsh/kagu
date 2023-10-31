@@ -62,7 +62,30 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .realms
         .items
         .iter()
-        .map(|i| ListItem::new(i.1.clone()).style(Style::default().fg(Color::LightBlue)))
+        //.map(|i| ListItem::new(i.1.clone()).style(Style::default().fg(Color::LightBlue)))
+        .map(|i| {
+            ListItem::new(i.1.clone()).style(
+                if let Some(realm) = app.realms_manager.get_realm(i.0) {
+                    let mut notification = false;
+                    // Check to see if we have a pending mention in any channels
+                    for channel in &realm.text_channels {
+                        // Check if we have a pending mention
+                        if channel.1.pending_mention {
+                            notification = true;
+                        }
+                    }
+
+                    // We have been mentioned, so show this to the user
+                    if notification {
+                        Style::default().fg(Color::Black).bg(Color::LightYellow)
+                    } else {
+                        Style::default().fg(Color::LightBlue)
+                    }
+                } else {
+                    Style::default().fg(Color::LightBlue)
+                },
+            )
+        })
         .collect();
     let realms = List::new(realms_list)
         .block(

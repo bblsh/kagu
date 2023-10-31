@@ -414,6 +414,7 @@ impl<'a> App<'a> {
                                     message.1.clone(),
                                 ));
 
+                                // See if we've been mentioned
                                 for chunk in message.1 {
                                     if let Some(id) = chunk.1 {
                                         if id == self.user_id.unwrap() {
