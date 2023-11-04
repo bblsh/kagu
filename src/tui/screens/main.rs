@@ -30,7 +30,19 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         )
         .split(top_and_bottom_layout[0]);
 
-    let kagu_logo = Paragraph::new("Kagu");
+    let mut kagu_spans: Vec<Span> = vec![Span::raw("Kagu")];
+
+    if !app.friend_requests.is_empty() {
+        kagu_spans.push(Span::styled(" (", Style::default().fg(Color::LightRed)));
+        kagu_spans.push(Span::styled(
+            app.friend_requests.len().to_string(),
+            Style::default().fg(Color::LightRed),
+        ));
+        kagu_spans.push(Span::styled(")", Style::default().fg(Color::LightRed)));
+    }
+
+    let kagu_text = vec![Line::from(kagu_spans)];
+    let kagu_logo = Paragraph::new(kagu_text);
     let time = Paragraph::new(app.get_current_time_string()).alignment(Alignment::Right);
     let connected_label = Paragraph::new(match app.is_voice_connected {
         true => Span::styled("Voice connected", Style::default().fg(Color::LightGreen)),
