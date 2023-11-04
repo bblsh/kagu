@@ -915,4 +915,9 @@ impl<'a> App<'a> {
         // Tell client to remove the realm (send a RemoveRealm message)
         self.client.remove_realm(realm_id).await;
     }
+
+    pub async fn add_friend(&self, friend_id: UserIdSize) {
+        // Tell client to add a new friend (send a NewFriendRequestMessage)
+        self.client.add_friend(friend_id).await;
+    }
 }
