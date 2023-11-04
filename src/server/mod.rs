@@ -452,6 +452,16 @@ impl Server {
                 )
                 .await;
             }
+            MessageType::NewFriendRequest(request) => {
+                // Send a friend request to this user
+                Server::send_to_id(
+                    connections,
+                    request.1,
+                    Message::from(MessageType::NewFriendRequest(request)),
+                    message_sender,
+                )
+                .await;
+            }
             MessageType::Disconnecting(user_id) => {
                 // Remove this user from our list of users
                 users.retain(|user| user.get_id() != user_id);

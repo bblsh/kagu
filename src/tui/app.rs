@@ -215,6 +215,8 @@ pub struct App<'a> {
     pub add_realm_popup: AddRealmPopup,
     /// Remove realm popup
     pub remove_realm_popup: RemoveRealmPopup,
+    /// Pending friend requests
+    pub friend_requests: Vec<UserIdSize>,
 }
 
 impl<'a> App<'a> {
@@ -266,6 +268,7 @@ impl<'a> App<'a> {
             remove_channel_popup: RemoveChannelPopup::default(),
             add_realm_popup: AddRealmPopup::default(),
             remove_realm_popup: RemoveRealmPopup::default(),
+            friend_requests: Vec::new(),
         }
     }
 
@@ -549,6 +552,13 @@ impl<'a> App<'a> {
                             if realm_id == cr.0 {
                                 self.refresh_realm(realm_id).await;
                             }
+                        }
+                    }
+                    MessageType::NewFriendRequest(nfr) => {
+                        // Add this user id to our list of requests
+                        // Don't add it twice (need to prevent repeated friend requests)
+                        if !self.friend_requests.contains(&nfr.0.user_id) {
+                            self.friend_requests.push(nfr.0.user_id);
                         }
                     }
                     _ => (),
