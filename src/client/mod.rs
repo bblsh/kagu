@@ -489,8 +489,20 @@ impl Client {
 
     pub async fn add_friend(&self, friend_id: UserIdSize) {
         if let Some(user_id) = self.get_user_id().await {
-            // Send our remove realm message
+            // Send our add friend message
             let message = Message::from(MessageType::NewFriendRequest((
+                MessageHeader::new(user_id, 0, 0),
+                friend_id,
+            )));
+            let serialized = message.into_vec_u8().unwrap();
+            Client::send(serialized.as_slice(), self.connection.clone()).await;
+        }
+    }
+
+    pub async fn remove_friend(&self, friend_id: UserIdSize) {
+        if let Some(user_id) = self.get_user_id().await {
+            // Send our remove friend message
+            let message = Message::from(MessageType::RemoveFriend((
                 MessageHeader::new(user_id, 0, 0),
                 friend_id,
             )));

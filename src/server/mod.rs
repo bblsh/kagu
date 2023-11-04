@@ -462,6 +462,16 @@ impl Server {
                 )
                 .await;
             }
+            MessageType::RemoveFriend(rf) => {
+                // Break the bad news to this now former friend
+                Server::send_to_id(
+                    connections,
+                    rf.1,
+                    Message::from(MessageType::FriendshipEnded(rf.0)),
+                    message_sender,
+                )
+                .await;
+            }
             MessageType::Disconnecting(user_id) => {
                 // Remove this user from our list of users
                 users.retain(|user| user.get_id() != user_id);

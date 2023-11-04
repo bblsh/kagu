@@ -567,6 +567,14 @@ impl<'a> App<'a> {
                             self.friend_requests.push(nfr.0.user_id);
                         }
                     }
+                    MessageType::FriendshipEnded(fe) => {
+                        // Remove this old friend from our list of friends
+                        let index = self.friends.iter().position(|id| *id == fe.user_id);
+
+                        if let Some(index) = index {
+                            self.friends.remove(index);
+                        }
+                    }
                     _ => (),
                 };
             }
@@ -944,5 +952,16 @@ impl<'a> App<'a> {
         self.client.add_friend(friend_id).await;
 
         self.pending_friend_requests.push(friend_id);
+    }
+
+    pub async fn remove_friend(&mut self, friend_id: UserIdSize) {
+        // Remove this old friend from our list of friends
+        let index = self.friends.iter().position(|id| *id == friend_id);
+
+        if let Some(index) = index {
+            // Tell client to remove a friend (send a Remove)
+            self.client.remove_friend(friend_id).await;
+            self.friends.remove(index);
+        }
     }
 }

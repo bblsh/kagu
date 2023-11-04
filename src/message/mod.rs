@@ -56,6 +56,8 @@ pub enum MessageType {
     NewFriendRequest((MessageHeader, UserIdSize)),
     FriendRequestAccepted((MessageHeader, UserIdSize)),
     FriendRequestRejected((MessageHeader, UserIdSize)),
+    RemoveFriend((MessageHeader, UserIdSize)),
+    FriendshipEnded(MessageHeader),
 
     // Realms
     RealmsManager(RealmsManager),
@@ -131,6 +133,8 @@ impl From<MessageType> for Message {
             MessageType::FriendRequestRejected(rejected) => {
                 Message::new(0, MessageType::FriendRequestRejected(rejected))
             }
+            MessageType::RemoveFriend(rf) => Message::new(0, MessageType::RemoveFriend(rf)),
+            MessageType::FriendshipEnded(fe) => Message::new(0, MessageType::FriendshipEnded(fe)),
             MessageType::GetRealms(user_id) => {
                 Message::new(user_id, MessageType::GetRealms(user_id))
             }
@@ -194,6 +198,8 @@ impl Message {
             MessageType::FriendRequestRejected(rejected) => {
                 MessageType::FriendRequestRejected(rejected)
             }
+            MessageType::RemoveFriend(rf) => MessageType::RemoveFriend(rf),
+            MessageType::FriendshipEnded(fe) => MessageType::FriendshipEnded(fe),
             MessageType::RealmsManager(rm) => MessageType::RealmsManager(rm),
             MessageType::Realms(realms) => MessageType::Realms(realms),
             MessageType::GetRealms(user_id) => MessageType::GetRealms(user_id),
