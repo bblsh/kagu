@@ -6,7 +6,7 @@ use tui::{
     Frame,
 };
 
-pub fn render(app: &mut App, frame: &mut Frame<'_>) {
+pub fn render(_app: &mut App, frame: &mut Frame<'_>) {
     let back_panel = Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)

@@ -1,11 +1,6 @@
-use crate::tui::app::{KaguFormatting, Pane, Screen};
-use crate::{
-    realms::realm::ChannelType,
-    tui::app::{App, AppResult, InputMode, UiElement},
-};
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use tui::style::{Color, Style};
+use crate::tui::app::{App, AppResult};
+use crossterm::event::KeyEvent;
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub async fn handle_key_events(_key_event: KeyEvent, _app: &mut App<'_>) -> AppResult<()> {
     Ok(())
 }

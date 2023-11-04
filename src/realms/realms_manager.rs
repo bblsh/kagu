@@ -5,8 +5,6 @@ use crate::user::User;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use super::realm;
-
 impl Clone for RealmsManager {
     fn clone(&self) -> RealmsManager {
         RealmsManager {

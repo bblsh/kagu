@@ -34,7 +34,6 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     MemberPopupUiElement::Actions => {
                         app.member_popup.current_ui_element = MemberPopupUiElement::Dm
                     }
-                    _ => (),
                 },
                 KeyCode::Down => match app.member_popup.current_ui_element {
                     MemberPopupUiElement::Dm => {
