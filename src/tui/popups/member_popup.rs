@@ -20,7 +20,7 @@ pub enum MemberPopupInputMode {
 
 #[derive(Debug)]
 pub enum MemberPopupActionsUiElements {
-    AddFriend,
+    AddRemoveFriend,
     Message,
     Call,
     Block,
@@ -50,7 +50,9 @@ impl Default for MemberPopup {
             dm_buffer: String::new(),
             current_ui_element: MemberPopupUiElement::Dm,
             current_ui: MemberPopupUi::Info,
-            current_actions_ui_element: MemberPopupActionsUiElements::AddFriend,
+            current_actions_ui_element: MemberPopupActionsUiElements::AddRemoveFriend,
+            is_friend: false,
+            is_request_pending: false,
         }
     }
 }
@@ -65,6 +67,8 @@ pub struct MemberPopup {
     pub dm_buffer: String,
     pub current_ui: MemberPopupUi,
     pub current_actions_ui_element: MemberPopupActionsUiElements,
+    pub is_friend: bool,
+    pub is_request_pending: bool,
 }
 
 impl PopupTraits for MemberPopup {
@@ -75,6 +79,9 @@ impl PopupTraits for MemberPopup {
         self.input_mode = MemberPopupInputMode::Normal;
         self.current_ui_element = MemberPopupUiElement::Dm;
         self.dm_buffer = String::new();
+        self.is_friend = false;
+        self.is_request_pending = false;
+        self.current_ui = MemberPopupUi::Info;
     }
 
     fn setup(&mut self, _title: Option<String>, _message: Option<String>) {
@@ -218,12 +225,34 @@ impl MemberPopup {
             return;
         };
 
-        let add_friend_paragraph = Paragraph::new(match self.current_actions_ui_element {
-            MemberPopupActionsUiElements::AddFriend => String::from("Add Friend")
-                .with_focus()
-                .with_pre_post_spaces(),
-            _ => String::from("Add Friend").with_pre_post_spaces(),
-        });
+        let mut add_remove_spans: Vec<Span> = Vec::new();
+        if self.is_friend {
+            add_remove_spans.push(Span::raw(match self.current_actions_ui_element {
+                MemberPopupActionsUiElements::AddRemoveFriend => String::from("Remove Friend")
+                    .with_focus()
+                    .with_pre_post_spaces(),
+                _ => String::from("Remove Friend").with_pre_post_spaces(),
+            }));
+        } else if self.is_request_pending {
+            add_remove_spans.push(Span::styled(
+                match self.current_actions_ui_element {
+                    MemberPopupActionsUiElements::AddRemoveFriend => {
+                        String::from("Request Pending").with_focus()
+                    }
+                    _ => String::from("Request Pending").with_pre_post_spaces(),
+                },
+                Style::default().fg(Color::Gray),
+            ));
+        } else {
+            add_remove_spans.push(Span::raw(match self.current_actions_ui_element {
+                MemberPopupActionsUiElements::AddRemoveFriend => String::from("Add Friend")
+                    .with_focus()
+                    .with_pre_post_spaces(),
+                _ => String::from("Add Friend").with_pre_post_spaces(),
+            }));
+        }
+
+        let add_remove_friend_paragraph = Paragraph::new(Line::from(add_remove_spans));
 
         let message_paragraph = Paragraph::new(match self.current_actions_ui_element {
             MemberPopupActionsUiElements::Message => {
@@ -281,7 +310,7 @@ impl MemberPopup {
             )])],
         });
 
-        frame.render_widget(add_friend_paragraph, add_friend_area);
+        frame.render_widget(add_remove_friend_paragraph, add_friend_area);
         frame.render_widget(message_paragraph, message_area);
         frame.render_widget(call_paragraph, call_area);
         frame.render_widget(block_paragraph, block_area);

@@ -215,8 +215,12 @@ pub struct App<'a> {
     pub add_realm_popup: AddRealmPopup,
     /// Remove realm popup
     pub remove_realm_popup: RemoveRealmPopup,
-    /// Pending friend requests
+    /// Incoming friend requests
     pub friend_requests: Vec<UserIdSize>,
+    /// Pending friend requests
+    pub pending_friend_requests: Vec<UserIdSize>,
+    /// Friends list
+    pub friends: Vec<UserIdSize>,
 }
 
 impl<'a> App<'a> {
@@ -269,6 +273,8 @@ impl<'a> App<'a> {
             add_realm_popup: AddRealmPopup::default(),
             remove_realm_popup: RemoveRealmPopup::default(),
             friend_requests: Vec::new(),
+            pending_friend_requests: Vec::new(),
+            friends: Vec::new(),
         }
     }
 
@@ -894,6 +900,13 @@ impl<'a> App<'a> {
         self.member_popup.selected_index = selected_index;
         self.member_popup.user_id = user_id;
         self.member_popup.username = username;
+
+        // First check to see if we're friends with this user
+        // or if we have any pending requests for them
+        self.member_popup.is_friend = self.friends.contains(&user_id);
+        self.member_popup.is_request_pending = self.pending_friend_requests.contains(&user_id);
+
+        // Now show the popup
         self.show_popup(PopupType::Member);
     }
 
@@ -926,8 +939,10 @@ impl<'a> App<'a> {
         self.client.remove_realm(realm_id).await;
     }
 
-    pub async fn add_friend(&self, friend_id: UserIdSize) {
+    pub async fn add_friend(&mut self, friend_id: UserIdSize) {
         // Tell client to add a new friend (send a NewFriendRequestMessage)
         self.client.add_friend(friend_id).await;
+
+        self.pending_friend_requests.push(friend_id);
     }
 }

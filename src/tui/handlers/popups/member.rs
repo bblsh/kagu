@@ -57,10 +57,10 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.member_popup.current_ui = MemberPopupUi::Info;
                 }
                 KeyCode::Up => match app.member_popup.current_actions_ui_element {
-                    MemberPopupActionsUiElements::AddFriend => (),
+                    MemberPopupActionsUiElements::AddRemoveFriend => (),
                     MemberPopupActionsUiElements::Message => {
                         app.member_popup.current_actions_ui_element =
-                            MemberPopupActionsUiElements::AddFriend
+                            MemberPopupActionsUiElements::AddRemoveFriend
                     }
                     MemberPopupActionsUiElements::Call => {
                         app.member_popup.current_actions_ui_element =
@@ -69,7 +69,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     _ => (), // Ignore others for now until those messages are supported
                 },
                 KeyCode::Down => match app.member_popup.current_actions_ui_element {
-                    MemberPopupActionsUiElements::AddFriend => {
+                    MemberPopupActionsUiElements::AddRemoveFriend => {
                         app.member_popup.current_actions_ui_element =
                             MemberPopupActionsUiElements::Message
                     }
@@ -81,8 +81,23 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     _ => (), // Ignore others for now until those messages are supported
                 },
                 KeyCode::Enter => match app.member_popup.current_actions_ui_element {
-                    MemberPopupActionsUiElements::AddFriend => {
-                        app.add_friend(app.member_popup.user_id).await;
+                    MemberPopupActionsUiElements::AddRemoveFriend => {
+                        // Add the friend only if there isn't a request pending or we aren't friends
+                        if !app.member_popup.is_request_pending {
+                            app.add_friend(app.member_popup.user_id).await;
+                            app.dismiss_popup();
+                            // Set the current pane to be the Members pane
+                            app.current_pane = Pane::MembersPane;
+                            app.input_mode = InputMode::Members;
+                        }
+                        // Remove this friend
+                        else if app.member_popup.is_friend {
+                            //app.remove_friend(app.member_popup.user_id).await;
+                            app.dismiss_popup();
+                            // Set the current pane to be the Members pane
+                            app.current_pane = Pane::MembersPane;
+                            app.input_mode = InputMode::Members;
+                        }
                     }
                     MemberPopupActionsUiElements::Message => (),
                     MemberPopupActionsUiElements::Call => (),
