@@ -1,4 +1,5 @@
 use crate::tui::app::AppResult;
+use crate::tui::event::event::KeyEventKind;
 use crossterm::event::{self, Event as CrosstermEvent, KeyEvent, MouseEvent};
 use std::sync::mpsc;
 use std::thread;
@@ -45,7 +46,13 @@ impl EventHandler {
 
                     if event::poll(timeout).expect("no events available") {
                         match event::read().expect("unable to read event") {
-                            CrosstermEvent::Key(e) => sender.send(Event::Key(e)),
+                            CrosstermEvent::Key(e) => {
+                                if e.kind == KeyEventKind::Press {
+                                    sender.send(Event::Key(e))
+                                } else {
+                                    Ok(())
+                                }
+                            }
                             CrosstermEvent::Mouse(e) => sender.send(Event::Mouse(e)),
                             CrosstermEvent::Resize(w, h) => sender.send(Event::Resize(w, h)),
                             _ => unimplemented!(),
