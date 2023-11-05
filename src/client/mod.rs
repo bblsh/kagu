@@ -266,20 +266,6 @@ impl Client {
         });
     }
 
-    pub async fn send_text_message(&self, message: &str) -> Result<(), ClientError> {
-        let guard = self.user.lock().await;
-        match *guard {
-            Some(ref user) => {
-                let message = Message::new(user.get_id(), MessageType::Text(Vec::from(message)));
-                let serialized = message.into_vec_u8().unwrap();
-                Client::send(serialized.as_slice(), self.connection.clone()).await;
-            }
-            None => return Err(ClientError::NotLoggedIn),
-        }
-
-        Ok(())
-    }
-
     pub async fn send_mention_message(
         &self,
         realm_id: RealmIdSize,

@@ -32,7 +32,6 @@ impl MessageHeader {
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub enum MessageType {
     // User communications
-    Text(Vec<u8>),
     Audio((MessageHeader, Vec<u8>)),
     TextMention((MessageHeader, Vec<(String, Option<UserIdSize>)>)),
     AudioConnection(UserIdSize),
@@ -175,7 +174,6 @@ impl Message {
 
     pub fn get_message(self) -> MessageType {
         match self.message {
-            MessageType::Text(text) => MessageType::Text(text),
             MessageType::TextMention(message) => MessageType::TextMention(message),
             MessageType::Audio(audio) => MessageType::Audio(audio),
             MessageType::Image(message) => MessageType::Image(message),

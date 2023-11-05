@@ -2,12 +2,7 @@ use std::collections::HashMap;
 use std::error;
 use std::io;
 use std::path::Path;
-use tui::{
-    backend::CrosstermBackend,
-    style::Color,
-    text::{Line, Span},
-    Terminal,
-};
+use tui::{backend::CrosstermBackend, text::Line, Terminal};
 
 use crate::client::Client;
 use crate::message::MessageType;
@@ -21,7 +16,6 @@ use crate::tui::{
     tui::Tui,
 };
 use crate::types::{ChannelIdSize, RealmIdSize, UserIdSize};
-use tui::style::Style;
 
 use super::input_buffer::InputBuffer;
 use super::popups::popup_traits::PopupTraits;
@@ -398,16 +392,6 @@ impl<'a> App<'a> {
                                 .items
                                 .push((user.get_id(), String::from(user.get_username())));
                         }
-                    }
-                    MessageType::Text(text) => {
-                        self.chat_history.push(Line::from(vec![
-                            Span::raw(self.get_username_from_id(message.user_id)),
-                            Span::raw(": "),
-                            Span::styled(
-                                String::from_utf8(text).unwrap(),
-                                Style::default().fg(Color::DarkGray),
-                            ),
-                        ]));
                     }
                     MessageType::TextMention(message) => {
                         // Add this message to its respective channel's history
