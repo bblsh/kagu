@@ -359,12 +359,12 @@ impl Server {
                 Server::send_realms_to_id(connections, user_id, realms_manager, message_sender)
                     .await;
             }
-            MessageType::TextMention(mut message) => {
+            MessageType::Text(mut message) => {
                 // Change the time the message was sent
                 message.0.datetime = Some(Utc::now());
                 Server::send_to_everyone(
                     connections,
-                    Message::from(MessageType::TextMention(message)),
+                    Message::from(MessageType::Text(message)),
                     message_sender,
                 )
                 .await;

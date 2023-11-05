@@ -33,7 +33,7 @@ impl MessageHeader {
 pub enum MessageType {
     // User communications
     Audio((MessageHeader, Vec<u8>)),
-    TextMention((MessageHeader, Vec<(String, Option<UserIdSize>)>)),
+    Text((MessageHeader, Vec<(String, Option<UserIdSize>)>)),
     AudioConnection(UserIdSize),
     Image((MessageHeader, Vec<u8>)),
 
@@ -95,7 +95,7 @@ pub struct Message {
 impl From<MessageType> for Message {
     fn from(message_type: MessageType) -> Message {
         match message_type {
-            MessageType::TextMention(message) => Message::new(0, MessageType::TextMention(message)),
+            MessageType::Text(message) => Message::new(0, MessageType::Text(message)),
             MessageType::Audio(audio) => Message::new(0, MessageType::Audio(audio)),
             MessageType::AudioConnection(user_id) => {
                 Message::new(0, MessageType::AudioConnection(user_id))
@@ -174,7 +174,7 @@ impl Message {
 
     pub fn get_message(self) -> MessageType {
         match self.message {
-            MessageType::TextMention(message) => MessageType::TextMention(message),
+            MessageType::Text(message) => MessageType::Text(message),
             MessageType::Audio(audio) => MessageType::Audio(audio),
             MessageType::Image(message) => MessageType::Image(message),
             MessageType::AudioConnection(user_id) => MessageType::AudioConnection(user_id),

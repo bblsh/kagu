@@ -393,7 +393,7 @@ impl<'a> App<'a> {
                                 .push((user.get_id(), String::from(user.get_username())));
                         }
                     }
-                    MessageType::TextMention(message) => {
+                    MessageType::Text(message) => {
                         // Add this message to its respective channel's history
                         // Get our realm
                         if let Some(realm) = self.realms_manager.get_realm_mut(message.0.realm_id) {

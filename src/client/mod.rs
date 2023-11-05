@@ -276,7 +276,7 @@ impl Client {
         let guard = self.user.lock().await;
         if let Some(ref user) = *guard {
             // Send our mention message
-            let message = Message::from(MessageType::TextMention((
+            let message = Message::from(MessageType::Text((
                 MessageHeader::new(user.get_id(), realm_id, channel_id),
                 message_chunks,
             )));
