@@ -3,6 +3,7 @@ use crate::{
     types::{ChannelIdSize, RealmIdSize, UserIdSize},
     user::User,
 };
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy)]
@@ -10,6 +11,7 @@ pub struct MessageHeader {
     pub user_id: UserIdSize,
     pub realm_id: RealmIdSize,
     pub channel_id: ChannelIdSize,
+    pub datetime: Option<DateTime<Utc>>,
 }
 
 impl MessageHeader {
@@ -22,6 +24,7 @@ impl MessageHeader {
             user_id,
             realm_id,
             channel_id,
+            datetime: Some(Utc::now()),
         }
     }
 }

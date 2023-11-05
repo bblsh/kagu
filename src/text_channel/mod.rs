@@ -1,5 +1,7 @@
 use crate::types::{ChannelIdSize, TextMessageChunks, UserIdSize};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct TextChannel {
     id: ChannelIdSize,
@@ -8,6 +10,8 @@ pub struct TextChannel {
     pub chat_history: Vec<(
         // User ID
         UserIdSize,
+        // Time sent
+        Option<DateTime<Utc>>,
         // Optional Vec<u8> to hold images
         Option<Vec<u8>>,
         // Vec to hold chunks of strings with id mentions
@@ -33,7 +37,7 @@ impl TextChannel {
         &self.name
     }
 
-    pub fn push_image(&mut self, user_id: UserIdSize, image: Vec<u8>) {
-        self.chat_history.push((user_id, Some(image), Vec::new()));
-    }
+    // pub fn push_image(&mut self, user_id: UserIdSize, image: Vec<u8>) {
+    //     self.chat_history.push((user_id, Some(image), Vec::new()));
+    // }
 }

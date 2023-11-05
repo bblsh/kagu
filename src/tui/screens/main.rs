@@ -1,3 +1,4 @@
+use chrono::Local;
 use tui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Rect},
@@ -436,15 +437,30 @@ fn get_lines_from_text_channel<'a>(app: &App) -> Vec<Line<'a>> {
                     // Add this message to our that channel's chat history
                     for message in &channel.chat_history {
                         // If there's optional image data
-                        if let Some(_image) = &message.1 {
+                        if let Some(_image) = &message.2 {
                             // Render the image here
                         } else {
-                            let mut spans: Vec<Span> = vec![
-                                Span::raw(app.get_username_from_id(message.0)),
-                                Span::raw(": "),
+                            let spans: Vec<Span> = vec![
+                                Span::styled(
+                                    app.get_username_from_id(message.0),
+                                    Style::default().add_modifier(Modifier::BOLD),
+                                ),
+                                Span::raw(" "),
+                                Span::styled(
+                                    match message.1 {
+                                        Some(time) => {
+                                            time.with_timezone(&Local).format("%H:%M").to_string()
+                                        }
+                                        None => Local::now().format("%H:%M").to_string(),
+                                    },
+                                    Style::default().add_modifier(Modifier::ITALIC),
+                                ),
                             ];
+                            lines.push(Line::from(spans));
+                            let mut spans: Vec<Span> = Vec::new();
+
                             // This is a normal text/mention message
-                            for chunk in &message.2 {
+                            for chunk in &message.3 {
                                 // If we have an ID, this is a mention chunk
                                 if let Some(id) = chunk.1 {
                                     if let Some(our_id) = app.user_id {

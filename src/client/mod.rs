@@ -310,11 +310,7 @@ impl Client {
         if let Some(ref user) = *guard {
             // Send our mention message
             let message = Message::from(MessageType::Image((
-                MessageHeader {
-                    user_id: user.get_id(),
-                    realm_id,
-                    channel_id,
-                },
+                MessageHeader::new(user.get_id(), realm_id, channel_id),
                 image,
             )));
             let serialized = message.into_vec_u8().unwrap();

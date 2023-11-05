@@ -5,6 +5,7 @@ use crate::realms::realms_manager::RealmsManager;
 use crate::types::UserIdSize;
 use crate::user::User;
 
+use chrono::Utc;
 use quinn::{Connection, Endpoint};
 use std::collections::HashMap;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -358,7 +359,9 @@ impl Server {
                 Server::send_realms_to_id(connections, user_id, realms_manager, message_sender)
                     .await;
             }
-            MessageType::TextMention(message) => {
+            MessageType::TextMention(mut message) => {
+                // Change the time the message was sent
+                message.0.datetime = Some(Utc::now());
                 Server::send_to_everyone(
                     connections,
                     Message::from(MessageType::TextMention(message)),

@@ -419,6 +419,7 @@ impl<'a> App<'a> {
                                 // Add this message to our that channel's chat history
                                 channel.chat_history.push((
                                     message.0.user_id,
+                                    message.0.datetime,
                                     None,
                                     message.1.clone(),
                                 ));
