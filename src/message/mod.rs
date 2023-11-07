@@ -1,6 +1,6 @@
 use crate::{
     realms::{realm::ChannelType, realm_desc::RealmDescription, realms_manager::RealmsManager},
-    types::{ChannelIdSize, RealmIdSize, UserIdSize},
+    types::{ChannelIdSize, MessageIdSize, RealmIdSize, TextMessageChunks, UserIdSize},
     user::User,
 };
 use chrono::{DateTime, Utc};
@@ -12,6 +12,7 @@ pub struct MessageHeader {
     pub realm_id: RealmIdSize,
     pub channel_id: ChannelIdSize,
     pub datetime: Option<DateTime<Utc>>,
+    pub message_id: Option<MessageIdSize>,
 }
 
 impl MessageHeader {
@@ -25,6 +26,7 @@ impl MessageHeader {
             realm_id,
             channel_id,
             datetime: Some(Utc::now()),
+            message_id: None,
         }
     }
 }
@@ -33,7 +35,8 @@ impl MessageHeader {
 pub enum MessageType {
     // User communications
     Audio((MessageHeader, Vec<u8>)),
-    Text((MessageHeader, Vec<(String, Option<UserIdSize>)>)),
+    Text((MessageHeader, TextMessageChunks)),
+    Reply((MessageHeader, MessageIdSize, TextMessageChunks)),
     AudioConnection(UserIdSize),
     Image((MessageHeader, Vec<u8>)),
 
@@ -175,6 +178,7 @@ impl Message {
     pub fn get_message(self) -> MessageType {
         match self.message {
             MessageType::Text(message) => MessageType::Text(message),
+            MessageType::Reply(reply) => MessageType::Reply(reply),
             MessageType::Audio(audio) => MessageType::Audio(audio),
             MessageType::Image(message) => MessageType::Image(message),
             MessageType::AudioConnection(user_id) => MessageType::AudioConnection(user_id),

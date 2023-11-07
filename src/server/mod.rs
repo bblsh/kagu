@@ -360,14 +360,27 @@ impl Server {
                     .await;
             }
             MessageType::Text(mut message) => {
-                // Change the time the message was sent
-                message.0.datetime = Some(Utc::now());
-                Server::send_to_everyone(
-                    connections,
-                    Message::from(MessageType::Text(message)),
-                    message_sender,
-                )
-                .await;
+                // Before sending, we need to generate an id for this message
+                if let Some(realm) = realms_manager.get_realm_mut(message.0.realm_id) {
+                    if let Some(channel) = realm.get_text_channel_mut(message.0.channel_id) {
+                        let id = channel.generate_message_id();
+
+                        // Set the message id
+                        message.0.message_id = Some(id);
+
+                        // Set the time the message was sent
+                        message.0.datetime = Some(Utc::now());
+
+                        Server::send_to_everyone(
+                            connections,
+                            Message::from(MessageType::Text(message)),
+                            message_sender,
+                        )
+                        .await;
+                    }
+                }
+
+                // If we couldn't find the realm or channel, don't send it
             }
             MessageType::Audio(message) => {
                 Server::send_to_everyone(

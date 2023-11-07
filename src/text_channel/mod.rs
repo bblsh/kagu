@@ -1,4 +1,4 @@
-use crate::types::{ChannelIdSize, TextMessageChunks, UserIdSize};
+use crate::types::{ChannelIdSize, MessageIdSize, TextMessageChunks, UserIdSize};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct TextChannel {
     id: ChannelIdSize,
     name: String,
+    pub num_messages: MessageIdSize,
     pub pending_mention: bool,
     pub chat_history: Vec<(
         // User ID
@@ -16,6 +17,8 @@ pub struct TextChannel {
         Option<Vec<u8>>,
         // Vec to hold chunks of strings with id mentions
         TextMessageChunks,
+        // id of this message
+        Option<MessageIdSize>,
     )>,
 }
 
@@ -24,6 +27,7 @@ impl TextChannel {
         TextChannel {
             id,
             name,
+            num_messages: 0,
             pending_mention: false,
             chat_history: Vec::new(),
         }
@@ -35,6 +39,13 @@ impl TextChannel {
 
     pub fn get_name(&self) -> &String {
         &self.name
+    }
+
+    // When an id is generated, increment the number for next time
+    pub fn generate_message_id(&mut self) -> MessageIdSize {
+        let id = self.num_messages;
+        self.num_messages += 1;
+        id
     }
 
     // pub fn push_image(&mut self, user_id: UserIdSize, image: Vec<u8>) {

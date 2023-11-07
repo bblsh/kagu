@@ -406,6 +406,7 @@ impl<'a> App<'a> {
                                     message.0.datetime,
                                     None,
                                     message.1.clone(),
+                                    message.0.message_id,
                                 ));
 
                                 // See if we've been mentioned
