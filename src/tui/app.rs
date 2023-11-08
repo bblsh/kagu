@@ -8,6 +8,7 @@ use crate::client::Client;
 use crate::message::MessageType;
 use crate::realms::realm::ChannelType;
 use crate::realms::realms_manager::RealmsManager;
+use crate::text_channel::TextChannelMessage;
 use crate::tui::command::Command;
 use crate::tui::{
     event::{Event, EventHandler},
@@ -401,13 +402,13 @@ impl<'a> App<'a> {
                             if let Some(channel) = realm.get_text_channel_mut(message.0.channel_id)
                             {
                                 // Add this message to our that channel's chat history
-                                channel.chat_history.push((
-                                    message.0.user_id,
-                                    message.0.datetime,
-                                    None,
-                                    message.1.clone(),
-                                    message.0.message_id,
-                                ));
+                                channel.chat_history.push(TextChannelMessage {
+                                    message_id: message.0.message_id,
+                                    user_id: message.0.user_id,
+                                    time_sent: message.0.datetime,
+                                    image: None,
+                                    message_chunks: message.1.clone(),
+                                });
 
                                 // See if we've been mentioned
                                 for chunk in message.1 {

@@ -3,23 +3,26 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+pub struct TextChannelMessage {
+    /// ID of this message
+    pub message_id: Option<MessageIdSize>,
+    /// ID of the user who sent the message
+    pub user_id: UserIdSize,
+    /// Time this message was sent, in UTC DateTime format
+    pub time_sent: Option<DateTime<Utc>>,
+    /// Image data, if this message has an image
+    pub image: Option<Vec<u8>>,
+    /// Chunks of the message
+    pub message_chunks: TextMessageChunks,
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct TextChannel {
     id: ChannelIdSize,
     name: String,
     pub num_messages: MessageIdSize,
     pub pending_mention: bool,
-    pub chat_history: Vec<(
-        // User ID
-        UserIdSize,
-        // Time sent
-        Option<DateTime<Utc>>,
-        // Optional Vec<u8> to hold images
-        Option<Vec<u8>>,
-        // Vec to hold chunks of strings with id mentions
-        TextMessageChunks,
-        // id of this message
-        Option<MessageIdSize>,
-    )>,
+    pub chat_history: Vec<TextChannelMessage>,
 }
 
 impl TextChannel {
