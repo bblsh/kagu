@@ -492,4 +492,15 @@ impl Client {
             Client::send(serialized.as_slice(), self.connection.clone()).await;
         }
     }
+
+    pub async fn send_typing(&self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
+        if let Some(user_id) = self.get_user_id().await {
+            // Send our typing message
+            let message = Message::from(MessageType::Typing(MessageHeader::new(
+                user_id, realm_id, channel_id,
+            )));
+            let serialized = message.into_vec_u8().unwrap();
+            Client::send(serialized.as_slice(), self.connection.clone()).await;
+        }
+    }
 }

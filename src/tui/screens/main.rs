@@ -4,11 +4,13 @@ use tui::{
     prelude::{Alignment, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
+    widgets::block::{Position, Title},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
 };
 
 use crate::tui::app::{App, InputMode, KaguFormatting, Pane, PopupType, UiElement};
+use chrono::Utc;
 
 pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let top_and_bottom_layout = Layout::default()
@@ -234,6 +236,38 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         &mut app.voice_channels.state,
     );
 
+    let mut users_typing: Vec<String> = Vec::new();
+    let mut users_typing_string = String::new();
+    if let Some(realm_id) = app.current_realm_id {
+        if let Some(realm) = app.realms_manager.get_realm(realm_id) {
+            if let Some(channel_id) = &app.current_text_channel {
+                if let Some(channel) = realm.get_text_channel(channel_id.0) {
+                    for user in &channel.users_typing {
+                        let seconds_difference =
+                            Utc::now().signed_duration_since(user.1).num_seconds();
+                        if seconds_difference < 5 {
+                            users_typing.push(app.get_username_from_id(user.0));
+                        }
+                    }
+
+                    if users_typing.len() == 1 {
+                        users_typing_string.push(' ');
+                        users_typing_string.push_str(users_typing[0].as_str());
+                        users_typing_string.push_str(" is typing... ");
+                    } else if users_typing.len() == 2 {
+                        users_typing_string.push(' ');
+                        users_typing_string.push_str(users_typing[0].as_str());
+                        users_typing_string.push_str(" and ");
+                        users_typing_string.push_str(users_typing[1].as_str());
+                        users_typing_string.push_str(" are typing... ");
+                    } else if users_typing.len() > 2 {
+                        users_typing_string.push_str(" Multiple users are typing... ");
+                    }
+                }
+            }
+        }
+    }
+
     let chat_paragraph = Paragraph::new(get_lines_from_text_channel(app))
         .style(match app.input_mode {
             InputMode::Normal => Style::default(),
@@ -255,6 +289,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                         _ => Pane::to_str(&Pane::ChatPane).with_pre_post_spaces(),
                     },
                 })
+                .title(
+                    Title::from(users_typing_string)
+                        .position(Position::Bottom)
+                        .alignment(Alignment::Left),
+                )
                 .border_style(Style::default()),
         )
         .wrap(Wrap { trim: false });

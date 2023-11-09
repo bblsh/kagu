@@ -488,6 +488,15 @@ impl Server {
                 )
                 .await;
             }
+            MessageType::Typing(typing) => {
+                Server::send_to_everyone_except_id(
+                    typing.user_id,
+                    connections,
+                    Message::from(MessageType::Typing(typing)),
+                    message_sender,
+                )
+                .await;
+            }
             MessageType::Disconnecting(user_id) => {
                 // Remove this user from our list of users
                 users.retain(|user| user.get_id() != user_id);

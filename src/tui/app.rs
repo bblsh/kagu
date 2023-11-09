@@ -1,3 +1,5 @@
+use chrono::DateTime;
+use chrono::Utc;
 use std::collections::HashMap;
 use std::error;
 use std::io;
@@ -216,6 +218,8 @@ pub struct App<'a> {
     pub pending_friend_requests: Vec<UserIdSize>,
     /// Friends list
     pub friends: Vec<UserIdSize>,
+    /// Timestamp for when we started typing
+    pub time_started_typing: Option<DateTime<Utc>>,
 }
 
 impl<'a> App<'a> {
@@ -270,6 +274,7 @@ impl<'a> App<'a> {
             friend_requests: Vec::new(),
             pending_friend_requests: Vec::new(),
             friends: Vec::new(),
+            time_started_typing: None,
         }
     }
 
@@ -425,6 +430,18 @@ impl<'a> App<'a> {
                                         }
                                     }
                                 }
+
+                                // If this user appeared to be typing, they shouldn't be anymore
+                                // since a message was just sent. So remove them from the typing list
+                                let index = channel
+                                    .users_typing
+                                    .iter()
+                                    .position(|&u| u.0 == message.0.user_id);
+
+                                // Remove the old entry if there is one
+                                if let Some(i) = index {
+                                    channel.users_typing.remove(i);
+                                }
                             }
                         }
                     }
@@ -562,12 +579,33 @@ impl<'a> App<'a> {
                             self.friends.remove(index);
                         }
                     }
+                    MessageType::Typing(typing) => {
+                        // Add this to our list of users typing
+                        if let Some(realm) = self.realms_manager.get_realm_mut(typing.realm_id) {
+                            // Get this text channel
+                            if let Some(channel) = realm.get_text_channel_mut(typing.channel_id) {
+                                let index = channel
+                                    .users_typing
+                                    .iter()
+                                    .position(|&u| u.0 == typing.user_id);
+
+                                // Remove the old entry if there is one
+                                if let Some(i) = index {
+                                    channel.users_typing.remove(i);
+                                }
+
+                                channel.users_typing.push((typing.user_id, Utc::now()));
+                            }
+                        }
+                    }
                     _ => (),
                 };
             }
-            // Render the user interface.
+
+            // Render the user interface
             tui.draw(self)?;
-            // Handle events.
+
+            // Handle events
             match tui.events.next()? {
                 Event::Tick => self.tick(),
                 Event::Key(key_event) => handle_key_events(key_event, self).await?,
@@ -576,7 +614,7 @@ impl<'a> App<'a> {
             }
         }
 
-        // Exit the user interface.
+        // Exit the user interface
         tui.exit()?;
 
         Ok(())
@@ -949,6 +987,34 @@ impl<'a> App<'a> {
             // Tell client to remove a friend (send a Remove)
             self.client.remove_friend(friend_id).await;
             self.friends.remove(index);
+        }
+    }
+
+    pub async fn send_typing(&mut self) {
+        let mut send = false;
+
+        // If we don't have a time set, set it
+        match self.time_started_typing {
+            Some(time) => {
+                // Check the last time we sent a typing message
+                // Don't send it if it's been more than five seconds
+                let seconds_difference = Utc::now().signed_duration_since(time).num_seconds();
+                if seconds_difference > 4 {
+                    send = true;
+                }
+            }
+            None => {
+                send = true;
+            }
+        }
+
+        if send {
+            if let Some(realm_id) = self.current_realm_id {
+                if let Some(channel) = &self.current_text_channel {
+                    self.client.send_typing(realm_id, channel.0).await;
+                    self.time_started_typing = Some(Utc::now());
+                }
+            }
         }
     }
 }

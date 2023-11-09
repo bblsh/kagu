@@ -39,6 +39,7 @@ pub enum MessageType {
     Reply((MessageHeader, MessageIdSize, TextMessageChunks)),
     AudioConnection(UserIdSize),
     Image((MessageHeader, Vec<u8>)),
+    Typing(MessageHeader),
 
     // Logging in
     LoginAttempt(String),
@@ -104,6 +105,7 @@ impl From<MessageType> for Message {
                 Message::new(0, MessageType::AudioConnection(user_id))
             }
             MessageType::Image(message) => Message::new(0, MessageType::Image(message)),
+            MessageType::Typing(typing) => Message::new(0, MessageType::Typing(typing)),
             MessageType::LoginAttempt(username) => {
                 Message::new(0, MessageType::LoginAttempt(username))
             }
@@ -181,6 +183,7 @@ impl Message {
             MessageType::Reply(reply) => MessageType::Reply(reply),
             MessageType::Audio(audio) => MessageType::Audio(audio),
             MessageType::Image(message) => MessageType::Image(message),
+            MessageType::Typing(typing) => MessageType::Typing(typing),
             MessageType::AudioConnection(user_id) => MessageType::AudioConnection(user_id),
             MessageType::LoginAttempt(username) => MessageType::LoginAttempt(username),
             MessageType::LoginSuccess(user) => MessageType::LoginSuccess(user),

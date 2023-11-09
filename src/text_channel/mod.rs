@@ -23,6 +23,7 @@ pub struct TextChannel {
     pub num_messages: MessageIdSize,
     pub pending_mention: bool,
     pub chat_history: Vec<TextChannelMessage>,
+    pub users_typing: Vec<(UserIdSize, DateTime<Utc>)>,
 }
 
 impl TextChannel {
@@ -33,6 +34,7 @@ impl TextChannel {
             num_messages: 0,
             pending_mention: false,
             chat_history: Vec::new(),
+            users_typing: Vec::new(),
         }
     }
 

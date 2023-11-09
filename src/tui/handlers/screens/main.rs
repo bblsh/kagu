@@ -301,6 +301,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             KeyCode::Char(c) => {
                 if let Some(input) = app.input_buffer.input.last_mut() {
                     input.0.push(c);
+                    app.send_typing().await;
                 } else {
                     app.input_buffer
                         .input
