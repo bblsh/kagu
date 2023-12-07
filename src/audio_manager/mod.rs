@@ -65,7 +65,7 @@ impl Default for AudioManager {
             .expect("Couldn't get the default output device");
 
         let config = StreamConfig {
-            sample_rate: cpal::SampleRate(44100),
+            sample_rate: cpal::SampleRate(48000),
             channels: 1,
             buffer_size: cpal::BufferSize::Fixed(4096),
         };
