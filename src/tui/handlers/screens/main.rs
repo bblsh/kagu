@@ -62,6 +62,10 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.input_mode = InputMode::Realms;
                     app.realms.next();
                 }
+                Pane::ChatPane => {
+                    app.input_mode = InputMode::Chat;
+                    app.chat_history.next();
+                }
                 _ => (),
             },
             _ => (),
@@ -548,6 +552,19 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         app.enter_realm(realm.0).await;
                     }
                 }
+            }
+            _ => (),
+        },
+        InputMode::Chat => match key_event.code {
+            KeyCode::Up => {
+                app.chat_history.previous();
+            }
+            KeyCode::Down => {
+                app.chat_history.next();
+            }
+            KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
+                app.chat_history.unselect();
+                app.input_mode = InputMode::Normal;
             }
             _ => (),
         },

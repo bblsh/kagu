@@ -4,7 +4,9 @@ use std::collections::HashMap;
 use std::error;
 use std::io;
 use std::path::Path;
-use tui::{backend::CrosstermBackend, text::Line, Terminal};
+
+use tui::{backend::CrosstermBackend, Terminal};
+use tui_widget_list::widget_list::stateful_widget_list::StatefulWidgetList;
 
 use crate::client::Client;
 use crate::message::MessageType;
@@ -18,6 +20,7 @@ use crate::tui::{
     stateful_list::StatefulList,
     tui::Tui,
 };
+use crate::types::MessageIdSize;
 use crate::types::{ChannelIdSize, RealmIdSize, UserIdSize};
 
 use super::input_buffer::InputBuffer;
@@ -63,6 +66,7 @@ pub enum InputMode {
     Realms,
     Loading,
     Popup,
+    Chat,
 }
 
 #[derive(Debug)]
@@ -148,8 +152,6 @@ pub struct App<'a> {
     pub running: bool,
     /// Client to handle all interactions with the server
     pub client: Client,
-    /// Chat history
-    pub chat_history: Vec<Line<'a>>,
     /// User ID to usernames
     pub user_id_to_username: HashMap<UserIdSize, String>,
     /// Realms manager to manage our realms and channels
@@ -220,6 +222,9 @@ pub struct App<'a> {
     pub friends: Vec<UserIdSize>,
     /// Timestamp for when we started typing
     pub time_started_typing: Option<DateTime<Utc>>,
+    /// Stateful widget list for chat history and replies
+    pub chat_history: StatefulWidgetList<Option<MessageIdSize>>,
+    pub _not_used: &'a bool,
 }
 
 impl<'a> App<'a> {
@@ -239,7 +244,6 @@ impl<'a> App<'a> {
             current_pane: Pane::ChatPane,
             running: true,
             client,
-            chat_history: Vec::new(),
             user_id_to_username: HashMap::new(),
             realms_manager: RealmsManager::default(),
             users_online: StatefulList::default(),
@@ -275,6 +279,8 @@ impl<'a> App<'a> {
             pending_friend_requests: Vec::new(),
             friends: Vec::new(),
             time_started_typing: None,
+            chat_history: StatefulWidgetList::default(),
+            _not_used: &false,
         }
     }
 
@@ -441,6 +447,17 @@ impl<'a> App<'a> {
                                 // Remove the old entry if there is one
                                 if let Some(i) = index {
                                     channel.users_typing.remove(i);
+                                }
+                            }
+
+                            // Add this to the chat history if we're in that channel
+                            if let Some(current_channel) = &self.current_text_channel {
+                                if let Some(current_realm) = &self.current_realm_id {
+                                    if current_channel.0 == message.0.channel_id
+                                        && current_realm == &message.0.realm_id
+                                    {
+                                        self.chat_history.items.push(message.0.message_id);
+                                    }
                                 }
                             }
                         }
@@ -649,6 +666,14 @@ impl<'a> App<'a> {
                         if let Some(realm) = self.realms_manager.get_realm_mut(realm_id) {
                             if let Some(channel) = realm.get_text_channel_mut(channel_id) {
                                 channel.pending_mention = false;
+
+                                self.chat_history.items.clear();
+                                self.chat_history.unselect();
+
+                                // Populate our chat history with chat messages
+                                for message in &channel.chat_history {
+                                    self.chat_history.items.push(message.message_id);
+                                }
                             }
                         }
 

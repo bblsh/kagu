@@ -2,11 +2,15 @@ use chrono::Local;
 use tui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Rect},
-    style::{Color, Modifier, Style},
+    style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::block::{Position, Title},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
+};
+use tui_widget_list::widget_list::{
+    widget_list::WidgetList,
+    widget_list_item::{WidgetListItem, WidgetListItemType},
 };
 
 use crate::tui::app::{App, InputMode, KaguFormatting, Pane, PopupType, UiElement};
@@ -268,12 +272,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         }
     }
 
-    let chat_paragraph = Paragraph::new(get_lines_from_text_channel(app))
-        .style(match app.input_mode {
-            InputMode::Normal => Style::default(),
-            InputMode::Editing => Style::default(),
-            _ => Style::default(),
-        })
+    let chat_list = get_paragraphs_from_text_channel(app, top_blocks[1].width as usize - 1)
         .block(
             Block::default()
                 .borders(Borders::ALL)
@@ -296,8 +295,41 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                 )
                 .border_style(Style::default()),
         )
-        .wrap(Wrap { trim: false });
-    frame.render_widget(chat_paragraph, top_blocks[1]);
+        .highlight_symbol(">")
+        .highlight_style(Style::default().on_gray());
+    //app.chat_history.state.select(Some(0));
+
+    // let chat_paragraph = Paragraph::new(get_lines_from_text_channel(app))
+    //     .style(match app.input_mode {
+    //         InputMode::Normal => Style::default(),
+    //         InputMode::Editing => Style::default(),
+    //         _ => Style::default(),
+    //     })
+    //     .block(
+    //         Block::default()
+    //             .borders(Borders::ALL)
+    //             .title(match &app.current_text_channel {
+    //                 Some(channel) => match &app.current_pane {
+    //                     Pane::ChatPane => channel.1.clone().with_focus().with_pre_post_spaces(),
+    //                     _ => channel.1.clone().with_pre_post_spaces(),
+    //                 },
+    //                 None => match &app.current_pane {
+    //                     Pane::ChatPane => Pane::to_str(&app.current_pane)
+    //                         .with_focus()
+    //                         .with_pre_post_spaces(),
+    //                     _ => Pane::to_str(&Pane::ChatPane).with_pre_post_spaces(),
+    //                 },
+    //             })
+    // .title(
+    //     Title::from(users_typing_string)
+    //         .position(Position::Bottom)
+    //         .alignment(Alignment::Left),
+    // )
+    // .border_style(Style::default()),
+    //     )
+    //     .wrap(Wrap { trim: false });
+    //frame.render_widget(chat_list, top_blocks[1]);
+    frame.render_stateful_widget(chat_list, top_blocks[1], &mut app.chat_history.state);
 
     let members_list: Vec<ListItem> = app
         .users_online
@@ -464,7 +496,192 @@ fn build_mention_command_popup(r: Rect, input_length: &u16, num_items: usize) ->
         .split(popup_layout[1])[1]
 }
 
-fn get_lines_from_text_channel<'a>(app: &App) -> Vec<Line<'a>> {
+fn get_paragraphs_from_text_channel<'a>(app: &App, width: usize) -> WidgetList<'a> {
+    let mut widgets: Vec<WidgetListItem<'a>> = Vec::new();
+
+    if let Some(realm_id) = app.current_realm_id {
+        if let Some(channel) = &app.current_text_channel {
+            // Now that we have a confirmed text channel, get it
+            if let Some(realm) = app.realms_manager.get_realm(realm_id) {
+                // Get this text channel
+                if let Some(channel) = realm.get_text_channel(channel.0) {
+                    // Add this message to our that channel's chat history
+                    for message_id in &app.chat_history.items {
+                        let mut lines: Vec<Line<'_>> = Vec::new();
+
+                        if let Some(message_index) = channel
+                            .chat_history
+                            .iter()
+                            .position(|m| *message_id == m.message_id)
+                        {
+                            let message = &channel.chat_history[message_index];
+                            let spans: Vec<Span> = vec![
+                                Span::styled(
+                                    app.get_username_from_id(message.user_id),
+                                    Style::default().add_modifier(Modifier::BOLD),
+                                ),
+                                Span::raw(" "),
+                                Span::styled(
+                                    match message.time_sent {
+                                        Some(time) => {
+                                            time.with_timezone(&Local).format("%H:%M").to_string()
+                                        }
+                                        None => Local::now().format("%H:%M").to_string(),
+                                    },
+                                    Style::default().add_modifier(Modifier::ITALIC),
+                                ),
+                            ];
+                            lines.push(Line::from(spans));
+                            let mut spans: Vec<Span> = Vec::new();
+
+                            // For text wrapping
+                            let mut complete_message = String::new();
+
+                            // This is a normal text/mention message
+                            for chunk in &message.message_chunks {
+                                complete_message.push_str(chunk.0.as_str());
+
+                                // If we have an ID, this is a mention chunk
+                                if let Some(id) = chunk.1 {
+                                    if let Some(our_id) = app.user_id {
+                                        if id == our_id {
+                                            spans.push(Span::styled(
+                                                chunk.0.clone(),
+                                                Style::default()
+                                                    .bg(Color::LightYellow)
+                                                    .fg(Color::Black),
+                                            ));
+                                        }
+                                        // This mention chunk isn't mentioning us, so display it normally
+                                        else {
+                                            spans.push(Span::styled(
+                                                chunk.0.clone(),
+                                                Style::default().fg(Color::Yellow),
+                                            ));
+                                        }
+                                    }
+                                }
+                                // This has no ID, so display it as normal text
+                                else {
+                                    spans.push(Span::styled(
+                                        chunk.0.clone(),
+                                        Style::default().fg(Color::DarkGray),
+                                    ));
+                                }
+                            }
+
+                            lines.push(Line::from(spans));
+
+                            widgets.push(WidgetListItem::new(
+                                WidgetListItemType::Paragraph(
+                                    Paragraph::new(lines).wrap(Wrap { trim: false }),
+                                ),
+                                width,
+                                textwrap::wrap(&complete_message, width).len() + 1,
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    WidgetList::from(widgets)
+}
+
+fn _get_paragraphs_from_text_channel<'a>(app: &App, width: usize) -> WidgetList<'a> {
+    let mut widgets: Vec<WidgetListItem<'a>> = Vec::new();
+
+    if let Some(realm_id) = app.current_realm_id {
+        if let Some(channel) = &app.current_text_channel {
+            // Now that we have a confirmed text channel, get it
+            if let Some(realm) = app.realms_manager.get_realm(realm_id) {
+                // Get this text channel
+                if let Some(channel) = realm.get_text_channel(channel.0) {
+                    // Add this message to our that channel's chat history
+                    for message in &channel.chat_history {
+                        let mut lines: Vec<Line<'_>> = Vec::new();
+
+                        // If there's optional image data
+                        if let Some(_image) = &message.image {
+                            // Render the image here
+                        } else {
+                            let spans: Vec<Span> = vec![
+                                Span::styled(
+                                    app.get_username_from_id(message.user_id),
+                                    Style::default().add_modifier(Modifier::BOLD),
+                                ),
+                                Span::raw(" "),
+                                Span::styled(
+                                    match message.time_sent {
+                                        Some(time) => {
+                                            time.with_timezone(&Local).format("%H:%M").to_string()
+                                        }
+                                        None => Local::now().format("%H:%M").to_string(),
+                                    },
+                                    Style::default().add_modifier(Modifier::ITALIC),
+                                ),
+                            ];
+                            lines.push(Line::from(spans));
+                            let mut spans: Vec<Span> = Vec::new();
+
+                            // For text wrapping
+                            let mut complete_message = String::new();
+
+                            // This is a normal text/mention message
+                            for chunk in &message.message_chunks {
+                                complete_message.push_str(chunk.0.as_str());
+
+                                // If we have an ID, this is a mention chunk
+                                if let Some(id) = chunk.1 {
+                                    if let Some(our_id) = app.user_id {
+                                        if id == our_id {
+                                            spans.push(Span::styled(
+                                                chunk.0.clone(),
+                                                Style::default()
+                                                    .bg(Color::LightYellow)
+                                                    .fg(Color::Black),
+                                            ));
+                                        }
+                                        // This mention chunk isn't mentioning us, so display it normally
+                                        else {
+                                            spans.push(Span::styled(
+                                                chunk.0.clone(),
+                                                Style::default().fg(Color::Yellow),
+                                            ));
+                                        }
+                                    }
+                                }
+                                // This has no ID, so display it as normal text
+                                else {
+                                    spans.push(Span::styled(
+                                        chunk.0.clone(),
+                                        Style::default().fg(Color::DarkGray),
+                                    ));
+                                }
+                            }
+
+                            lines.push(Line::from(spans));
+
+                            widgets.push(WidgetListItem::new(
+                                WidgetListItemType::Paragraph(
+                                    Paragraph::new(lines).wrap(Wrap { trim: false }),
+                                ),
+                                width,
+                                textwrap::wrap(&complete_message, width).len() + 1,
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    WidgetList::from(widgets)
+}
+
+// Legacy function. Not used for now
+fn _get_lines_from_text_channel<'a>(app: &App) -> Vec<Line<'a>> {
     let mut lines: Vec<Line<'_>> = Vec::new();
 
     if let Some(realm_id) = app.current_realm_id {

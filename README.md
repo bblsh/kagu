@@ -84,7 +84,7 @@ Similarly, text and voice channels can be added by navigating to the Channels pa
 * Some features that are drawn out of bounds due to too small of a terminal size will panic the client.
 * Kagu was used as motivation to learn Rust, so it is currently *very* unoptimized.
 * There are many pieces of the code that are not consistent since new methods of doing things were learned as development progressed.
-* Realms and channels are currently hardcoded as a proof of concept until a database is introduced to save and serve this data.
+* Realms and channels are currently hardcoded as a proof of concept until a database is introduced to save and serve this data. Messages are not saved or persist because of this as well.
 * Due to the current server design, audio is also echoed back to the user speaking.
 * There's currently no option to choose an audio input and output (coming soonTM), so the defaults will be used.
 * Any and all feedback or pull requests to improve Kagu in any way is welcome!
