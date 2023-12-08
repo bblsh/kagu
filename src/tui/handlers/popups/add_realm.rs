@@ -52,7 +52,8 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     }
                 };
                 app.dismiss_popup();
-                app.input_mode = InputMode::Realms;
+                app.realms.unselect();
+                app.input_mode = InputMode::Normal;
                 app.current_pane = Pane::RealmsPane;
             }
             _ => (),

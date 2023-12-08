@@ -70,7 +70,9 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 .await;
 
                 app.dismiss_popup();
-                app.input_mode = InputMode::ChannelType;
+                app.text_channels.unselect();
+                app.voice_channels.unselect();
+                app.input_mode = InputMode::Normal;
                 app.current_pane = Pane::ChannelsPane;
             }
             _ => (),

@@ -68,6 +68,21 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 }
                 _ => (),
             },
+            KeyCode::Char('a') | KeyCode::Char('A') => {
+                if key_event.modifiers == KeyModifiers::CONTROL {
+                    match app.current_pane {
+                        Pane::RealmsPane => {
+                            app.show_add_realm_popup();
+                            return Ok(());
+                        }
+                        Pane::ChannelsPane => {
+                            app.show_add_channel_popup();
+                            return Ok(());
+                        }
+                        _ => (),
+                    };
+                }
+            }
             _ => (),
         },
         InputMode::ChannelType => match key_event.code {
