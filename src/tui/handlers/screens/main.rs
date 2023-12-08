@@ -14,10 +14,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 return Ok(());
             }
             KeyCode::Char('i') => {
-                if app.current_text_channel.is_some() {
-                    app.input_mode = InputMode::Editing;
-                    app.current_pane = Pane::InputPane;
-                }
+                app.begin_editing();
             }
             KeyCode::Up => {
                 if let Pane::InputPane = app.current_pane {
@@ -59,12 +56,15 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.users_online.next();
                 }
                 Pane::RealmsPane => {
-                    app.input_mode = InputMode::Realms;
-                    app.realms.next();
+                    if !app.realms.items.is_empty() {
+                        app.input_mode = InputMode::Realms;
+                        app.realms.next();
+                    }
                 }
                 Pane::ChatPane => {
-                    app.input_mode = InputMode::Chat;
-                    app.chat_history.next();
+                    if !app.chat_history.items.is_empty() {
+                        app.input_mode = InputMode::Chat;
+                    }
                 }
                 _ => (),
             },
@@ -73,12 +73,16 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         InputMode::ChannelType => match key_event.code {
             KeyCode::Enter => match app.ui_element {
                 UiElement::TextChannelLabel => {
-                    app.input_mode = InputMode::TextChannel;
-                    app.text_channels.next();
+                    if !app.text_channels.items.is_empty() {
+                        app.input_mode = InputMode::TextChannel;
+                        app.text_channels.next();
+                    }
                 }
                 UiElement::VoiceChannelLabel => {
-                    app.input_mode = InputMode::VoiceChannel;
-                    app.voice_channels.next();
+                    if !app.voice_channels.items.is_empty() {
+                        app.input_mode = InputMode::VoiceChannel;
+                        app.voice_channels.next();
+                    }
                 }
                 _ => (),
             },
@@ -97,9 +101,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.input_mode = InputMode::Normal;
             }
             KeyCode::Char('i') => {
-                app.ui_element = UiElement::None;
-                app.input_mode = InputMode::Editing;
-                app.current_pane = Pane::InputPane;
+                app.begin_editing();
             }
             KeyCode::Char('a') | KeyCode::Char('A') => {
                 if key_event.modifiers == KeyModifiers::CONTROL {
@@ -111,10 +113,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         },
         InputMode::TextChannel => match key_event.code {
             KeyCode::Char('i') => {
-                app.ui_element = UiElement::None;
-                app.input_mode = InputMode::Editing;
-                app.text_channels.unselect();
-                app.current_pane = Pane::InputPane;
+                app.begin_editing();
             }
             KeyCode::Up => app.text_channels.previous(),
             KeyCode::Down => app.text_channels.next(),
@@ -154,10 +153,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
         },
         InputMode::VoiceChannel => match key_event.code {
             KeyCode::Char('i') => {
-                app.ui_element = UiElement::None;
-                app.input_mode = InputMode::Editing;
-                app.voice_channels.unselect();
-                app.current_pane = Pane::InputPane;
+                app.begin_editing();
             }
             KeyCode::Up => app.voice_channels.previous(),
             KeyCode::Down => app.voice_channels.next(),
@@ -563,7 +559,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.chat_history.next();
             }
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
-                app.chat_history.unselect();
+                //app.chat_history.unselect();
                 app.input_mode = InputMode::Normal;
             }
             _ => (),

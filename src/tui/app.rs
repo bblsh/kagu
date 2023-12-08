@@ -55,7 +55,7 @@ pub enum Screen {
     Personal,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum InputMode {
     Normal,
     Editing,
@@ -457,6 +457,12 @@ impl<'a> App<'a> {
                                         && current_realm == &message.0.realm_id
                                     {
                                         self.chat_history.items.push(message.0.message_id);
+
+                                        // If we aren't scrolling through messages,
+                                        // move the offset down to the end
+                                        if self.input_mode != InputMode::Chat {
+                                            self.chat_history.select_last();
+                                        }
                                     }
                                 }
                             }
@@ -545,8 +551,30 @@ impl<'a> App<'a> {
                         self.refresh_realms_list();
                     }
                     MessageType::RealmRemoved(rr) => {
-                        // Remove this realm for our realms
+                        // If we are in this realm, stop viewing it
+                        if let Some(realm_id) = &self.current_realm_id {
+                            if realm_id == &rr {
+                                self.current_realm_id = None;
+                                self.current_text_channel = None;
+                                if self.is_voice_connected {
+                                    self.hang_up().await;
+                                }
+                                self.current_voice_channel = None;
+
+                                self.chat_history.items.clear();
+                                self.chat_history.unselect();
+                                self.forget_text_channels();
+                                self.forget_voice_channels();
+
+                                if self.input_mode == InputMode::Editing {
+                                    self.input_mode = InputMode::Normal;
+                                }
+                            }
+                        }
+
+                        // Now we can remove this realm from our realms
                         self.realms_manager.remove_realm(rr);
+
                         self.refresh_realms_list();
                     }
                     MessageType::ChannelAdded(ca) => {
@@ -576,6 +604,12 @@ impl<'a> App<'a> {
                         // Refresh this realm if we're in it
                         // Otherwise the realm will be refreshed when it is joined again
                         if let Some(realm_id) = self.current_realm_id {
+                            if let Some(channel) = &self.current_text_channel {
+                                if channel.0 == cr.2 {
+                                    self.current_text_channel = None;
+                                }
+                            }
+
                             if realm_id == cr.0 {
                                 self.refresh_realm(realm_id).await;
                             }
@@ -800,6 +834,7 @@ impl<'a> App<'a> {
                 ));
             }
 
+            // Join the first saved text channel
             if !self.text_channels.items.is_empty() {
                 self.join_channel(
                     realm_id,
@@ -974,31 +1009,26 @@ impl<'a> App<'a> {
     }
 
     pub async fn add_channel(&mut self, channel_type: ChannelType, channel_name: String) {
-        // Tell client to add the channel (send a AddChannel message)
         self.client
             .add_channel(self.current_realm_id.unwrap(), channel_type, channel_name)
             .await;
     }
 
     pub async fn remove_channel(&mut self, channel_type: ChannelType, channel_id: ChannelIdSize) {
-        // Tell client to remove a channel (send a RemoveChannel message)
         self.client
             .remove_channel(self.current_realm_id.unwrap(), channel_type, channel_id)
             .await;
     }
 
     pub async fn add_realm(&mut self, realm_name: String) {
-        // Tell client to add the realm (send a AddRealm message)
         self.client.add_realm(realm_name).await;
     }
 
     pub async fn remove_realm(&mut self, realm_id: RealmIdSize) {
-        // Tell client to remove the realm (send a RemoveRealm message)
         self.client.remove_realm(realm_id).await;
     }
 
     pub async fn add_friend(&mut self, friend_id: UserIdSize) {
-        // Tell client to add a new friend (send a NewFriendRequestMessage)
         self.client.add_friend(friend_id).await;
 
         self.pending_friend_requests.push(friend_id);
@@ -1009,7 +1039,6 @@ impl<'a> App<'a> {
         let index = self.friends.iter().position(|id| *id == friend_id);
 
         if let Some(index) = index {
-            // Tell client to remove a friend (send a Remove)
             self.client.remove_friend(friend_id).await;
             self.friends.remove(index);
         }
@@ -1040,6 +1069,26 @@ impl<'a> App<'a> {
                     self.time_started_typing = Some(Utc::now());
                 }
             }
+        }
+    }
+
+    pub fn forget_text_channels(&mut self) {
+        self.text_channels.items.clear();
+        self.text_channels.unselect();
+    }
+
+    pub fn forget_voice_channels(&mut self) {
+        self.voice_channels.items.clear();
+        self.voice_channels.unselect();
+    }
+
+    pub fn begin_editing(&mut self) {
+        if self.current_text_channel.is_some() {
+            self.voice_channels.unselect();
+            self.text_channels.unselect();
+            self.input_mode = InputMode::Editing;
+            self.current_pane = Pane::InputPane;
+            self.ui_element = UiElement::None;
         }
     }
 }

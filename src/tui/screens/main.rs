@@ -295,40 +295,14 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                 )
                 .border_style(Style::default()),
         )
-        .highlight_symbol(">")
-        .highlight_style(Style::default().on_gray());
-    //app.chat_history.state.select(Some(0));
-
-    // let chat_paragraph = Paragraph::new(get_lines_from_text_channel(app))
-    //     .style(match app.input_mode {
-    //         InputMode::Normal => Style::default(),
-    //         InputMode::Editing => Style::default(),
-    //         _ => Style::default(),
-    //     })
-    //     .block(
-    //         Block::default()
-    //             .borders(Borders::ALL)
-    //             .title(match &app.current_text_channel {
-    //                 Some(channel) => match &app.current_pane {
-    //                     Pane::ChatPane => channel.1.clone().with_focus().with_pre_post_spaces(),
-    //                     _ => channel.1.clone().with_pre_post_spaces(),
-    //                 },
-    //                 None => match &app.current_pane {
-    //                     Pane::ChatPane => Pane::to_str(&app.current_pane)
-    //                         .with_focus()
-    //                         .with_pre_post_spaces(),
-    //                     _ => Pane::to_str(&Pane::ChatPane).with_pre_post_spaces(),
-    //                 },
-    //             })
-    // .title(
-    //     Title::from(users_typing_string)
-    //         .position(Position::Bottom)
-    //         .alignment(Alignment::Left),
-    // )
-    // .border_style(Style::default()),
-    //     )
-    //     .wrap(Wrap { trim: false });
-    //frame.render_widget(chat_list, top_blocks[1]);
+        .highlight_symbol(match app.input_mode {
+            InputMode::Chat => ">",
+            _ => "",
+        })
+        .highlight_style(match app.input_mode {
+            InputMode::Chat => Style::default().on_gray(),
+            _ => Style::default(),
+        });
     frame.render_stateful_widget(chat_list, top_blocks[1], &mut app.chat_history.state);
 
     let members_list: Vec<ListItem> = app

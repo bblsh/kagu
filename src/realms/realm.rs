@@ -57,20 +57,22 @@ impl Realm {
     ) -> (ChannelIdSize, String) {
         match channel_type {
             ChannelType::TextChannel => {
+                let id = self.text_channels.len() as ChannelIdSize;
                 self.text_channels.insert(
                     self.text_channels.len() as ChannelIdSize,
                     TextChannel::new(self.text_channels.len() as ChannelIdSize, name.clone()),
                 );
 
-                (self.text_channels.len() as ChannelIdSize, name)
+                (id, name)
             }
             ChannelType::VoiceChannel => {
+                let id = self.voice_channels.len() as ChannelIdSize;
                 self.voice_channels.insert(
                     self.voice_channels.len() as ChannelIdSize,
                     VoiceChannel::new(self.voice_channels.len() as ChannelIdSize, name.clone()),
                 );
 
-                (self.voice_channels.len() as ChannelIdSize, name)
+                (id, name)
             }
         }
     }
