@@ -649,6 +649,9 @@ impl<'a> App<'a> {
                             }
                         }
                     }
+                    MessageType::Disconnect => {
+                        self.quit().await;
+                    }
                     _ => (),
                 };
             }

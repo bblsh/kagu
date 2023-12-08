@@ -252,13 +252,19 @@ impl Client {
                             ac.error_code,
                             String::from_utf8(ac.reason.to_vec()).unwrap()
                         );
+                        let mut messages = messages.lock().await;
+                        messages.push_back(Message::from(MessageType::Disconnect));
                         break;
                     }
                     Err(quinn::ConnectionError::LocallyClosed) => {
+                        let mut messages = messages.lock().await;
+                        messages.push_back(Message::from(MessageType::Disconnect));
                         break;
                     }
                     _ => {
                         eprintln!("[client] unhandled stream error");
+                        let mut messages = messages.lock().await;
+                        messages.push_back(Message::from(MessageType::Disconnect));
                         break;
                     }
                 }
