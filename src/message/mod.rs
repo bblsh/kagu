@@ -100,6 +100,7 @@ impl From<MessageType> for Message {
     fn from(message_type: MessageType) -> Message {
         match message_type {
             MessageType::Text(message) => Message::new(0, MessageType::Text(message)),
+            MessageType::Reply(message) => Message::new(0, MessageType::Reply(message)),
             MessageType::Audio(audio) => Message::new(0, MessageType::Audio(audio)),
             MessageType::AudioConnection(user_id) => {
                 Message::new(0, MessageType::AudioConnection(user_id))

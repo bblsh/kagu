@@ -224,6 +224,8 @@ pub struct App<'a> {
     pub time_started_typing: Option<DateTime<Utc>>,
     /// Stateful widget list for chat history and replies
     pub chat_history: StatefulWidgetList<Option<MessageIdSize>>,
+    /// What message id we are replying to
+    pub reply_target_message_id: Option<MessageIdSize>,
     pub _not_used: &'a bool,
 }
 
@@ -280,6 +282,7 @@ impl<'a> App<'a> {
             friends: Vec::new(),
             time_started_typing: None,
             chat_history: StatefulWidgetList::default(),
+            reply_target_message_id: None,
             _not_used: &false,
         }
     }
@@ -416,6 +419,7 @@ impl<'a> App<'a> {
                                 channel.chat_history.push(TextChannelMessage {
                                     message_id: message.0.message_id,
                                     user_id: message.0.user_id,
+                                    target_reply_message_id: None,
                                     time_sent: message.0.datetime,
                                     image: None,
                                     message_chunks: message.1.clone(),
@@ -423,6 +427,70 @@ impl<'a> App<'a> {
 
                                 // See if we've been mentioned
                                 for chunk in message.1 {
+                                    if let Some(id) = chunk.1 {
+                                        if id == self.user_id.unwrap() {
+                                            // If we are currently in this channel, don't mark a pending mention
+                                            if let Some(current_channel) =
+                                                &self.current_text_channel
+                                            {
+                                                if current_channel.0 != *channel.get_id() {
+                                                    channel.pending_mention = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // If this user appeared to be typing, they shouldn't be anymore
+                                // since a message was just sent. So remove them from the typing list
+                                let index = channel
+                                    .users_typing
+                                    .iter()
+                                    .position(|&u| u.0 == message.0.user_id);
+
+                                // Remove the old entry if there is one
+                                if let Some(i) = index {
+                                    channel.users_typing.remove(i);
+                                }
+                            }
+
+                            // Add this to the chat history if we're in that channel
+                            if let Some(current_channel) = &self.current_text_channel {
+                                if let Some(current_realm) = &self.current_realm_id {
+                                    if current_channel.0 == message.0.channel_id
+                                        && current_realm == &message.0.realm_id
+                                    {
+                                        self.chat_history.items.push(message.0.message_id);
+
+                                        // If we aren't scrolling through messages,
+                                        // move the offset down to the end
+                                        if self.input_mode != InputMode::Chat {
+                                            self.chat_history.select_last();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    MessageType::Reply(message) => {
+                        // Add this message to its respective channel's history
+                        // Get our realm
+                        if let Some(realm) = self.realms_manager.get_realm_mut(message.0.realm_id) {
+                            // Get this text channel
+                            if let Some(channel) = realm.get_text_channel_mut(message.0.channel_id)
+                            {
+                                // Add this message to our that channel's chat history
+                                channel.chat_history.push(TextChannelMessage {
+                                    message_id: message.0.message_id,
+                                    user_id: message.0.user_id,
+                                    target_reply_message_id: Some(message.1),
+                                    time_sent: message.0.datetime,
+                                    image: None,
+                                    message_chunks: message.2.clone(),
+                                });
+
+                                // See if we've been mentioned
+                                for chunk in message.2 {
                                     if let Some(id) = chunk.1 {
                                         if id == self.user_id.unwrap() {
                                             // If we are currently in this channel, don't mark a pending mention
@@ -877,13 +945,24 @@ impl<'a> App<'a> {
                 }
             },
             None => {
-                self.client
-                    .send_mention_message(
-                        self.current_realm_id.unwrap(),
-                        self.current_text_channel.as_ref().unwrap().0,
-                        self.input_buffer.get_input_without_style(),
-                    )
-                    .await;
+                if self.reply_target_message_id.is_some() {
+                    self.client
+                        .send_reply_message(
+                            self.current_realm_id.unwrap(),
+                            self.current_text_channel.as_ref().unwrap().0,
+                            self.reply_target_message_id.unwrap(),
+                            self.input_buffer.get_input_without_style(),
+                        )
+                        .await;
+                } else {
+                    self.client
+                        .send_mention_message(
+                            self.current_realm_id.unwrap(),
+                            self.current_text_channel.as_ref().unwrap().0,
+                            self.input_buffer.get_input_without_style(),
+                        )
+                        .await;
+                }
             }
         }
 

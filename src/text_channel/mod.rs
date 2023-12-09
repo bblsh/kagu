@@ -8,6 +8,8 @@ pub struct TextChannelMessage {
     pub message_id: Option<MessageIdSize>,
     /// ID of the user who sent the message
     pub user_id: UserIdSize,
+    /// ID of the message this may be a reply to
+    pub target_reply_message_id: Option<MessageIdSize>,
     /// Time this message was sent, in UTC DateTime format
     pub time_sent: Option<DateTime<Utc>>,
     /// Image data, if this message has an image

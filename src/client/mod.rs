@@ -3,7 +3,7 @@ use crate::message::{Message, MessageHeader, MessageType};
 use crate::network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
 use crate::realms::realm::ChannelType;
 use crate::realms::realm_desc::RealmDescription;
-use crate::types::{ChannelIdSize, RealmIdSize, UserIdSize};
+use crate::types::{ChannelIdSize, MessageIdSize, RealmIdSize, UserIdSize};
 use crate::user::User;
 use quinn::{Connection, ConnectionError, Endpoint};
 use std::collections::VecDeque;
@@ -284,6 +284,27 @@ impl Client {
             // Send our mention message
             let message = Message::from(MessageType::Text((
                 MessageHeader::new(user.get_id(), realm_id, channel_id),
+                message_chunks,
+            )));
+            let serialized = message.into_vec_u8().unwrap();
+            Client::send(serialized.as_slice(), self.connection.clone()).await;
+        }
+    }
+
+    pub async fn send_reply_message(
+        &self,
+        realm_id: RealmIdSize,
+        channel_id: ChannelIdSize,
+        message_id: MessageIdSize,
+        message_chunks: Vec<(String, Option<UserIdSize>)>,
+    ) {
+        // Get our user id
+        let guard = self.user.lock().await;
+        if let Some(ref user) = *guard {
+            // Send our reply message
+            let message = Message::from(MessageType::Reply((
+                MessageHeader::new(user.get_id(), realm_id, channel_id),
+                message_id,
                 message_chunks,
             )));
             let serialized = message.into_vec_u8().unwrap();

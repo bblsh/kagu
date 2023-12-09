@@ -267,6 +267,8 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.users_mentioned.clear();
 
                     app.current_command = None;
+
+                    app.reply_target_message_id = None;
                 }
             }
             KeyCode::Char('@') => {
@@ -389,6 +391,8 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 }
             }
             KeyCode::Esc => {
+                app.reply_target_message_id = None;
+
                 if app.is_mentioning {
                     app.is_mentioning = false;
                     app.mention_buffer.clear();
@@ -574,8 +578,19 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.chat_history.next();
             }
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
-                //app.chat_history.unselect();
                 app.input_mode = InputMode::Normal;
+            }
+            KeyCode::Char('r') | KeyCode::Char('R') => {
+                if key_event.modifiers == KeyModifiers::CONTROL
+                    && (app.input_mode == InputMode::Chat)
+                {
+                    let selected_id = app.chat_history.state.selected().unwrap();
+                    let message_id = app.chat_history.items.get(selected_id).unwrap();
+
+                    app.reply_target_message_id = *message_id;
+
+                    app.begin_editing();
+                }
             }
             _ => (),
         },
