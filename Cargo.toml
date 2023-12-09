@@ -30,5 +30,5 @@ image = "0.24.7"
 clap = { version = "4.3.23", features = ["derive"] }
 chrono = { version = "0.4.31", features = ["serde"] }
 textwrap = "0.16.0"
-#tui-widget-list = { git = "https://github.com/bblsh/tui-widget-list"}
-tui-widget-list = { path = "../tui-widget-list"}
+tui-widget-list = { git = "https://github.com/bblsh/tui-widget-list"}
+#tui-widget-list = { path = "../tui-widget-list"}

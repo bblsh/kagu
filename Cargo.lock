@@ -1883,6 +1883,7 @@ dependencies = [
 [[package]]
 name = "tui-widget-list"
 version = "0.1.0"
+source = "git+https://github.com/bblsh/tui-widget-list#87fd5d55bb0f4a599ee0d313d21cc7b11bf574ec"
 dependencies = [
  "crossterm 0.27.0",
  "ratatui",
