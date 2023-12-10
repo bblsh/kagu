@@ -550,8 +550,9 @@ fn get_paragraphs_from_text_channel<'a>(app: &App, width: usize) -> WidgetList<'
                                 }
 
                                 let mut name_chunk = String::from("@");
-                                name_chunk
-                                    .push_str(app.get_username_from_id(message.user_id).as_str());
+                                name_chunk.push_str(
+                                    app.get_username_from_id(target_message.user_id).as_str(),
+                                );
 
                                 let mut length = target_message_str.len();
                                 if width < name_chunk.len() + 8 + length {
@@ -566,7 +567,9 @@ fn get_paragraphs_from_text_channel<'a>(app: &App, width: usize) -> WidgetList<'
                                     Span::raw(" "),
                                     Span::styled(
                                         target_message_str,
-                                        Style::default().add_modifier(Modifier::ITALIC),
+                                        Style::default()
+                                            .add_modifier(Modifier::ITALIC)
+                                            .fg(Color::Gray),
                                     ),
                                 ];
                                 lines.push(Line::from(spans));
