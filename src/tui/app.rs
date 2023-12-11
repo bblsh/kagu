@@ -9,7 +9,7 @@ use tui::{backend::CrosstermBackend, Terminal};
 use tui_widget_list::widget_list::stateful_widget_list::StatefulWidgetList;
 
 use crate::client::client::Client;
-use crate::message::MessageType;
+use crate::message::message::MessageType;
 use crate::realms::realm::ChannelType;
 use crate::realms::realms_manager::RealmsManager;
 use crate::text_channel::TextChannelMessage;
