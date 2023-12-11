@@ -10,9 +10,9 @@ use tui_widget_list::widget_list::stateful_widget_list::StatefulWidgetList;
 
 use crate::client::client::Client;
 use crate::message::message::MessageType;
+use crate::realms::channels::text_channel::TextChannelMessage;
 use crate::realms::realm::ChannelType;
 use crate::realms::realms_manager::RealmsManager;
-use crate::text_channel::TextChannelMessage;
 use crate::tui::command::Command;
 use crate::tui::{
     event::{Event, EventHandler},

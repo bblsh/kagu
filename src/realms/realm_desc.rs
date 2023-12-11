@@ -1,6 +1,6 @@
-use crate::text_channel::TextChannel;
+use crate::realms::channels::text_channel::TextChannel;
+use crate::realms::channels::voice_channel::VoiceChannel;
 use crate::types::{ChannelIdSize, RealmIdSize};
-use crate::voice_channel::VoiceChannel;
 use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
