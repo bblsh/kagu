@@ -1,4 +1,4 @@
-pub mod audio_manager;
+pub mod audio;
 pub mod client;
 pub mod message;
 pub mod network_manager;
