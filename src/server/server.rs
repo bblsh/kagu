@@ -1,5 +1,5 @@
 use crate::message::message::{Message, MessageType};
-use crate::network_manager::{NetworkManager, ServerOrClient};
+use crate::network_manager::network_manager::{NetworkManager, ServerOrClient};
 use crate::realms::realm::ChannelType;
 use crate::realms::realms_manager::RealmsManager;
 use crate::types::UserIdSize;

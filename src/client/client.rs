@@ -1,6 +1,6 @@
 use crate::audio::audio_manager::AudioManager;
 use crate::message::message::{Message, MessageHeader, MessageType};
-use crate::network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
+use crate::network_manager::network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
 use crate::realms::realm::ChannelType;
 use crate::realms::realm_desc::RealmDescription;
 use crate::types::{ChannelIdSize, MessageIdSize, RealmIdSize, UserIdSize};
