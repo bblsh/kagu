@@ -1,5 +1,5 @@
 use clap::Parser;
-use kagu::server::Server;
+use kagu::server::server::Server;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
