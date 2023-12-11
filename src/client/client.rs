@@ -4,7 +4,7 @@ use crate::network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
 use crate::realms::realm::ChannelType;
 use crate::realms::realm_desc::RealmDescription;
 use crate::types::{ChannelIdSize, MessageIdSize, RealmIdSize, UserIdSize};
-use crate::user::User;
+use crate::user::user::User;
 use quinn::{Connection, ConnectionError, Endpoint};
 use std::collections::VecDeque;
 use std::sync::Arc;

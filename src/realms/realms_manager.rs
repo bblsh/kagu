@@ -1,7 +1,7 @@
 use crate::realms::realm::{ChannelType, Realm};
 use crate::realms::realm_desc::RealmDescription;
 use crate::types::{ChannelIdSize, NumRealmsSize, RealmIdSize, UserIdSize};
-use crate::user::User;
+use crate::user::user::User;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

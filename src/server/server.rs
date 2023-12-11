@@ -3,7 +3,7 @@ use crate::network_manager::{NetworkManager, ServerOrClient};
 use crate::realms::realm::ChannelType;
 use crate::realms::realms_manager::RealmsManager;
 use crate::types::UserIdSize;
-use crate::user::User;
+use crate::user::user::User;
 
 use chrono::Utc;
 use quinn::{Connection, Endpoint};

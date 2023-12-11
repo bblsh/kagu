@@ -1,7 +1,7 @@
 use crate::{
     realms::{realm::ChannelType, realm_desc::RealmDescription, realms_manager::RealmsManager},
     types::{ChannelIdSize, MessageIdSize, RealmIdSize, TextMessageChunks, UserIdSize},
-    user::User,
+    user::user::User,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
