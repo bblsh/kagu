@@ -3,7 +3,6 @@ pub mod client;
 pub mod message;
 pub mod network_manager;
 pub mod realms;
-pub mod rtp;
 pub mod server;
 pub mod text_channel;
 pub mod tui;
