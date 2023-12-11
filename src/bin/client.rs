@@ -1,5 +1,5 @@
 use clap::Parser;
-use kagu::client::Client;
+use kagu::client::client::Client;
 use kagu::tui::app::{App, AppResult};
 
 #[derive(Parser, Debug)]
