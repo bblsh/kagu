@@ -3,6 +3,7 @@ use tui::{
     layout::{Constraint, Direction, Layout},
     prelude::{Alignment, Rect},
     style::{Color, Modifier, Style, Stylize},
+    symbols,
     text::{Line, Span},
     widgets::block::{Position, Title},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
@@ -108,10 +109,14 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let realms = List::new(realms_list)
         .block(
             Block::default()
-                .borders(Borders::ALL)
+                .borders(Borders::TOP | Borders::RIGHT)
                 .title(match app.current_pane {
                     Pane::RealmsPane => Pane::to_str(&app.current_pane).with_focus(),
                     _ => Pane::to_str(&Pane::RealmsPane),
+                })
+                .border_set(symbols::border::Set {
+                    top_right: symbols::line::HORIZONTAL_DOWN,
+                    ..symbols::border::PLAIN
                 }),
         )
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
@@ -168,12 +173,16 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     ])
     .block(
         Block::default()
-            .borders(Borders::LEFT | Borders::RIGHT | Borders::TOP)
+            .borders(Borders::RIGHT | Borders::TOP)
             .title(match app.current_pane {
                 Pane::ChannelsPane => Pane::to_str(&app.current_pane)
                     .with_focus()
                     .with_pre_post_spaces(),
                 _ => Pane::to_str(&Pane::ChannelsPane).with_pre_post_spaces(),
+            })
+            .border_set(symbols::border::Set {
+                top_right: symbols::line::HORIZONTAL_DOWN,
+                ..symbols::border::PLAIN
             }),
     );
 
@@ -204,7 +213,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         Line::from(""),
         Line::from(""),
     ])
-    .block(Block::default().borders(Borders::LEFT | Borders::RIGHT));
+    .block(Block::default().borders(Borders::RIGHT));
 
     let voice_channels_list: Vec<ListItem> = app
         .voice_channels
@@ -223,11 +232,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .collect();
 
     let text_channels = List::new(text_channels_list)
-        .block(Block::default().borders(Borders::LEFT | Borders::RIGHT))
+        .block(Block::default().borders(Borders::RIGHT))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
     let voice_channels = List::new(voice_channels_list)
-        .block(Block::default().borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM))
+        .block(Block::default().borders(Borders::RIGHT))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
 
@@ -280,7 +289,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let chat_list = get_paragraphs_from_text_channel(app, top_blocks[1].width as usize - 1)
         .block(
             Block::default()
-                .borders(Borders::ALL)
+                .borders(Borders::TOP | Borders::RIGHT)
+                .border_set(symbols::border::Set {
+                    top_right: symbols::line::HORIZONTAL_DOWN,
+                    ..symbols::border::PLAIN
+                })
                 .title(match &app.current_text_channel {
                     Some(channel) => match &app.current_pane {
                         Pane::ChatPane => channel.1.clone().with_focus().with_pre_post_spaces(),
@@ -327,7 +340,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let members = List::new(members_list)
         .block(
             Block::default()
-                .borders(Borders::ALL)
+                .borders(Borders::TOP)
                 .title(match app.current_pane {
                     Pane::MembersPane => Pane::to_str(&app.current_pane)
                         .with_focus()
@@ -368,7 +381,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         })
         .block(if app.current_text_channel.is_some() {
             Block::default()
-                .borders(Borders::ALL)
+                .borders(Borders::TOP)
                 .title(if app.reply_target_message_id.is_some() {
                     reply_string.with_focus().with_pre_post_spaces().on_gray()
                 } else {
