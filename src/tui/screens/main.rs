@@ -21,21 +21,18 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let top_and_bottom_layout = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints([Constraint::Max(1), Constraint::Max(frame.size().width - 1)].as_ref())
+        .constraints([Constraint::Max(1), Constraint::Max(frame.size().width - 1)])
         .split(frame.size());
 
     let kagu_bar = Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)
-        .constraints(
-            [
-                Constraint::Max(10),                                // Kagu logo
-                Constraint::Max(20),                                // Voice status
-                Constraint::Max(frame.size().width - 10 - 20 - 15), // Blank space
-                Constraint::Max(15),                                // Current time
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Max(10),                                // Kagu logo
+            Constraint::Max(20),                                // Voice status
+            Constraint::Max(frame.size().width - 10 - 20 - 15), // Blank space
+            Constraint::Max(15),                                // Current time
+        ])
         .split(top_and_bottom_layout[0]);
 
     let mut kagu_spans: Vec<Span> = vec![Span::raw("Kagu")];
@@ -63,19 +60,16 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let back_panel = Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)
-        .constraints(
-            [
-                Constraint::Max(10),
-                Constraint::Max(frame.size().width - 10),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Max(10),
+            Constraint::Max(frame.size().width - 10),
+        ])
         .split(top_and_bottom_layout[1]);
 
     let left_panel = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints([Constraint::Max(frame.size().height - 4)].as_ref())
+        .constraints([Constraint::Max(frame.size().height - 4)])
         .split(back_panel[0]);
 
     let realms_list: Vec<ListItem> = app
@@ -123,15 +117,10 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .highlight_symbol(">");
     frame.render_stateful_widget(realms, left_panel[0], &mut app.realms.state);
 
-    // let reply_size = match app.reply_target_message_id {
-    //     Some(_) => 2,
-    //     None => 0,
-    // };
-
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints([Constraint::Max(frame.size().height - 4), Constraint::Max(3)].as_ref())
+        .constraints([Constraint::Max(frame.size().height - 4), Constraint::Max(3)])
         .split(back_panel[1]);
 
     let top_blocks = Layout::default()
@@ -373,7 +362,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         }
     }
 
-    let input = Paragraph::new(app.input_buffer.get_input_line())
+    let input_paragraph = Paragraph::new(app.input_buffer.get_input_line())
         .style(match app.input_mode {
             InputMode::Normal => Style::default(),
             InputMode::Editing => Style::default(),
@@ -412,7 +401,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                 .border_style(Style::default().fg(Color::Gray))
         })
         .wrap(Wrap { trim: false });
-    frame.render_widget(input, chunks[1]);
+    frame.render_widget(input_paragraph, chunks[1]);
 
     let input_width = app.input_buffer.get_input_width();
     if app.is_mentioning {
@@ -501,26 +490,20 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
 fn build_mention_command_popup(r: Rect, input_length: &u16, num_items: usize) -> Rect {
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints(
-            [
-                Constraint::Max(r.height - num_items as u16 - 4),
-                Constraint::Max(num_items as u16 + 2),
-                Constraint::Max(3),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Max(r.height - num_items as u16 - 4),
+            Constraint::Max(num_items as u16 + 2),
+            Constraint::Max(3),
+        ])
         .split(r);
 
     Layout::default()
         .direction(Direction::Horizontal)
-        .constraints(
-            [
-                Constraint::Max(7 + input_length),
-                Constraint::Max(30),
-                Constraint::Max(r.width - 10 - input_length),
-            ]
-            .as_ref(),
-        )
+        .constraints([
+            Constraint::Max(7 + input_length),
+            Constraint::Max(30),
+            Constraint::Max(r.width - 10 - input_length),
+        ])
         .split(popup_layout[1])[1]
 }
 
