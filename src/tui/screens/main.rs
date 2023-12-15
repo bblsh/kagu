@@ -489,7 +489,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             // specified coordinates after rendering
             frame.set_cursor(
                 // Put cursor past the end of the input text
-                chunks[1].x + app.input_buffer.get_input_width() + 1,
+                chunks[1].x + app.input_buffer.get_input_width(),
                 // Move one line down, from the border to the input line
                 chunks[1].y + 1,
             )
