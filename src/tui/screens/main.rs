@@ -116,13 +116,16 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .highlight_symbol(">");
     frame.render_stateful_widget(realms, left_panel[0], &mut app.realms.state);
 
-    let chunks = Layout::default()
+    let [top_area, input_area] = *Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
         .constraints([Constraint::Max(frame.size().height - 4), Constraint::Max(3)])
-        .split(back_panel[1]);
+        .split(back_panel[1])
+    else {
+        return;
+    };
 
-    let top_blocks = Layout::default()
+    let [channels_block_area, chat_block_area, members_block_area] = *Layout::default()
         .direction(Direction::Horizontal)
         .margin(0)
         .constraints([
@@ -136,7 +139,10 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             }),
             Constraint::Max(20),
         ])
-        .split(chunks[0]);
+        .split(top_area)
+    else {
+        return;
+    };
 
     let channels_outer_block = Block::default()
         .borders(Borders::TOP | Borders::RIGHT)
@@ -151,8 +157,8 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             _ => Pane::to_str(&Pane::ChannelsPane).with_pre_post_spaces(),
         })
         .border_style(Style::default());
-    let inner_channels_area = channels_outer_block.inner(top_blocks[0]);
-    frame.render_widget(channels_outer_block, top_blocks[0]);
+    let inner_channels_area = channels_outer_block.inner(channels_block_area);
+    frame.render_widget(channels_outer_block, channels_block_area);
 
     let [text_channel_label_area, text_channels_list_area, voice_channel_label_area, voice_channels_list_area] =
         *Layout::default()
@@ -298,8 +304,8 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             },
         })
         .border_style(Style::default());
-    let inner_chat_area = chat_history_outer_block.inner(top_blocks[1]);
-    frame.render_widget(chat_history_outer_block, top_blocks[1]);
+    let inner_chat_area = chat_history_outer_block.inner(chat_block_area);
+    frame.render_widget(chat_history_outer_block, chat_block_area);
 
     let [messages_area, typing_indicator_area] = *Layout::default()
         .direction(Direction::Vertical)
@@ -316,7 +322,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let typing_indicator_paragraph = Paragraph::new(users_typing_string);
     frame.render_widget(typing_indicator_paragraph, typing_indicator_area);
 
-    let chat_list = get_paragraphs_from_text_channel(app, top_blocks[1].width as usize - 1)
+    let chat_list = get_paragraphs_from_text_channel(app, chat_block_area.width as usize - 1)
         .highlight_symbol(if app.reply_target_message_id.is_some() {
             ">"
         } else {
@@ -354,7 +360,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         )
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
-    frame.render_stateful_widget(members, top_blocks[2], &mut app.users_online.state);
+    frame.render_stateful_widget(members, members_block_area, &mut app.users_online.state);
 
     let mut reply_string = String::from("Replying to ");
     if app.reply_target_message_id.is_some() {
@@ -416,7 +422,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                 .border_style(Style::default().fg(Color::Gray))
         })
         .wrap(Wrap { trim: false });
-    frame.render_widget(input_paragraph, chunks[1]);
+    frame.render_widget(input_paragraph, input_area);
 
     let input_width = app.input_buffer.get_input_width();
     if app.is_mentioning {
@@ -493,9 +499,9 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             // specified coordinates after rendering
             frame.set_cursor(
                 // Put cursor past the end of the input text
-                chunks[1].x + app.input_buffer.get_input_width(),
+                input_area.x + app.input_buffer.get_input_width(),
                 // Move one line down, from the border to the input line
-                chunks[1].y + 1,
+                input_area.y + 1,
             )
         }
         _ => (),
