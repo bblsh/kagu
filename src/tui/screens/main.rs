@@ -5,7 +5,6 @@ use tui::{
     style::{Color, Modifier, Style, Stylize},
     symbols,
     text::{Line, Span},
-    widgets::block::{Position, Title},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
 };
@@ -139,16 +138,36 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         ])
         .split(chunks[0]);
 
-    let channels_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(0)
-        .constraints([
-            Constraint::Max(2),
-            Constraint::Percentage(45),
-            Constraint::Max(1),
-            Constraint::Percentage(40),
-        ])
-        .split(top_blocks[0]);
+    let channels_outer_block = Block::default()
+        .borders(Borders::TOP | Borders::RIGHT)
+        .border_set(symbols::border::Set {
+            top_right: symbols::line::HORIZONTAL_DOWN,
+            ..symbols::border::PLAIN
+        })
+        .title(match &app.current_pane {
+            Pane::ChannelsPane => Pane::to_str(&app.current_pane)
+                .with_focus()
+                .with_pre_post_spaces(),
+            _ => Pane::to_str(&Pane::ChannelsPane).with_pre_post_spaces(),
+        })
+        .border_style(Style::default());
+    let inner_channels_area = channels_outer_block.inner(top_blocks[0]);
+    frame.render_widget(channels_outer_block, top_blocks[0]);
+
+    let [text_channel_label_area, text_channels_list_area, voice_channel_label_area, voice_channels_list_area] =
+        *Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Max(1),
+                Constraint::Percentage(45),
+                Constraint::Max(1),
+                Constraint::Percentage(40),
+            ])
+            .margin(0)
+            .split(inner_channels_area)
+    else {
+        return;
+    };
 
     let text_channels_label = Paragraph::new(vec![
         match &app.input_mode {
@@ -159,21 +178,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             _ => Line::from("Text"),
         },
         Line::from(""),
-    ])
-    .block(
-        Block::default()
-            .borders(Borders::RIGHT | Borders::TOP)
-            .title(match app.current_pane {
-                Pane::ChannelsPane => Pane::to_str(&app.current_pane)
-                    .with_focus()
-                    .with_pre_post_spaces(),
-                _ => Pane::to_str(&Pane::ChannelsPane).with_pre_post_spaces(),
-            })
-            .border_set(symbols::border::Set {
-                top_right: symbols::line::HORIZONTAL_DOWN,
-                ..symbols::border::PLAIN
-            }),
-    );
+    ]);
 
     let mut text_channels_list: Vec<ListItem> = Vec::new();
     if let Some(realm_id) = app.current_realm_id {
@@ -201,8 +206,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         },
         Line::from(""),
         Line::from(""),
-    ])
-    .block(Block::default().borders(Borders::RIGHT));
+    ]);
 
     let voice_channels_list: Vec<ListItem> = app
         .voice_channels
@@ -221,25 +225,23 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .collect();
 
     let text_channels = List::new(text_channels_list)
-        .block(Block::default().borders(Borders::RIGHT))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
     let voice_channels = List::new(voice_channels_list)
-        .block(Block::default().borders(Borders::RIGHT))
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
         .highlight_symbol(">");
 
     // Render everything related to channels
-    frame.render_widget(text_channels_label, channels_layout[0]);
+    frame.render_widget(text_channels_label, text_channel_label_area);
     frame.render_stateful_widget(
         text_channels,
-        channels_layout[1],
+        text_channels_list_area,
         &mut app.text_channels.state,
     );
-    frame.render_widget(voice_channels_label, channels_layout[2]);
+    frame.render_widget(voice_channels_label, voice_channel_label_area);
     frame.render_stateful_widget(
         voice_channels,
-        channels_layout[3],
+        voice_channels_list_area,
         &mut app.voice_channels.state,
     );
 
