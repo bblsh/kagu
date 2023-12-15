@@ -275,33 +275,46 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         }
     }
 
+    // Split the area for chat into two areas
+    // One area will hold chat history, and the other a typing indicator
+    let chat_history_outer_block = Block::default()
+        .borders(Borders::TOP | Borders::RIGHT)
+        .border_set(symbols::border::Set {
+            top_right: symbols::line::HORIZONTAL_DOWN,
+            ..symbols::border::PLAIN
+        })
+        .title(match &app.current_text_channel {
+            Some(channel) => match &app.current_pane {
+                Pane::ChatPane => channel.1.clone().with_focus().with_pre_post_spaces(),
+                _ => channel.1.clone().with_pre_post_spaces(),
+            },
+            None => match &app.current_pane {
+                Pane::ChatPane => Pane::to_str(&app.current_pane)
+                    .with_focus()
+                    .with_pre_post_spaces(),
+                _ => Pane::to_str(&Pane::ChatPane).with_pre_post_spaces(),
+            },
+        })
+        .border_style(Style::default());
+    let inner_chat_area = chat_history_outer_block.inner(top_blocks[1]);
+    frame.render_widget(chat_history_outer_block, top_blocks[1]);
+
+    let [messages_area, typing_indicator_area] = *Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Max(inner_chat_area.height - 1),
+            Constraint::Max(1),
+        ])
+        .margin(0)
+        .split(inner_chat_area)
+    else {
+        return;
+    };
+
+    let typing_indicator_paragraph = Paragraph::new(users_typing_string);
+    frame.render_widget(typing_indicator_paragraph, typing_indicator_area);
+
     let chat_list = get_paragraphs_from_text_channel(app, top_blocks[1].width as usize - 1)
-        .block(
-            Block::default()
-                .borders(Borders::TOP | Borders::RIGHT)
-                .border_set(symbols::border::Set {
-                    top_right: symbols::line::HORIZONTAL_DOWN,
-                    ..symbols::border::PLAIN
-                })
-                .title(match &app.current_text_channel {
-                    Some(channel) => match &app.current_pane {
-                        Pane::ChatPane => channel.1.clone().with_focus().with_pre_post_spaces(),
-                        _ => channel.1.clone().with_pre_post_spaces(),
-                    },
-                    None => match &app.current_pane {
-                        Pane::ChatPane => Pane::to_str(&app.current_pane)
-                            .with_focus()
-                            .with_pre_post_spaces(),
-                        _ => Pane::to_str(&Pane::ChatPane).with_pre_post_spaces(),
-                    },
-                })
-                .title(
-                    Title::from(users_typing_string)
-                        .position(Position::Bottom)
-                        .alignment(Alignment::Left),
-                )
-                .border_style(Style::default()),
-        )
         .highlight_symbol(if app.reply_target_message_id.is_some() {
             ">"
         } else {
@@ -318,7 +331,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                 _ => Style::default(),
             }
         });
-    frame.render_stateful_widget(chat_list, top_blocks[1], &mut app.chat_history.state);
+    frame.render_stateful_widget(chat_list, messages_area, &mut app.chat_history.state);
 
     let members_list: Vec<ListItem> = app
         .users_online
