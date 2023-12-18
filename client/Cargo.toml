@@ -1,0 +1,15 @@
+[package]
+name = "client"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+types = { path = "../types" }
+user = { path = "../user" }
+realms = { path = "../realms" }
+message = { path = "../message" }
+audio = { path = "../audio" }
+network_manager = { path = "../network_manager" }
+
+tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
+quinn = "*"
