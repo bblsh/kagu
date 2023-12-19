@@ -1,5 +1,5 @@
 use clap::Parser;
-use server::Server;
+use server::server::Server;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
