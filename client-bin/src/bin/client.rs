@@ -1,5 +1,5 @@
 use clap::Parser;
-use client::Client;
+use client::client::Client;
 use tui::app::{App, AppResult};
 
 #[derive(Parser, Debug)]

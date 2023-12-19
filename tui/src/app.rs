@@ -15,7 +15,7 @@ use crate::{
     stateful_list::StatefulList,
     tui::Tui,
 };
-use client::Client;
+use client::client::Client;
 use message::message::MessageType;
 use realms::channels::text_channel::TextChannelMessage;
 use realms::realm::ChannelType;
