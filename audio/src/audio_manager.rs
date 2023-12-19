@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
-use message::{Message, MessageHeader, MessageType};
+use message::message::{Message, MessageHeader, MessageType};
 use types::UserIdSize;
 
 pub enum AudioManagerError {

@@ -1,4 +1,4 @@
-use message::{Message, MessageType};
+use message::message::{Message, MessageType};
 use network_manager::{NetworkManager, ServerOrClient};
 use realms::realm::ChannelType;
 use realms::realms_manager::RealmsManager;
