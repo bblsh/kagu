@@ -1,6 +1,6 @@
 use audio::audio_manager::AudioManager;
 use message::message::{Message, MessageHeader, MessageType};
-use network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
+use network_manager::network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
 use quinn::{Connection, ConnectionError, Endpoint};
 use realms::realm::ChannelType;
 use realms::realm_desc::RealmDescription;
