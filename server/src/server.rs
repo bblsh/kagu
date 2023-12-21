@@ -1,5 +1,5 @@
 use message::message::{Message, MessageType};
-use network_manager::network_manager::{NetworkManager, ServerOrClient};
+use network_manager::network_manager::{NetworkManager, NetworkManagerError, ServerOrClient};
 use realms::realm::ChannelType;
 use realms::realms_manager::RealmsManager;
 use types::UserIdSize;
@@ -35,12 +35,11 @@ pub struct Server {
 }
 
 impl Server {
-    pub async fn new(server_address: String, server_port: u16) -> Server {
-        let endpoint =
-            NetworkManager::connect_endpoint(server_address, server_port, ServerOrClient::Server)
-                .await;
-
-        Server { endpoint }
+    pub async fn new(port: u16, use_ipv6: Option<bool>) -> Result<Server, NetworkManagerError> {
+        match NetworkManager::connect_endpoint(None, use_ipv6, port, ServerOrClient::Server).await {
+            Ok(endpoint) => Ok(Server { endpoint }),
+            Err(e) => Err(e),
+        }
     }
 
     pub async fn run_server(&self) {

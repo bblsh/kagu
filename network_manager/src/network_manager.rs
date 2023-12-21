@@ -1,4 +1,5 @@
 use anyhow::Result;
+use core::fmt;
 use quinn::{ClientConfig, Endpoint, ServerConfig};
 use std::error::Error;
 use std::net::SocketAddr;
@@ -15,35 +16,72 @@ pub enum ServerOrClient {
 }
 
 #[derive(Debug)]
+pub enum NetworkManagerError {
+    ParseError,
+    NoAddressProvided,
+    FailedToMakeClientEndpoint,
+    FailedToMakeServerEndpoint,
+}
+
+impl fmt::Display for NetworkManagerError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+#[derive(Debug)]
 pub struct NetworkManager {}
+
+trait AppendPort {
+    fn append_port(self, port: u16) -> String;
+}
+
+impl AppendPort for String {
+    fn append_port(mut self, port: u16) -> String {
+        self.push(':');
+        self.push_str(port.to_string().as_str());
+        self
+    }
+}
 
 impl NetworkManager {
     pub async fn connect_endpoint(
-        mut address: String,
+        address: Option<SocketAddr>,
+        use_ipv6: Option<bool>,
         port: u16,
         server_or_client: ServerOrClient,
-    ) -> Endpoint {
-        address.push(':');
-        address.push_str(port.to_string().as_str());
-
-        // Parse this address into a SocketAddr
-        let address: SocketAddr = address.parse().unwrap();
-
+    ) -> Result<Endpoint, NetworkManagerError> {
         match server_or_client {
-            // Configure this NetworkManager for a client
-            ServerOrClient::Client => make_client_endpoint("0.0.0.0:0".parse().unwrap()).unwrap(),
-
-            // Configure this NetworkManager for a server
             ServerOrClient::Server => {
-                let (endpoint, _server_cert) = match make_server_endpoint(address) {
-                    Ok((ep, cert)) => (ep, cert),
-                    Err(_) => {
-                        eprintln!("[server] failed to bind to address. exiting");
-                        std::process::exit(1);
-                    }
-                };
+                let mut address_t: SocketAddr =
+                    String::from("0.0.0.0").append_port(port).parse().unwrap();
 
-                endpoint
+                // Check to see if we should serve with IPv6
+                if use_ipv6.unwrap_or(false) {
+                    address_t = String::from("[::]")
+                        .append_port(port)
+                        .as_str()
+                        .parse()
+                        .unwrap();
+                }
+
+                match make_server_endpoint(address_t) {
+                    Ok((endpoint, _cert)) => Ok(endpoint),
+                    Err(_) => Err(NetworkManagerError::FailedToMakeServerEndpoint),
+                }
+            }
+            ServerOrClient::Client => {
+                if let Some(a) = address {
+                    match make_client_endpoint(match a.is_ipv6() {
+                        true => SocketAddr::V6("[::]:0".parse().unwrap()),
+                        false => SocketAddr::V4("0.0.0.0:0".parse().unwrap()),
+                    }) {
+                        Ok(endpoint) => Ok(endpoint),
+                        Err(_) => Err(NetworkManagerError::FailedToMakeClientEndpoint),
+                    }
+                } else {
+                    Err(NetworkManagerError::NoAddressProvided)
+                }
             }
         }
     }

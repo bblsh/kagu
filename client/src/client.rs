@@ -1,6 +1,10 @@
+use std::net::SocketAddr;
+
 use audio::audio_manager::AudioManager;
 use message::message::{Message, MessageHeader, MessageType};
-use network_manager::network_manager::{ConnectionCommand, NetworkManager, ServerOrClient};
+use network_manager::network_manager::{
+    ConnectionCommand, NetworkManager, NetworkManagerError, ServerOrClient,
+};
 use quinn::{Connection, ConnectionError, Endpoint};
 use realms::realm::ChannelType;
 use realms::realm_desc::RealmDescription;
@@ -52,21 +56,20 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(server_address: String, server_port: u16, username: String) -> Client {
+    pub async fn new(
+        server_address: SocketAddr,
+        username: String,
+    ) -> Result<Client, NetworkManagerError> {
         let endpoint = NetworkManager::connect_endpoint(
-            server_address.clone(),
-            server_port,
+            Some(server_address),
+            None,
+            server_address.port(),
             ServerOrClient::Client,
         )
-        .await;
-
-        let mut address = server_address;
-        address.push(':');
-        address.push_str(server_port.to_string().as_str());
-        let address: std::net::SocketAddr = address.parse().unwrap();
+        .await?;
 
         // Here "localhost" should match the server cert (but this is ignored right now)
-        let connect = endpoint.connect(address, "localhost").unwrap();
+        let connect = endpoint.connect(server_address, "localhost").unwrap();
         let connection = connect.await;
 
         let connection = match connection {
@@ -90,7 +93,7 @@ impl Client {
             .connection(connection.clone())
             .audio_receiver(audio_to_am_rx);
 
-        Client {
+        let client = Client {
             endpoint,
             connection,
             audio_sender: Some(audio_to_am_tx),
@@ -101,7 +104,9 @@ impl Client {
             realms: Arc::new(Mutex::new(Vec::new())),
             audio_manager: Arc::new(Mutex::new(Some(audio_manager))),
             is_logged_in: Arc::new(Mutex::new(false)),
-        }
+        };
+
+        Ok(client)
     }
 
     pub async fn get_new_messages(&self) -> Vec<Message> {
