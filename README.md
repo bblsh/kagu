@@ -30,20 +30,18 @@ git clone https://github.com/bblsh/kagu.git
 To run the client, run:
 
 ```
-cargo run --bin client -- -u username -a address -p port
+cargo run --bin client -- -u username -a address
 ```
 
-This will establish a connection with the server  at `address:port` and display a TUI. Messages sent will be sent as `username`.
+This will establish a connection with the server  at `ip:port` and display a TUI. Messages sent will be sent as `username`.
 
 To run the server, run:
 
 ```
-cargo run --bin server -- -a address -p port
+cargo run --bin server -- -p port
 ```
 
 The server will listen for QUIC connections on port `port`.
-
-Without the `address` parameter, the server will listen on `0.0.0.0` by default.
 
 ## Navigating the Client Interface
 To navigate through different panes (Messages, Channels, Input), use arrow keys.
