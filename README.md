@@ -1,4 +1,4 @@
-<h1 align="center"><img width="500" src="kagu.png" /></h1>
+<h1 align="center"><img width="500" src="assets/kagu.png" /></h1>
 
 # Kagu
 
@@ -9,6 +9,8 @@ Kagu is powered by:
 - 🔊 [cpal] for audio playback and recording
 - 👟 [quinn] to leverage the speed and reliability of QUIC
 - 🖼️ [ratatui] for a rich terminal user interface
+
+<h1 align="center"><img width="500" src="assets/screenshot_1.png" /></h1>
 
 ## Getting Started
 

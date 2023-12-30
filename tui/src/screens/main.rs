@@ -91,10 +91,10 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                     if notification {
                         Style::default().fg(Color::Black).bg(Color::LightYellow)
                     } else {
-                        Style::default().fg(Color::LightBlue)
+                        Style::default()
                     }
                 } else {
-                    Style::default().fg(Color::LightBlue)
+                    Style::default()
                 },
             )
         })
