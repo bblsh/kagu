@@ -64,7 +64,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let realms = List::new(realms_list)
         .block(
             Block::default()
-                .borders(Borders::ALL)
+                .borders(Borders::TOP | Borders::RIGHT)
+                .border_set(symbols::border::Set {
+                    top_right: symbols::line::HORIZONTAL_DOWN,
+                    ..symbols::border::PLAIN
+                })
                 .title(match app.current_pane {
                     Pane::RealmsPane => Pane::to_str(&app.current_pane).with_focus(),
                     _ => Pane::to_str(&Pane::RealmsPane),
@@ -77,7 +81,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let [friends_btn_area, dm_list_area] = *Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints([Constraint::Max(3), Constraint::Max(frame.size().height - 3)])
+        .constraints([Constraint::Max(2), Constraint::Max(frame.size().height - 2)])
         .split(middle_panel_area)
     else {
         return;
@@ -86,26 +90,36 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let [friends_name_area, dm_history_area] = *Layout::default()
         .direction(Direction::Vertical)
         .margin(0)
-        .constraints([Constraint::Max(3), Constraint::Max(frame.size().height - 3)])
+        .constraints([Constraint::Max(2), Constraint::Max(frame.size().height - 2)])
         .split(right_panel_area)
     else {
         return;
     };
 
     let test_top_bar =
-        Paragraph::new("Friends or friend_name").block(Block::default().borders(Borders::ALL));
+        Paragraph::new("Friends or friend_name").block(Block::default().borders(Borders::TOP));
     let test_dm_chat =
-        Paragraph::new("DM history here").block(Block::default().borders(Borders::ALL));
+        Paragraph::new("DM history here").block(Block::default().borders(Borders::TOP));
 
     frame.render_widget(test_top_bar, friends_name_area);
     frame.render_widget(test_dm_chat, dm_history_area);
 
-    let test_friends_button =
-        Paragraph::new("Friends btn").block(Block::default().borders(Borders::ALL));
+    let test_friends_button = Paragraph::new("Friends btn").block(
+        Block::default()
+            .borders(Borders::TOP | Borders::RIGHT)
+            .border_set(symbols::border::Set {
+                top_right: symbols::line::HORIZONTAL_DOWN,
+                ..symbols::border::PLAIN
+            }),
+    );
     let test_friends_list = Paragraph::new("DMs go here").block(
         Block::default()
             .title("Direct Messages")
-            .borders(Borders::ALL),
+            .borders(Borders::TOP | Borders::RIGHT)
+            .border_set(symbols::border::Set {
+                top_right: symbols::line::CROSS,
+                ..symbols::border::PLAIN
+            }),
     );
 
     frame.render_widget(test_friends_button, friends_btn_area);
