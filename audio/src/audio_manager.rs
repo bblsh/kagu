@@ -1,7 +1,7 @@
 use core::mem::MaybeUninit;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, Host, Sample, Stream, StreamConfig, SupportedStreamConfigRange};
-use quinn::{Connection, Endpoint};
+use quinn::Connection;
 use ringbuf::{Consumer, SharedRb};
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
@@ -35,7 +35,6 @@ impl std::fmt::Debug for AudioManager {
 }
 
 pub struct AudioManager {
-    endpoint: Option<Endpoint>,
     connection: Option<Connection>,
     user_id: Option<UserIdSize>,
     audio_receiver: Option<Receiver<(UserIdSize, Vec<u8>)>>,
@@ -72,7 +71,6 @@ impl Default for AudioManager {
 
         AudioManager {
             user_id: None,
-            endpoint: None,
             connection: None,
             audio_receiver: None,
             input_device: input_device.name().unwrap(),
@@ -90,11 +88,6 @@ impl Default for AudioManager {
 }
 
 impl AudioManager {
-    pub fn endpoint(mut self, endpoint: Endpoint) -> Self {
-        self.endpoint = Some(endpoint);
-        self
-    }
-
     pub fn connection(mut self, connection: Connection) -> Self {
         self.connection = Some(connection);
         self

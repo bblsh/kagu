@@ -89,7 +89,6 @@ impl Client {
 
         // Make our AudioManager and give it our client's endpoint
         let audio_manager = AudioManager::default()
-            .endpoint(endpoint.clone())
             .connection(connection.clone())
             .audio_receiver(audio_to_am_rx);
 
