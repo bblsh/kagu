@@ -8,12 +8,12 @@ homepage = "https://github.com/bblsh/kagu"
 repository = "https://github.com/bblsh/kagu"
 
 [dependencies]
-types = { path = "../types" }
-user = { path = "../user" }
-realms = { path = "../realms" }
-message = { path = "../message" }
-audio = { path = "../audio" }
-network_manager = { path = "../network_manager" }
+types = { path = "../types", version = "*" }
+user = { path = "../user", version = "*"  }
+realms = { path = "../realms", version = "*"  }
+message = { path = "../message", version = "*"  }
+audio = { path = "../audio", version = "*"  }
+network_manager = { path = "../network_manager", version = "*"  }
 
 tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
 quinn = "*"

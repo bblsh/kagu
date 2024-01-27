@@ -2,8 +2,10 @@
 name = "network_manager"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "Network initializer used by the Kagu server client."
+license-file = "LICENSE.txt"
+homepage = "https://github.com/bblsh/kagu"
+repository = "https://github.com/bblsh/kagu"
 
 [dependencies]
 quinn = "*"
