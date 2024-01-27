@@ -2,6 +2,10 @@
 name = "tui"
 version = "0.1.0"
 edition = "2021"
+description = "A rich terminal user interface for the Kagu client."
+license-file = "LICENSE.txt"
+homepage = "https://github.com/bblsh/kagu"
+repository = "https://github.com/bblsh/kagu"
 
 [dependencies]
 realms = { path = "../realms" }

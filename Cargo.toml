@@ -1,9 +1,13 @@
 [workspace]
 resolver = "2"
+package.description = "A server and client with a rich terminal user interface resembling a familiar chat service."
+package.license-file = "LICENSE.txt"
+package.homepage = "https://github.com/bblsh/kagu"
+package.repository = "https://github.com/bblsh/kagu"
 
 members = [
-    "server-bin",
-    "client-bin",
+    "kagu-server",
+    "kagu",
     "server",
     "client",
     "message",
@@ -14,6 +18,3 @@ members = [
     "audio",
     "types"
 ]
-
-[workspace.package]
-license-file = "LICENSE.txt"

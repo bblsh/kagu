@@ -353,16 +353,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "client-bin"
-version = "0.1.0"
-dependencies = [
- "clap",
- "client",
- "tokio",
- "tui",
-]
-
-[[package]]
 name = "colorchoice"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -659,6 +649,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cee9c64da59eae3b50095c18d3e74f8b73c0b86d2792824ff01bbce68ba229ca"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "kagu"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "client",
+ "tokio",
+ "tui",
+]
+
+[[package]]
+name = "kagu-server"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "server",
+ "tokio",
 ]
 
 [[package]]
@@ -1373,15 +1382,6 @@ dependencies = [
  "tokio",
  "types",
  "user",
-]
-
-[[package]]
-name = "server-bin"
-version = "0.1.0"
-dependencies = [
- "clap",
- "server",
- "tokio",
 ]
 
 [[package]]

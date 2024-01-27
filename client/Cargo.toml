@@ -2,6 +2,10 @@
 name = "client"
 version = "0.1.0"
 edition = "2021"
+description = "Client backend used by the Kagu client."
+license-file = "LICENSE.txt"
+homepage = "https://github.com/bblsh/kagu"
+repository = "https://github.com/bblsh/kagu"
 
 [dependencies]
 types = { path = "../types" }

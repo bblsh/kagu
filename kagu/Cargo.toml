@@ -1,0 +1,19 @@
+[package]
+name = "kagu"
+version = "0.1.0"
+edition = "2021"
+description = "A Kagu client with a rich terminal user interface."
+license-file = "LICENSE.txt"
+homepage = "https://github.com/bblsh/kagu"
+repository = "https://github.com/bblsh/kagu"
+
+[[bin]]
+name = "kagu"
+path = "src/bin/client.rs"
+
+[dependencies]
+tui = { path = "../tui", version = "*"}
+client = { path = "../client", version =  "*"}
+
+clap = { version = "4.3.23", features = ["derive"] }
+tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
