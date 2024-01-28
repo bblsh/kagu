@@ -4,11 +4,15 @@ use types::*;
 
 use std::{net::SocketAddr, path::PathBuf};
 
+use crossbeam::channel::{Receiver, Sender};
+
 #[derive(Debug)]
 pub struct NewClient {
     server_address: SocketAddr,
     username: String,
     cert_dir: PathBuf,
+    ui_receiver: Option<Receiver<Message>>,
+    message_sender: Option<Sender<Message>>,
 }
 
 impl NewClient {
@@ -17,6 +21,8 @@ impl NewClient {
             server_address,
             username,
             cert_dir,
+            ui_receiver: None,
+            message_sender: None,
         }
     }
 
