@@ -15,4 +15,5 @@ message = { path = "../message", version = "*"  }
 audio = { path = "../audio", version = "*"  }
 network_manager = { path = "../network_manager", version = "*"  }
 
-quinn = "*"
+mio = { version = "*", features = ["os-poll", "net"]}
+quiche = { version = "*" }
