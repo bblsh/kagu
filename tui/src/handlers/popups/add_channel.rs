@@ -5,7 +5,7 @@ use crate::{
 use crossterm::event::{KeyCode, KeyEvent};
 use realms::realm::ChannelType;
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match app.add_channel_popup.input_mode {
         AddChannelInputMode::Normal => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') => {
@@ -64,8 +64,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         false => ChannelType::VoiceChannel,
                     },
                     app.add_channel_popup.channel_name_buffer.clone(),
-                )
-                .await;
+                );
 
                 app.dismiss_popup();
                 app.text_channels.unselect();

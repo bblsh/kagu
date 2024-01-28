@@ -3,18 +3,18 @@ use crate::app::{PopupType, Screen};
 use crate::handlers;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match key_event.code {
         // Regardless of mode or screen, exit application on `Ctrl-C`
         KeyCode::Char('c') | KeyCode::Char('C') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
-                app.quit().await;
+                app.quit();
                 return Ok(());
             }
         }
         KeyCode::Char('d') | KeyCode::Char('D') => {
             if key_event.modifiers == KeyModifiers::CONTROL {
-                app.hang_up().await;
+                app.hang_up();
                 return Ok(());
             }
         }
@@ -51,34 +51,28 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             }
             PopupType::YesNo => return handlers::popups::yes_no::handle_key_events(key_event, app),
             PopupType::AddChannel => {
-                return handlers::popups::add_channel::handle_key_events(key_event, app).await
+                return handlers::popups::add_channel::handle_key_events(key_event, app)
             }
             PopupType::RemoveChannel => {
-                return handlers::popups::remove_channel::handle_key_events(key_event, app).await
+                return handlers::popups::remove_channel::handle_key_events(key_event, app)
             }
             PopupType::Member => {
-                return handlers::popups::member::handle_key_events(key_event, app).await
+                return handlers::popups::member::handle_key_events(key_event, app)
             }
             PopupType::AddRealm => {
-                return handlers::popups::add_realm::handle_key_events(key_event, app).await
+                return handlers::popups::add_realm::handle_key_events(key_event, app)
             }
             PopupType::RemoveRealm => {
-                return handlers::popups::remove_realm::handle_key_events(key_event, app).await
+                return handlers::popups::remove_realm::handle_key_events(key_event, app)
             }
         }
     }
 
     // Send each key event to that screen's handler
     match app.current_screen {
-        Screen::Main => handlers::screens::main::handle_key_events(key_event, app)
-            .await
-            .unwrap(),
-        Screen::Personal => handlers::screens::personal::handle_key_events(key_event, app)
-            .await
-            .unwrap(),
-        Screen::Settings => handlers::screens::settings::handle_key_events(key_event, app)
-            .await
-            .unwrap(),
+        Screen::Main => handlers::screens::main::handle_key_events(key_event, app).unwrap(),
+        Screen::Personal => handlers::screens::personal::handle_key_events(key_event, app).unwrap(),
+        Screen::Settings => handlers::screens::settings::handle_key_events(key_event, app).unwrap(),
     }
 
     Ok(())

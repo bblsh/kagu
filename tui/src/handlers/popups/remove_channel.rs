@@ -6,7 +6,7 @@ use crate::{
 use crossterm::event::{KeyCode, KeyEvent};
 use realms::realm::ChannelType;
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match key_event.code {
         KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
             app.dismiss_popup();
@@ -38,8 +38,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 app.remove_channel(
                     app.remove_channel_popup.channel_type.clone(),
                     app.remove_channel_popup.channel_id,
-                )
-                .await;
+                );
 
                 match app.remove_channel_popup.channel_type {
                     ChannelType::TextChannel => {

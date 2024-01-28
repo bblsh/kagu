@@ -4,11 +4,11 @@ use crossterm::event::{KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::style::{Color, Style};
 use realms::realm::ChannelType;
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match app.input_mode {
         InputMode::Normal => match key_event.code {
             KeyCode::Char('Q') | KeyCode::Char('q') | KeyCode::Esc => {
-                app.quit().await;
+                app.quit();
                 return Ok(());
             }
             KeyCode::Char('i') => {
@@ -144,8 +144,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     app.current_realm_id.unwrap(),
                     ChannelType::TextChannel,
                     app.text_channels.items.get(selected_id).unwrap().0,
-                )
-                .await;
+                );
             }
             KeyCode::Char('r') | KeyCode::Char('R') => {
                 if key_event.modifiers == KeyModifiers::CONTROL {
@@ -183,15 +182,14 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 if let Some(current_channel) = app.current_voice_channel {
                     if channel_id != current_channel {
                         // Leave a channel if we're in one already
-                        app.hang_up().await;
+                        app.hang_up();
 
                         // Join the selected voice channel
                         app.join_channel(
                             app.current_realm_id.unwrap(),
                             ChannelType::VoiceChannel,
                             channel_id,
-                        )
-                        .await;
+                        );
                     }
                 } else {
                     // Join the selected voice channel
@@ -199,8 +197,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         app.current_realm_id.unwrap(),
                         ChannelType::VoiceChannel,
                         channel_id,
-                    )
-                    .await;
+                    );
                 }
             }
             KeyCode::Char('r') | KeyCode::Char('R') => {
@@ -250,7 +247,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         app.input_buffer.is_mentioning = true;
                     }
 
-                    app.handle_input().await;
+                    app.handle_input();
 
                     app.input_buffer.input.clear();
                     app.input_buffer
@@ -316,7 +313,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             KeyCode::Char(c) => {
                 if let Some(input) = app.input_buffer.input.last_mut() {
                     input.0.push(c);
-                    app.send_typing().await;
+                    app.send_typing();
                 } else {
                     app.input_buffer
                         .input
@@ -562,7 +559,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                 // Enter this realm
                 if let Some(selected_id) = app.realms.state.selected() {
                     if let Some(realm) = app.realms.items.get(selected_id) {
-                        app.enter_realm(realm.0).await;
+                        app.enter_realm(realm.0);
                     }
                 }
             }

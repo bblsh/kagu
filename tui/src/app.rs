@@ -15,7 +15,7 @@ use crate::{
     stateful_list::StatefulList,
     tui::Tui,
 };
-use client::client::Client;
+use client::new_client::NewClient;
 use message::message::MessageType;
 use realms::channels::text_channel::TextChannelMessage;
 use realms::realm::ChannelType;
@@ -151,7 +151,7 @@ pub struct App<'a> {
     /// Is the application running?
     pub running: bool,
     /// Client to handle all interactions with the server
-    pub client: Client,
+    pub client: NewClient,
     /// User ID to usernames
     pub user_id_to_username: HashMap<UserIdSize, String>,
     /// Realms manager to manage our realms and channels
@@ -231,7 +231,7 @@ pub struct App<'a> {
 
 impl<'a> App<'a> {
     /// Constructs a new instance of [`App`].
-    pub fn new(client: Client) -> Self {
+    pub fn new(client: NewClient) -> Self {
         // There's likely a better way to populate these commands
         let mut commands_list = StatefulList::default();
         commands_list
@@ -291,13 +291,13 @@ impl<'a> App<'a> {
     pub fn tick(&self) {}
 
     /// Set running to false to quit the application.
-    pub async fn quit(&mut self) {
-        self.hang_up().await;
-        self.client.disconnect().await;
+    pub fn quit(&mut self) {
+        self.hang_up();
+        self.client.disconnect();
         self.running = false;
     }
 
-    pub async fn run_app(&mut self) -> AppResult<()> {
+    pub fn run_app(&mut self) -> AppResult<()> {
         // Initialize the terminal user interface.
         let backend = CrosstermBackend::new(io::stderr());
         let terminal = Terminal::new(backend)?;
@@ -305,21 +305,21 @@ impl<'a> App<'a> {
         let mut tui = Tui::new(terminal, events);
         tui.init()?;
 
-        let user_id = self.client.get_user_id().await;
+        let user_id = self.client.get_user_id();
         match user_id {
             Some(id) => self.user_id = Some(id),
             None => {
                 eprintln!("Failed to get User ID");
-                self.quit().await;
+                self.quit();
             }
         };
 
-        let username = self.client.get_username().await;
+        let username = self.client.get_username();
         match username {
             Some(_) => (),
             None => {
                 eprintln!("Failed to get Username");
-                self.quit().await;
+                self.quit();
             }
         };
 
@@ -330,11 +330,11 @@ impl<'a> App<'a> {
         // Start the main loop.
         while self.running {
             // Update any new messages received by the Client
-            for message in self.client.get_new_messages().await {
+            for message in self.client.get_new_messages() {
                 match message.message {
                     MessageType::UserJoined(user) => {
                         // We should already know we're online, so ignore anything about us
-                        if let Some(id) = self.client.get_user_id().await {
+                        if let Some(id) = self.client.get_user_id() {
                             if id == user.get_id() {
                                 continue;
                             }
@@ -376,7 +376,7 @@ impl<'a> App<'a> {
                         }
 
                         // If this is us, let us know we've been connected via voice
-                        if let Some(id) = self.client.get_user_id().await {
+                        if let Some(id) = self.client.get_user_id() {
                             if id == join.user_id {
                                 self.is_voice_connected = true;
                                 // Update our current voice channel ID
@@ -586,8 +586,7 @@ impl<'a> App<'a> {
                                     realm.id,
                                     ChannelType::TextChannel,
                                     self.text_channels.items[0].0,
-                                )
-                                .await;
+                                );
                             }
                         }
                     }
@@ -610,7 +609,7 @@ impl<'a> App<'a> {
                         // For now, let's initally join the first text channel of the first realm
                         if !self.realms.items.is_empty() {
                             self.current_realm_id = Some(self.realms.items[0].0);
-                            self.enter_realm(self.current_realm_id.unwrap()).await;
+                            self.enter_realm(self.current_realm_id.unwrap());
                         }
                     }
                     MessageType::RealmAdded(ra) => {
@@ -625,7 +624,7 @@ impl<'a> App<'a> {
                                 self.current_realm_id = None;
                                 self.current_text_channel = None;
                                 if self.is_voice_connected {
-                                    self.hang_up().await;
+                                    self.hang_up();
                                 }
                                 self.current_voice_channel = None;
 
@@ -658,7 +657,7 @@ impl<'a> App<'a> {
                         // Otherwise the realm will be refreshed when it is joined again
                         if let Some(realm_id) = self.current_realm_id {
                             if realm_id == ca.0 {
-                                self.refresh_realm(realm_id).await;
+                                self.refresh_realm(realm_id);
                             }
                         }
                     }
@@ -679,7 +678,7 @@ impl<'a> App<'a> {
                             }
 
                             if realm_id == cr.0 {
-                                self.refresh_realm(realm_id).await;
+                                self.refresh_realm(realm_id);
                             }
                         }
                     }
@@ -718,7 +717,7 @@ impl<'a> App<'a> {
                         }
                     }
                     MessageType::Disconnect => {
-                        self.quit().await;
+                        self.quit();
                     }
                     _ => (),
                 };
@@ -730,7 +729,7 @@ impl<'a> App<'a> {
             // Handle events
             match tui.events.next()? {
                 Event::Tick => self.tick(),
-                Event::Key(key_event) => handle_key_events(key_event, self).await?,
+                Event::Key(key_event) => handle_key_events(key_event, self)?,
                 Event::Mouse(_) => {}
                 Event::Resize(_, _) => {}
             }
@@ -750,7 +749,7 @@ impl<'a> App<'a> {
     }
 
     // Join the client to a text or voice channel
-    pub async fn join_channel(
+    pub fn join_channel(
         &mut self,
         realm_id: RealmIdSize,
         channel_type: ChannelType,
@@ -758,9 +757,7 @@ impl<'a> App<'a> {
     ) {
         match channel_type {
             ChannelType::TextChannel => {
-                self.client
-                    .join_channel(realm_id, channel_type, channel_id)
-                    .await;
+                self.client.join_channel(realm_id, channel_type, channel_id);
 
                 // Update our current text channel
                 for channel in &self.text_channels.items {
@@ -787,17 +784,15 @@ impl<'a> App<'a> {
                 }
             }
             ChannelType::VoiceChannel => {
-                self.client
-                    .join_channel(realm_id, channel_type, channel_id)
-                    .await;
+                self.client.join_channel(realm_id, channel_type, channel_id);
 
                 // Let the voices be heard
-                self.connect_voice(realm_id, channel_id).await;
+                self.connect_voice(realm_id, channel_id);
             }
         }
     }
 
-    pub async fn refresh_realm(&mut self, realm_id: RealmIdSize) {
+    pub fn refresh_realm(&mut self, realm_id: RealmIdSize) {
         if let Some(realm) = self.realms_manager.get_realm(realm_id) {
             // Update our text channels list
             self.text_channels.items.clear();
@@ -851,7 +846,7 @@ impl<'a> App<'a> {
                     if !self.voice_channels.items.is_empty() {
                         self.current_voice_channel = Some(self.voice_channels.items[0].0);
                     } else {
-                        self.hang_up().await;
+                        self.hang_up();
                         self.current_text_channel = None;
                     }
                 }
@@ -880,7 +875,7 @@ impl<'a> App<'a> {
         }
     }
 
-    pub async fn enter_realm(&mut self, realm_id: RealmIdSize) {
+    pub fn enter_realm(&mut self, realm_id: RealmIdSize) {
         if let Some(realm) = self.realms_manager.get_realm(realm_id) {
             // Update our text channels list
             self.text_channels.items.clear();
@@ -911,8 +906,7 @@ impl<'a> App<'a> {
                     realm_id,
                     ChannelType::TextChannel,
                     self.text_channels.items[0].0,
-                )
-                .await;
+                );
             } else {
                 self.current_text_channel = None;
             }
@@ -921,47 +915,42 @@ impl<'a> App<'a> {
         }
     }
 
-    pub async fn connect_voice(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
-        self.client.connect_voice(realm_id, channel_id).await;
+    pub fn connect_voice(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
+        self.client.connect_voice(realm_id, channel_id);
     }
 
-    pub async fn hang_up(&mut self) {
+    pub fn hang_up(&mut self) {
         if let Some(channel) = self.current_voice_channel {
             self.client
-                .hang_up(self.current_realm_id.as_ref().unwrap(), &channel)
-                .await;
+                .hang_up(self.current_realm_id.as_ref().unwrap(), &channel);
 
             self.is_voice_connected = false;
             self.current_voice_channel = None;
         }
     }
 
-    pub async fn handle_input(&mut self) {
+    pub fn handle_input(&mut self) {
         // First check to see if this is a command message
         match self.current_command {
             Some(command) => match command {
                 Command::Image => {
-                    self.send_image().await;
+                    self.send_image();
                 }
             },
             None => {
                 if self.reply_target_message_id.is_some() {
-                    self.client
-                        .send_reply_message(
-                            self.current_realm_id.unwrap(),
-                            self.current_text_channel.as_ref().unwrap().0,
-                            self.reply_target_message_id.unwrap(),
-                            self.input_buffer.get_input_without_style(),
-                        )
-                        .await;
+                    self.client.send_reply_message(
+                        self.current_realm_id.unwrap(),
+                        self.current_text_channel.as_ref().unwrap().0,
+                        self.reply_target_message_id.unwrap(),
+                        self.input_buffer.get_input_without_style(),
+                    );
                 } else {
-                    self.client
-                        .send_mention_message(
-                            self.current_realm_id.unwrap(),
-                            self.current_text_channel.as_ref().unwrap().0,
-                            self.input_buffer.get_input_without_style(),
-                        )
-                        .await;
+                    self.client.send_mention_message(
+                        self.current_realm_id.unwrap(),
+                        self.current_text_channel.as_ref().unwrap().0,
+                        self.input_buffer.get_input_without_style(),
+                    );
                 }
             }
         }
@@ -969,7 +958,7 @@ impl<'a> App<'a> {
         self.current_command = None;
     }
 
-    pub async fn send_image(&mut self) {
+    pub fn send_image(&mut self) {
         // First check to see if the image exists
         if let Some(input) = self.input_buffer.input.last() {
             let path = input.0.as_str();
@@ -986,13 +975,11 @@ impl<'a> App<'a> {
                     let image = std::fs::read(path);
                     match image {
                         Ok(img) => {
-                            self.client
-                                .send_image(
-                                    self.current_realm_id.unwrap(),
-                                    self.current_text_channel.as_ref().unwrap().0,
-                                    img,
-                                )
-                                .await;
+                            self.client.send_image(
+                                self.current_realm_id.unwrap(),
+                                self.current_text_channel.as_ref().unwrap().0,
+                                img,
+                            );
                         }
                         Err(_) => {
                             self.general_popup.setup(
@@ -1090,43 +1077,41 @@ impl<'a> App<'a> {
         local_time.format("%H:%M").to_string()
     }
 
-    pub async fn add_channel(&mut self, channel_type: ChannelType, channel_name: String) {
+    pub fn add_channel(&mut self, channel_type: ChannelType, channel_name: String) {
         self.client
-            .add_channel(self.current_realm_id.unwrap(), channel_type, channel_name)
-            .await;
+            .add_channel(self.current_realm_id.unwrap(), channel_type, channel_name);
     }
 
-    pub async fn remove_channel(&mut self, channel_type: ChannelType, channel_id: ChannelIdSize) {
+    pub fn remove_channel(&mut self, channel_type: ChannelType, channel_id: ChannelIdSize) {
         self.client
-            .remove_channel(self.current_realm_id.unwrap(), channel_type, channel_id)
-            .await;
+            .remove_channel(self.current_realm_id.unwrap(), channel_type, channel_id);
     }
 
-    pub async fn add_realm(&mut self, realm_name: String) {
-        self.client.add_realm(realm_name).await;
+    pub fn add_realm(&mut self, realm_name: String) {
+        self.client.add_realm(realm_name);
     }
 
-    pub async fn remove_realm(&mut self, realm_id: RealmIdSize) {
-        self.client.remove_realm(realm_id).await;
+    pub fn remove_realm(&mut self, realm_id: RealmIdSize) {
+        self.client.remove_realm(realm_id);
     }
 
-    pub async fn add_friend(&mut self, friend_id: UserIdSize) {
-        self.client.add_friend(friend_id).await;
+    pub fn add_friend(&mut self, friend_id: UserIdSize) {
+        self.client.add_friend(friend_id);
 
         self.pending_friend_requests.push(friend_id);
     }
 
-    pub async fn remove_friend(&mut self, friend_id: UserIdSize) {
+    pub fn remove_friend(&mut self, friend_id: UserIdSize) {
         // Remove this old friend from our list of friends
         let index = self.friends.iter().position(|id| *id == friend_id);
 
         if let Some(index) = index {
-            self.client.remove_friend(friend_id).await;
+            self.client.remove_friend(friend_id);
             self.friends.remove(index);
         }
     }
 
-    pub async fn send_typing(&mut self) {
+    pub fn send_typing(&mut self) {
         let mut send = false;
 
         // If we don't have a time set, set it
@@ -1147,7 +1132,7 @@ impl<'a> App<'a> {
         if send {
             if let Some(realm_id) = self.current_realm_id {
                 if let Some(channel) = &self.current_text_channel {
-                    self.client.send_typing(realm_id, channel.0).await;
+                    self.client.send_typing(realm_id, channel.0);
                     self.time_started_typing = Some(Utc::now());
                 }
             }

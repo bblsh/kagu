@@ -15,5 +15,4 @@ message = { path = "../message", version = "*"  }
 audio = { path = "../audio", version = "*"  }
 network_manager = { path = "../network_manager", version = "*"  }
 
-tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
 quinn = "*"

@@ -347,7 +347,6 @@ dependencies = [
  "network_manager",
  "quinn",
  "realms",
- "tokio",
  "types",
  "user",
 ]

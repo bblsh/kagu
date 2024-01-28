@@ -5,7 +5,7 @@ use crate::{
 };
 use crossterm::event::{KeyCode, KeyEvent};
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match app.remove_realm_popup.input_mode {
         RemoveRealmPopupInputMode::Normal => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
@@ -23,7 +23,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             KeyCode::Esc => app.remove_realm_popup.input_mode = RemoveRealmPopupInputMode::Normal,
             KeyCode::Enter => {
                 if app.remove_realm_popup.confirm_buffer == app.remove_realm_popup.realm_name {
-                    app.remove_realm(app.remove_realm_popup.realm_id).await;
+                    app.remove_realm(app.remove_realm_popup.realm_id);
                     app.dismiss_popup();
                     app.input_mode = InputMode::Realms;
                     app.current_pane = Pane::RealmsPane;

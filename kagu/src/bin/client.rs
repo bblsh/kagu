@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
 use clap::Parser;
-use client::client::Client;
+use client::new_client::NewClient;
 use tui::app::App;
 
 #[derive(Parser, Debug)]
@@ -17,24 +17,23 @@ struct Args {
     username: String,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     let args = Args::parse();
 
-    match Client::new(args.address, args.username).await {
-        Ok(client) => {
-            client.run_client().await;
+    // match NewClient::new(args.address, args.username) {
+    //     Ok(client) => {
+    //         client.run_client().await;
 
-            loop {
-                if client.get_user_id().await.is_some() {
-                    break;
-                }
-            }
+    //         loop {
+    //             if client.get_user_id().await.is_some() {
+    //                 break;
+    //             }
+    //         }
 
-            // Create an application.
-            let mut app = App::new(client);
-            let _ = app.run_app().await;
-        }
-        Err(e) => eprintln!("Failed to start client: {}", e),
-    };
+    //         // Create an application.
+    //         let mut app = App::new(client);
+    //         let _ = app.run_app().await;
+    //     }
+    //     Err(e) => eprintln!("Failed to start client: {}", e),
+    // };
 }

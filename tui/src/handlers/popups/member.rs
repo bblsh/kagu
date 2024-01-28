@@ -6,7 +6,7 @@ use crate::{
 };
 use crossterm::event::{KeyCode, KeyEvent};
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match app.member_popup.input_mode {
         MemberPopupInputMode::Editing => match key_event.code {
             KeyCode::Char(c) => app.member_popup.dm_buffer.push(c),
@@ -84,7 +84,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                     MemberPopupActionsUiElements::AddRemoveFriend => {
                         // Add the friend only if there isn't a request pending or we aren't friends
                         if !app.member_popup.is_request_pending {
-                            app.add_friend(app.member_popup.user_id).await;
+                            app.add_friend(app.member_popup.user_id);
                             app.dismiss_popup();
                             // Set the current pane to be the Members pane
                             app.current_pane = Pane::MembersPane;
@@ -92,7 +92,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
                         }
                         // Remove this friend
                         else if app.member_popup.is_friend {
-                            //app.remove_friend(app.member_popup.user_id).await;
+                            //app.remove_friend(app.member_popup.user_id) ;
                             app.dismiss_popup();
                             // Set the current pane to be the Members pane
                             app.current_pane = Pane::MembersPane;

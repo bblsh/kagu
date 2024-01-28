@@ -4,7 +4,7 @@ use crate::{
 };
 use crossterm::event::{KeyCode, KeyEvent};
 
-pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
+pub fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppResult<()> {
     match app.add_realm_popup.input_mode {
         AddRealmInputMode::Normal => match key_event.code {
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
@@ -44,8 +44,7 @@ pub async fn handle_key_events(key_event: KeyEvent, app: &mut App<'_>) -> AppRes
             KeyCode::Enter => {
                 match app.add_realm_popup.current_ui_element {
                     AddRealmUiElement::RealmName => {
-                        app.add_realm(app.add_realm_popup.realm_name_buffer.clone())
-                            .await;
+                        app.add_realm(app.add_realm_popup.realm_name_buffer.clone());
                     }
                     AddRealmUiElement::Invite => {
                         // Join by invite code
