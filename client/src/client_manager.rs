@@ -61,7 +61,7 @@ impl ClientManager {
 
         conn_mgr.send_data(&mut socket_mgr);
 
-        let client_state = ClientManager {
+        let manager = ClientManager {
             user_name,
             socket_mgr,
             read_data: [0; 65536],
@@ -71,7 +71,7 @@ impl ClientManager {
             next_tick_instant: Instant::now(),
         };
 
-        Ok(client_state)
+        Ok(manager)
     }
 
     pub fn close_connection(&mut self, error_code: u64) {

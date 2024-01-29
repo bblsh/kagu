@@ -87,7 +87,7 @@ impl ConnectionManager {
                     if send_info.at <= Instant::now() {
                         match socket_mgr.send_data(&next_send_packet[..write_len], send_info.to) {
                             None => num_sends += 1,
-                            Some(err) => {
+                            Some(_err) => {
                                 return Err(quiche::Error::Done); // Better Error Handling in Future
                             }
                         }
@@ -123,7 +123,7 @@ impl ConnectionManager {
 
         // Does it handle potentially coalesced packets?
         match self.connection.recv(data, self.recv_info) {
-            Ok(read_size) => {
+            Ok(_read_size) => {
                 self.send_data(socket_mgr) //to handle ACKs
             }
             Err(err) => Err(err),
