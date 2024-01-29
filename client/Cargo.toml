@@ -17,4 +17,5 @@ network_manager = { path = "../network_manager", version = "*"  }
 
 mio = { version = "*", features = ["os-poll", "net"]}
 quiche = { version = "*" }
+ring = { version = "0.17.7" }
 crossbeam = { version = "0.8.4" }

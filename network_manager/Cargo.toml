@@ -8,7 +8,5 @@ homepage = "https://github.com/bblsh/kagu"
 repository = "https://github.com/bblsh/kagu"
 
 [dependencies]
-quinn = "*"
-anyhow = "1.0.71"
-rustls = { version = "*", features = ["dangerous_configuration", "quic"] }
-rcgen = "0.10.0"
+quiche = { version = "*" }
+mio = { version = "*", features = ["os-poll", "net"]}

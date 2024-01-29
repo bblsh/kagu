@@ -2,7 +2,8 @@ use message::message::Message;
 use realms::realm::ChannelType;
 use types::*;
 
-use std::{net::SocketAddr, path::PathBuf};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::path::PathBuf;
 
 use crossbeam::channel::{Receiver, Sender};
 
@@ -27,7 +28,10 @@ impl NewClient {
     }
 
     pub fn run_client(&self) {
-        //
+        let bind_address = match self.server_address.is_ipv6() {
+            true => SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, 0, 0, 0)),
+            false => SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)),
+        };
     }
 
     pub fn get_username(&self) -> Option<String> {

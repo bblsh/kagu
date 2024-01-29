@@ -18,9 +18,3 @@ pub type TextMessageChunks = Vec<(String, Option<UserIdSize>)>;
 
 /// Type for the ID for a `Message`.
 pub type MessageIdSize = u32;
-
-/// Server/domain name that should matching the server cert.
-pub const SERVER_NAME: &str = "localhost";
-
-/// Application-Layer Protocol Negotiation name used to define the QUIC protocol used in this application.
-pub const ALPN_NAME: &[u8] = b"kagu";
