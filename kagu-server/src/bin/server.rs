@@ -1,25 +1,36 @@
 use clap::{ArgAction, Parser};
-use server::server::Server;
+use server::new_server::NewServer;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
     /// Port to listen on
     #[arg(short, long)]
-    port: u16,
+    port: Option<u16>,
 
     /// If IPv6 should be used
     #[arg(long, action=ArgAction::SetTrue)]
     ipv6: Option<bool>,
+
+    #[arg(short, long)]
+    name: Option<String>,
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
     // Collect arguments
     let args = Args::parse();
 
-    match Server::new(args.port, args.ipv6).await {
-        Ok(server) => server.run_server().await,
-        Err(e) => eprintln!("Failed to start server: {}", e),
+    let port = args.port.unwrap_or(5000);
+
+    let server_name = match args.name {
+        Some(name) => name,
+        None => String::from("KaguServer"),
     };
+
+    let server = NewServer::new(server_name, port, args.ipv6);
+    server.start_server();
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(5));
+    }
 }

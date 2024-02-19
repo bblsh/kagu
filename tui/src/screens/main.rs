@@ -623,8 +623,8 @@ fn get_paragraphs_from_text_channel<'a>(app: &App, width: usize) -> WidgetList<'
 
                                 // If we have an ID, this is a mention chunk
                                 if let Some(id) = chunk.1 {
-                                    if let Some(our_id) = app.user_id {
-                                        if id == our_id {
+                                    if let Some(user) = &app.user {
+                                        if id == user.get_id() {
                                             spans.push(Span::styled(
                                                 chunk.0.clone(),
                                                 Style::default()

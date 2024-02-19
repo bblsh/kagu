@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::{net::SocketAddr, path::PathBuf};
 
 use clap::Parser;
 use client::new_client::NewClient;
@@ -15,25 +15,18 @@ struct Args {
     /// Username to log in with
     #[arg(short, long)]
     username: String,
+
+    #[arg(short, long)]
+    cert_dir: PathBuf,
 }
 
 fn main() {
     let args = Args::parse();
 
-    // match NewClient::new(args.address, args.username) {
-    //     Ok(client) => {
-    //         client.run_client().await;
+    let client = NewClient::new(args.address, args.username, args.cert_dir);
+    client.run_client();
 
-    //         loop {
-    //             if client.get_user_id().await.is_some() {
-    //                 break;
-    //             }
-    //         }
-
-    //         // Create an application.
-    //         let mut app = App::new(client);
-    //         let _ = app.run_app().await;
-    //     }
-    //     Err(e) => eprintln!("Failed to start client: {}", e),
-    // };
+    // Create an application.
+    let mut app = App::new(client);
+    let _ = app.run_app();
 }

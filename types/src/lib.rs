@@ -11,7 +11,7 @@ pub type UserIdSize = u32;
 pub type NumRealmsSize = u32;
 
 /// Type for the ID of a Connection.
-pub type ConnectionIdSize = u32;
+pub type ConnectionIdSize = u64;
 
 /// Type for vec of data to describe what user may be tagged in parts of a message.
 pub type TextMessageChunks = Vec<(String, Option<UserIdSize>)>;

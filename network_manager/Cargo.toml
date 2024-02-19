@@ -10,3 +10,5 @@ repository = "https://github.com/bblsh/kagu"
 [dependencies]
 quiche = { version = "*" }
 mio = { version = "*", features = ["os-poll", "net"]}
+ring = { version = "0.17.7" }
+crossbeam = { version = "0.8.4" }

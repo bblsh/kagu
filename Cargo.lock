@@ -337,7 +337,7 @@ dependencies = [
  "network_manager",
  "quiche",
  "realms",
- "ring 0.17.7",
+ "swiftlet_quic",
  "types",
  "user",
 ]
@@ -712,8 +712,8 @@ name = "kagu-server"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "network_manager",
  "server",
- "tokio",
 ]
 
 [[package]]
@@ -871,8 +871,10 @@ dependencies = [
 name = "network_manager"
 version = "0.1.0"
 dependencies = [
+ "crossbeam",
  "mio",
  "quiche",
+ "ring 0.17.7",
 ]
 
 [[package]]
@@ -1436,6 +1438,7 @@ dependencies = [
  "quinn",
  "realms",
  "serde",
+ "swiftlet_quic",
  "tokio",
  "types",
  "user",
@@ -1559,6 +1562,15 @@ dependencies = [
  "quote",
  "rustversion",
  "syn 2.0.41",
+]
+
+[[package]]
+name = "swiftlet_quic"
+version = "0.1.0"
+dependencies = [
+ "mio",
+ "quiche",
+ "ring 0.17.7",
 ]
 
 [[package]]

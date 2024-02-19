@@ -15,6 +15,7 @@ use crate::{
     stateful_list::StatefulList,
     tui::Tui,
 };
+
 use client::new_client::NewClient;
 use message::message::MessageType;
 use realms::channels::text_channel::TextChannelMessage;
@@ -22,6 +23,7 @@ use realms::realm::ChannelType;
 use realms::realms_manager::RealmsManager;
 use types::MessageIdSize;
 use types::{ChannelIdSize, RealmIdSize, UserIdSize};
+use user::User;
 
 use super::input_buffer::InputBuffer;
 use super::popups::popup_traits::PopupTraits;
@@ -139,7 +141,8 @@ impl KaguFormatting for String {
 /// Application.
 #[derive(Debug)]
 pub struct App<'a> {
-    pub user_id: Option<UserIdSize>,
+    /// Our User
+    pub user: Option<User>,
     /// Current input mode
     pub input_mode: InputMode,
     /// Current UI element selected
@@ -239,7 +242,7 @@ impl<'a> App<'a> {
             .push((Command::Image, Command::Image.to_str()));
 
         Self {
-            user_id: None,
+            user: None,
             input_mode: InputMode::Normal,
             current_screen: Screen::Main,
             ui_element: UiElement::None,
@@ -305,33 +308,22 @@ impl<'a> App<'a> {
         let mut tui = Tui::new(terminal, events);
         tui.init()?;
 
-        let user_id = self.client.get_user_id();
-        match user_id {
-            Some(id) => self.user_id = Some(id),
-            None => {
-                eprintln!("Failed to get User ID");
-                self.quit();
-            }
-        };
-
-        let username = self.client.get_username();
-        match username {
-            Some(_) => (),
-            None => {
-                eprintln!("Failed to get Username");
-                self.quit();
-            }
-        };
-
-        // We should be logged in and have our own User, so use this to show our name
-        self.user_id_to_username
-            .insert(self.user_id.unwrap(), username.unwrap());
-
         // Start the main loop.
         while self.running {
             // Update any new messages received by the Client
             for message in self.client.get_new_messages() {
                 match message.message {
+                    MessageType::LoginSuccess(user) => {
+                        // Save who we are
+                        self.user_id_to_username
+                            .insert(user.get_id(), user.get_username().to_string());
+
+                        // Save our user
+                        self.user = Some(user);
+
+                        self.request_realms();
+                        self.request_all_users();
+                    }
                     MessageType::UserJoined(user) => {
                         // We should already know we're online, so ignore anything about us
                         if let Some(id) = self.client.get_user_id() {
@@ -428,13 +420,15 @@ impl<'a> App<'a> {
                                 // See if we've been mentioned
                                 for chunk in message.1 {
                                     if let Some(id) = chunk.1 {
-                                        if id == self.user_id.unwrap() {
-                                            // If we are currently in this channel, don't mark a pending mention
-                                            if let Some(current_channel) =
-                                                &self.current_text_channel
-                                            {
-                                                if current_channel.0 != *channel.get_id() {
-                                                    channel.pending_mention = true;
+                                        if let Some(user) = &self.user {
+                                            if user.get_id() == id {
+                                                // If we are currently in this channel, don't mark a pending mention
+                                                if let Some(current_channel) =
+                                                    &self.current_text_channel
+                                                {
+                                                    if current_channel.0 != *channel.get_id() {
+                                                        channel.pending_mention = true;
+                                                    }
                                                 }
                                             }
                                         }
@@ -492,13 +486,15 @@ impl<'a> App<'a> {
                                 // See if we've been mentioned
                                 for chunk in message.2 {
                                     if let Some(id) = chunk.1 {
-                                        if id == self.user_id.unwrap() {
-                                            // If we are currently in this channel, don't mark a pending mention
-                                            if let Some(current_channel) =
-                                                &self.current_text_channel
-                                            {
-                                                if current_channel.0 != *channel.get_id() {
-                                                    channel.pending_mention = true;
+                                        if let Some(user) = &self.user {
+                                            if id == user.get_id() {
+                                                // If we are currently in this channel, don't mark a pending mention
+                                                if let Some(current_channel) =
+                                                    &self.current_text_channel
+                                                {
+                                                    if current_channel.0 != *channel.get_id() {
+                                                        channel.pending_mention = true;
+                                                    }
                                                 }
                                             }
                                         }
@@ -1157,5 +1153,13 @@ impl<'a> App<'a> {
             self.current_pane = Pane::InputPane;
             self.ui_element = UiElement::None;
         }
+    }
+
+    pub fn request_realms(&self) {
+        self.client.get_realms();
+    }
+
+    pub fn request_all_users(&self) {
+        self.client.request_all_users();
     }
 }
