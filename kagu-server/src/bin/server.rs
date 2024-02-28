@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{ArgAction, Parser};
 use server::new_server::NewServer;
 
@@ -14,6 +16,9 @@ struct Args {
 
     #[arg(short, long)]
     name: Option<String>,
+
+    #[arg(short, long)]
+    cert_dir: PathBuf,
 }
 
 fn main() {
@@ -27,7 +32,7 @@ fn main() {
         None => String::from("KaguServer"),
     };
 
-    let server = NewServer::new(server_name, port, args.ipv6);
+    let server = NewServer::new(server_name, port, args.ipv6, args.cert_dir);
     server.start_server();
 
     loop {

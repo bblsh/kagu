@@ -298,6 +298,9 @@ impl<'a> App<'a> {
         self.hang_up();
         self.client.disconnect();
         self.running = false;
+
+        // Mega lazy instead of waiting for the client thread to finish
+        std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     pub fn run_app(&mut self) -> AppResult<()> {
@@ -307,6 +310,8 @@ impl<'a> App<'a> {
         let events = EventHandler::new(250);
         let mut tui = Tui::new(terminal, events);
         tui.init()?;
+
+        self.log_in();
 
         // Start the main loop.
         while self.running {
@@ -318,19 +323,26 @@ impl<'a> App<'a> {
                         self.user_id_to_username
                             .insert(user.get_id(), user.get_username().to_string());
 
+                        // Temporarily lazily tell the client who we are
+                        self.client.set_user(user.clone());
+
                         // Save our user
-                        self.user = Some(user);
+                        self.user = Some(user.clone());
+
+                        self.users_online
+                            .items
+                            .push((user.get_id(), String::from(user.get_username())));
 
                         self.request_realms();
                         self.request_all_users();
                     }
                     MessageType::UserJoined(user) => {
-                        // We should already know we're online, so ignore anything about us
-                        if let Some(id) = self.client.get_user_id() {
-                            if id == user.get_id() {
-                                continue;
-                            }
-                        }
+                        // // We should already know we're online, so ignore anything about us
+                        // if let Some(our_user) = &self.user {
+                        //     if user.get_id() == our_user.get_id() {
+                        //         continue;
+                        //     }
+                        // }
 
                         // Add this user to a map to know who is who
                         self.user_id_to_username
@@ -368,8 +380,8 @@ impl<'a> App<'a> {
                         }
 
                         // If this is us, let us know we've been connected via voice
-                        if let Some(id) = self.client.get_user_id() {
-                            if id == join.user_id {
+                        if let Some(user) = &self.user {
+                            if user.get_id() == join.user_id {
                                 self.is_voice_connected = true;
                                 // Update our current voice channel ID
                                 self.current_voice_channel = Some(join.channel_id);
@@ -392,12 +404,16 @@ impl<'a> App<'a> {
                         }
                     }
                     MessageType::AllUsers(users) => {
-                        for user in users {
-                            self.user_id_to_username
-                                .insert(user.get_id(), String::from(user.get_username()));
-                            self.users_online
-                                .items
-                                .push((user.get_id(), String::from(user.get_username())));
+                        if let Some(our_user) = &self.user {
+                            for user in users {
+                                if our_user.get_id() != user.get_id() {
+                                    self.user_id_to_username
+                                        .insert(user.get_id(), String::from(user.get_username()));
+                                    self.users_online
+                                        .items
+                                        .push((user.get_id(), String::from(user.get_username())));
+                                }
+                            }
                         }
                     }
                     MessageType::Text(message) => {
@@ -694,6 +710,12 @@ impl<'a> App<'a> {
                         }
                     }
                     MessageType::Typing(typing) => {
+                        if let Some(our_user) = &self.user {
+                            if our_user.get_id() == typing.user_id {
+                                continue;
+                            }
+                        }
+
                         // Add this to our list of users typing
                         if let Some(realm) = self.realms_manager.get_realm_mut(typing.realm_id) {
                             // Get this text channel
@@ -917,8 +939,8 @@ impl<'a> App<'a> {
 
     pub fn hang_up(&mut self) {
         if let Some(channel) = self.current_voice_channel {
-            self.client
-                .hang_up(self.current_realm_id.as_ref().unwrap(), &channel);
+            self.client.hang_up(self.current_realm_id.unwrap(), channel);
+            // todo: the current_realm_id may not be correct if the user goes to a new realm
 
             self.is_voice_connected = false;
             self.current_voice_channel = None;
@@ -1155,11 +1177,15 @@ impl<'a> App<'a> {
         }
     }
 
+    pub fn log_in(&self) {
+        self.client.log_in();
+    }
+
     pub fn request_realms(&self) {
         self.client.get_realms();
     }
 
     pub fn request_all_users(&self) {
-        self.client.request_all_users();
+        self.client.get_all_users();
     }
 }

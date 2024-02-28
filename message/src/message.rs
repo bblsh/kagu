@@ -1,4 +1,3 @@
-
 use chrono::{DateTime, Utc};
 use realms::{realm::ChannelType, realm_desc::RealmDescription, realms_manager::RealmsManager};
 use serde::{Deserialize, Serialize};
@@ -56,6 +55,7 @@ pub enum MessageType {
 
     // Users
     AllUsers(Vec<User>),
+    GetAllUsers(MessageHeader),
 
     // Friend actions
     NewFriendRequest((MessageHeader, UserIdSize)),
@@ -131,6 +131,7 @@ impl From<MessageType> for Message {
                 Message::new(0, MessageType::Disconnecting(user_id))
             }
             MessageType::AllUsers(users) => Message::new(0, MessageType::AllUsers(users)),
+            MessageType::GetAllUsers(gau) => Message::new(0, MessageType::GetAllUsers(gau)),
             MessageType::NewFriendRequest(request) => {
                 Message::new(0, MessageType::NewFriendRequest(request))
             }
@@ -199,6 +200,7 @@ impl Message {
                 MessageType::UserLeftVoiceChannel(leave_info)
             }
             MessageType::AllUsers(users) => MessageType::AllUsers(users),
+            MessageType::GetAllUsers(gau) => MessageType::GetAllUsers(gau),
             MessageType::NewFriendRequest(request) => MessageType::NewFriendRequest(request),
             MessageType::FriendRequestAccepted(accepted) => {
                 MessageType::FriendRequestAccepted(accepted)

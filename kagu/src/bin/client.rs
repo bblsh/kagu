@@ -26,6 +26,19 @@ fn main() {
     let client = NewClient::new(args.address, args.username, args.cert_dir);
     client.run_client();
 
+    std::thread::sleep(std::time::Duration::from_millis(500));
+
+    // client.log_in(String::from("TestHello"));
+
+    // //std::thread::sleep(std::time::Duration::from_millis(500));
+
+    // loop {
+    //     std::thread::sleep(std::time::Duration::from_secs(1));
+    //     for message in client.get_new_messages() {
+    //         println!("{:?}", message);
+    //     }
+    // }
+
     // Create an application.
     let mut app = App::new(client);
     let _ = app.run_app();
