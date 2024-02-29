@@ -232,11 +232,29 @@ impl NewClient {
         }
     }
 
-    pub fn remove_realm(&self, realm_id: RealmIdSize) {}
+    pub fn remove_realm(&self, realm_id: RealmIdSize) {
+        if let Some(user) = &self.user {
+            let header = MessageHeader::new(user.get_id(), 0, 0);
+            let message = Message::from(MessageType::RemoveRealm((header, realm_id)));
+            self.send(message);
+        }
+    }
 
-    pub fn add_friend(&self, friend_id: UserIdSize) {}
+    pub fn add_friend(&self, friend_id: UserIdSize) {
+        if let Some(our_user) = &self.user {
+            let header = MessageHeader::new(our_user.get_id(), 0, 0);
+            let message = Message::from(MessageType::NewFriendRequest((header, friend_id)));
+            self.send(message);
+        }
+    }
 
-    pub fn remove_friend(&self, friend_id: UserIdSize) {}
+    pub fn remove_friend(&self, friend_id: UserIdSize) {
+        if let Some(user) = &self.user {
+            let header = MessageHeader::new(user.get_id(), 0, 0);
+            let message = Message::from(MessageType::RemoveFriend((header, friend_id)));
+            self.send(message);
+        }
+    }
 
     pub fn send_typing(&self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
         if let Some(user) = &self.user {

@@ -145,6 +145,26 @@ impl ServerState {
                     let message = Message::from(MessageType::UserLeftVoiceChannel(message));
                     self.send(SendTo::Everyone, message, endpoint);
                 }
+                MessageType::NewFriendRequest((header, requested_id)) => {
+                    let message =
+                        Message::from(MessageType::NewFriendRequest((header, requested_id)));
+                    self.send(SendTo::SingleUser(requested_id), message, endpoint);
+                }
+                MessageType::RemoveFriend((header, old_friend_id)) => {
+                    // Break the bad news to this now former friend
+                    let message = Message::from(MessageType::FriendshipEnded(header));
+                    self.send(SendTo::SingleUser(old_friend_id), message, endpoint);
+                }
+                MessageType::FriendRequestAccepted((header, new_friend_id)) => {
+                    let message =
+                        Message::from(MessageType::FriendRequestAccepted((header, new_friend_id)));
+                    self.send(SendTo::SingleUser(new_friend_id), message, endpoint);
+                }
+                MessageType::FriendRequestRejected((header, rejected_id)) => {
+                    let message =
+                        Message::from(MessageType::FriendRequestRejected((header, rejected_id)));
+                    self.send(SendTo::SingleUser(rejected_id), message, endpoint);
+                }
                 _ => println!("Not implemented: {:?}", message),
             }
         }
