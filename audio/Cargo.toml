@@ -11,9 +11,6 @@ repository = "https://github.com/bblsh/kagu"
 message = { path = "../message"}
 types = { path = "../types" }
 
-tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
-cpal = "0.15.2"
-bincode = { version = "1.3.3" }
-serde = { version = "1.0.160", features = ["derive"] }
-quinn = "*"
-ringbuf = "0.3.3"
+cpal = { version = "0.15.2" }
+opus = { version = "*" }
+crossbeam = { version = "0.8.4" }

@@ -8,7 +8,7 @@ use swiftlet_quic::EndpointEventCallbacks;
 
 pub struct ClientHandler {
     connected: bool,
-    user: Option<User>,
+    _user: Option<User>, // not used yet?
     connection_id: Option<ConnectionId>,
     probable_index: usize,
     msg_type_recv: Option<Message>,
@@ -20,7 +20,7 @@ impl ClientHandler {
     pub fn new(outgoing_receiver: Receiver<Message>, incoming_sender: Sender<Message>) -> Self {
         ClientHandler {
             connected: false,
-            user: None,
+            _user: None,
             connection_id: None,
             probable_index: 0,
             msg_type_recv: None,

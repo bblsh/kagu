@@ -1,4 +1,5 @@
 use crate::client_handler::ClientHandler;
+use audio::new_audio_manager::NewAudioManager;
 use message::message::{Message, MessageHeader, MessageType};
 use network_manager::*;
 use realms::realm::ChannelType;
@@ -19,6 +20,7 @@ pub struct NewClient {
     username: String,
     user: Option<User>,
     cert_dir: PathBuf,
+    audio_manager: NewAudioManager,
     incoming_sender: Sender<Message>,
     incoming_receiver: Receiver<Message>,
     outgoing_sender: Sender<Message>,
@@ -33,11 +35,26 @@ impl NewClient {
         let (incoming_sender, incoming_receiver): (Sender<Message>, Receiver<Message>) =
             crossbeam::channel::bounded(10);
 
+        // let (audio_out_sender, audio_out_receiver): (Sender<Message>, Receiver<Message>) =
+        //     crossbeam::channel::bounded(10);
+
+        let (_audio_in_sender, audio_in_receiver): (Sender<Message>, Receiver<Message>) =
+            crossbeam::channel::bounded(10);
+
         NewClient {
             server_address,
             username,
             user: None,
             cert_dir,
+
+            audio_manager: NewAudioManager::new(
+                // Use our outgoing sender for all messages as the audio sender
+                outgoing_sender.clone(),
+                audio_in_receiver,
+                // Set a dummy MessageHeader for now
+                MessageHeader::new(0, 0, 0),
+            ),
+
             incoming_sender,
             incoming_receiver,
             outgoing_sender,
@@ -192,7 +209,16 @@ impl NewClient {
         }
     }
 
-    pub fn connect_voice(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {}
+    pub fn connect_voice(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
+        if let Some(user) = &self.user {
+            // Set our header for what channel we're connecting to
+            self.audio_manager
+                .set_header(MessageHeader::new(user.get_id(), realm_id, channel_id));
+
+            // Start recording and sending
+            self.audio_manager.start_recording().unwrap();
+        }
+    }
 
     pub fn add_channel(
         &self,
@@ -264,7 +290,9 @@ impl NewClient {
         }
     }
 
-    pub fn hang_up(&self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
+    pub fn hang_up(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
+        self.audio_manager.stop_recording();
+
         if let Some(user) = &self.user {
             let header = MessageHeader::new(user.get_id(), realm_id, channel_id);
             let message = Message::from(MessageType::UserLeftVoiceChannel(header));

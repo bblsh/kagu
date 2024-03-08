@@ -165,6 +165,9 @@ impl ServerState {
                         Message::from(MessageType::FriendRequestRejected((header, rejected_id)));
                     self.send(SendTo::SingleUser(rejected_id), message, endpoint);
                 }
+                MessageType::Audio((header, _audio)) => {
+                    println!("[server] Got audio message from {}!", header.user_id);
+                }
                 _ => println!("Not implemented: {:?}", message),
             }
         }
