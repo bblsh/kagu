@@ -1,8 +1,8 @@
-use crossbeam::channel::{Receiver, Sender};
 use message::message::{Message, MessageType};
 use network_manager::*;
 use user::User;
 
+use crossbeam::channel::{Receiver, Sender};
 use swiftlet_quic::endpoint::{ConnectionEndReason, ConnectionId, Endpoint};
 use swiftlet_quic::EndpointEventCallbacks;
 
@@ -14,10 +14,15 @@ pub struct ClientHandler {
     msg_type_recv: Option<Message>,
     outgoing_receiver: Receiver<Message>,
     incoming_sender: Sender<Message>,
+    audio_in_sender: Sender<Message>,
 }
 
 impl ClientHandler {
-    pub fn new(outgoing_receiver: Receiver<Message>, incoming_sender: Sender<Message>) -> Self {
+    pub fn new(
+        outgoing_receiver: Receiver<Message>,
+        incoming_sender: Sender<Message>,
+        audio_in_sender: Sender<Message>,
+    ) -> Self {
         ClientHandler {
             connected: false,
             _user: None,
@@ -26,17 +31,15 @@ impl ClientHandler {
             msg_type_recv: None,
             outgoing_receiver,
             incoming_sender,
+            audio_in_sender,
         }
     }
 
-    fn process_message(&mut self, cid: &ConnectionId, message: Message, endpoint: &mut Endpoint) {
-        // todo: handle audio differently here
-        let _ = self.incoming_sender.send(message);
-        // match message.message {
-        //     _ => {
-        //         self.incoming_sender.send(message);
-        //     }
-        // }
+    fn process_message(&mut self, _cid: &ConnectionId, message: Message, _endpoint: &mut Endpoint) {
+        match message.message {
+            MessageType::Audio(_) => self.audio_in_sender.send(message).unwrap(),
+            _ => self.incoming_sender.send(message).unwrap(),
+        }
     }
 
     #[inline]
@@ -59,7 +62,7 @@ impl ClientHandler {
 impl EndpointEventCallbacks for ClientHandler {
     fn connection_started(&mut self, _endpoint: &mut Endpoint, cid: &ConnectionId) {
         self.connected = true;
-        self.connection_id = Some(cid.clone());
+        self.connection_id = Some(*cid);
     }
 
     fn connection_ended(

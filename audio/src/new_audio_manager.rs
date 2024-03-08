@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 use message::message::{Message, MessageHeader, MessageType};
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
@@ -15,6 +17,7 @@ pub enum AudioManagerError {
     FailedToCreateInputStream,
     FailedToCreateOutputStream,
     FailedToCreateEncoder,
+    FailedToCreateDecoder,
     DeviceNotFound,
 }
 
@@ -61,15 +64,15 @@ impl NewAudioManager {
 
         let config = StreamConfig {
             sample_rate: cpal::SampleRate(48000),
-            channels: 1,
+            channels: 2,
             buffer_size: cpal::BufferSize::Fixed(480),
         };
 
-        let mut encoder = match Encoder::new(48000, opus::Channels::Mono, opus::Application::Audio)
-        {
-            Ok(encoder) => encoder,
-            Err(_) => return Err(AudioManagerError::FailedToCreateEncoder),
-        };
+        let mut encoder =
+            match Encoder::new(48000, opus::Channels::Stereo, opus::Application::Audio) {
+                Ok(encoder) => encoder,
+                Err(_) => return Err(AudioManagerError::FailedToCreateEncoder),
+            };
 
         let audio_sender = self.audio_out_sender.clone();
         let header = self.current_header;
@@ -78,12 +81,15 @@ impl NewAudioManager {
             eprintln!("an error occurred on stream: {}", err);
         };
 
-        if let Ok(stream) = input_device.build_input_stream(
-            &config,
-            move |data, _: &_| encode_and_send::<f32>(data, &mut encoder, &audio_sender, &header),
-            err_fn,
-            None,
-        ) {
+        let data_callback = move |data: &[f32], _: &_| {
+            let bytes = encoder.encode_vec_float(data, 480 * 4).unwrap();
+
+            let message = Message::from(MessageType::Audio((header, bytes)));
+
+            let _ = audio_sender.send(message);
+        };
+
+        if let Ok(stream) = input_device.build_input_stream(&config, data_callback, err_fn, None) {
             stream.play().unwrap();
             self.input_stream = Some(stream);
             Ok(())
@@ -95,27 +101,63 @@ impl NewAudioManager {
     pub fn stop_recording(&mut self) {
         self.input_stream = None;
     }
-}
 
-fn encode_and_send<T>(
-    input: &[T],
-    encoder: &mut Encoder,
-    audio_out_sender: &Sender<Message>,
-    message_header: &MessageHeader,
-) where
-    T: Sample,
-    f32: FromSample<T>,
-{
-    let f32_samples = input
-        .iter()
-        .map(|f| f32::from_sample_(*f))
-        .collect::<Vec<f32>>();
+    pub fn start_listening(&mut self) -> Result<(), AudioManagerError> {
+        let host = cpal::default_host();
 
-    let bytes = encoder
-        .encode_vec_float(f32_samples.as_slice(), 1200)
-        .unwrap();
+        let ouput_device = match host.default_output_device() {
+            Some(device) => device,
+            None => return Err(AudioManagerError::FailedToGetOutputDevices),
+        };
 
-    let message = Message::from(MessageType::Audio((*message_header, bytes)));
+        let config = StreamConfig {
+            sample_rate: cpal::SampleRate(48000),
+            channels: 2,
+            buffer_size: cpal::BufferSize::Fixed(480),
+        };
 
-    let _ = audio_out_sender.send(message);
+        let mut decoder = match Decoder::new(48000, opus::Channels::Mono) {
+            Ok(decoder) => decoder,
+            Err(_) => return Err(AudioManagerError::FailedToCreateDecoder),
+        };
+
+        let audio_receiver = self.audio_in_receiver.clone();
+        let _header = self.current_header;
+
+        let err_fn = move |err| {
+            eprintln!("an error occurred on stream: {}", err);
+        };
+
+        let data_callback = move |data: &mut [f32], _: &_| {
+            //assert_eq!(480, data.len());
+            data.fill(0.0);
+
+            // There's data to play back, so mix and play it back
+            while let Ok(message) = audio_receiver.try_recv() {
+                if let MessageType::Audio((_header, audio)) = message.message {
+                    // Volume manipulation may be able to be done here later on
+                    let mut user_audio: [f32; 480] = [0.0; 480];
+                    let _decoded_samples = decoder
+                        .decode_float(audio.as_slice(), &mut user_audio, false)
+                        .unwrap();
+
+                    for i in 0..480 {
+                        data[i] += user_audio[i];
+                    }
+                }
+            }
+        };
+
+        if let Ok(stream) = ouput_device.build_output_stream(&config, data_callback, err_fn, None) {
+            stream.play().unwrap();
+            self.output_stream = Some(stream);
+            Ok(())
+        } else {
+            Err(AudioManagerError::FailedToCreateOutputStream)
+        }
+    }
+
+    pub fn stop_listening(&mut self) {
+        self.output_stream = None;
+    }
 }

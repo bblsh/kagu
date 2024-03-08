@@ -25,6 +25,7 @@ pub struct NewClient {
     incoming_receiver: Receiver<Message>,
     outgoing_sender: Sender<Message>,
     outgoing_receiver: Receiver<Message>,
+    audio_in_sender: Sender<Message>,
 }
 
 impl NewClient {
@@ -35,10 +36,7 @@ impl NewClient {
         let (incoming_sender, incoming_receiver): (Sender<Message>, Receiver<Message>) =
             crossbeam::channel::bounded(10);
 
-        // let (audio_out_sender, audio_out_receiver): (Sender<Message>, Receiver<Message>) =
-        //     crossbeam::channel::bounded(10);
-
-        let (_audio_in_sender, audio_in_receiver): (Sender<Message>, Receiver<Message>) =
+        let (audio_in_sender, audio_in_receiver): (Sender<Message>, Receiver<Message>) =
             crossbeam::channel::bounded(10);
 
         NewClient {
@@ -59,6 +57,7 @@ impl NewClient {
             incoming_receiver,
             outgoing_sender,
             outgoing_receiver,
+            audio_in_sender,
         }
     }
 
@@ -71,6 +70,7 @@ impl NewClient {
         let server_address = self.server_address;
         let outgoing_receiver = self.outgoing_receiver.clone();
         let incoming_sender = self.incoming_sender.clone();
+        let audio_in_sender = self.audio_in_sender.clone();
 
         let config = Config {
             idle_timeout_in_ms: 5000,
@@ -103,10 +103,11 @@ impl NewClient {
                 }
             };
 
-            let mut client_handler = ClientHandler::new(outgoing_receiver, incoming_sender);
+            let mut client_handler =
+                ClientHandler::new(outgoing_receiver, incoming_sender, audio_in_sender);
             let mut rtc_handler = EndpointHandler::new(&mut client_endpoint, &mut client_handler);
 
-            match rtc_handler.run_event_loop(std::time::Duration::from_millis(5)) {
+            match rtc_handler.run_event_loop(std::time::Duration::from_millis(1)) {
                 Ok(_) => {}
                 Err(_) => {
                     eprintln!("Error running event loop?")
@@ -217,6 +218,9 @@ impl NewClient {
 
             // Start recording and sending
             self.audio_manager.start_recording().unwrap();
+
+            // Let the voices be heard
+            self.audio_manager.start_listening().unwrap();
         }
     }
 
@@ -292,6 +296,7 @@ impl NewClient {
 
     pub fn hang_up(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
         self.audio_manager.stop_recording();
+        self.audio_manager.stop_listening();
 
         if let Some(user) = &self.user {
             let header = MessageHeader::new(user.get_id(), realm_id, channel_id);
