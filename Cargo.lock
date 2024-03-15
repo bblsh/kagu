@@ -137,6 +137,7 @@ dependencies = [
  "crossbeam",
  "message",
  "opus",
+ "rtrb",
  "types",
 ]
 
@@ -1297,6 +1298,15 @@ dependencies = [
  "spin 0.9.8",
  "untrusted 0.9.0",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "rtrb"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "636b228b5adb32add7f0e41e5084d38aa66fb0f942e8a91751c1e90023288fbe"
+dependencies = [
+ "crossbeam-utils",
 ]
 
 [[package]]

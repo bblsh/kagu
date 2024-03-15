@@ -64,15 +64,15 @@ impl NewAudioManager {
 
         let config = StreamConfig {
             sample_rate: cpal::SampleRate(48000),
-            channels: 2,
+            channels: 1,
             buffer_size: cpal::BufferSize::Fixed(480),
         };
 
-        let mut encoder =
-            match Encoder::new(48000, opus::Channels::Stereo, opus::Application::Audio) {
-                Ok(encoder) => encoder,
-                Err(_) => return Err(AudioManagerError::FailedToCreateEncoder),
-            };
+        let mut encoder = match Encoder::new(48000, opus::Channels::Mono, opus::Application::Audio)
+        {
+            Ok(encoder) => encoder,
+            Err(_) => return Err(AudioManagerError::FailedToCreateEncoder),
+        };
 
         let audio_sender = self.audio_out_sender.clone();
         let header = self.current_header;
@@ -112,7 +112,7 @@ impl NewAudioManager {
 
         let config = StreamConfig {
             sample_rate: cpal::SampleRate(48000),
-            channels: 2,
+            channels: 1,
             buffer_size: cpal::BufferSize::Fixed(480),
         };
 
