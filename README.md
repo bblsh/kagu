@@ -77,16 +77,16 @@ Similarly, text and voice channels can be added by navigating to the Channels pa
 
 `Esc` will exit focus from an input box, and pressing `q` will back out of a menu to add or remove a realm or channel.
 
-## Notes / Known Issues
+## Planned Features
+* Persistent messages using a database
+* Text scrolling in text input
+* Ability to choose an audio input and output
 
-* Scrolling through chat history is not yet implemented (coming soonTM).
-* There's currently no scrolling in text input (coming soonTM).
+## Notes / Known Issues
+* If using voice comms on macOS, verify your input format is 48,000 Hz in the Audio MIDI Setup program.
 * Some features that are drawn out of bounds due to too small of a terminal size will panic the client.
 * Kagu was used as motivation to learn Rust, so it is currently *very* unoptimized.
-* There are many pieces of the code that are not consistent since new methods of doing things were learned as development progressed.
-* Realms and channels are currently hardcoded as a proof of concept until a database is introduced to save and serve this data. Messages are not saved or persist because of this as well.
-* Due to the current server design, audio is also echoed back to the user speaking.
-* There's currently no option to choose an audio input and output (coming soonTM), so the defaults will be used.
+* Audio is currently echoed back to the user speaking.
 * Any and all feedback or pull requests to improve Kagu in any way is welcome!
 * This was tested on macOS, and `cpal` may have issues building or running on other platforms.
 * Windows has not been fully tested yet.
