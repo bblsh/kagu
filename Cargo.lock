@@ -1586,6 +1586,7 @@ dependencies = [
 [[package]]
 name = "swiftlet_quic"
 version = "0.1.0"
+source = "git+https://github.com/MediaEnhanced/Swiftlet.git#5fb427b52588f696525077dcc9329287a305c866"
 dependencies = [
  "mio",
  "quiche",

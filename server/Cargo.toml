@@ -9,7 +9,7 @@ realms = { path = "../realms" }
 types = { path = "../types" }
 user = { path = "../user" }
 network_manager = { path = "../network_manager" }
-swiftlet_quic = { path = "../../swiftlet/quic"}
+swiftlet_quic = { version = "*", git = "https://github.com/MediaEnhanced/Swiftlet.git" }
 
 tokio = { version = "1.28.2", features = ["macros", "rt-multi-thread"] }
 quinn = "*"

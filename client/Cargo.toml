@@ -18,4 +18,4 @@ network_manager = { path = "../network_manager", version = "*"  }
 mio = { version = "*", features = ["os-poll", "net"]}
 quiche = { version = "*" }
 crossbeam = { version = "0.8.4" }
-swiftlet_quic = { path = "../../swiftlet/quic"}
+swiftlet_quic = { version = "*", git = "https://github.com/MediaEnhanced/Swiftlet.git" }
