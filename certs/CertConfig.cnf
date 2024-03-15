@@ -1,0 +1,5 @@
+[ req ]
+x509_extensions	= v3_ca	# The extensions to add to the self signed cert
+
+[ v3_ca ]
+subjectAltName = DNS:localhost

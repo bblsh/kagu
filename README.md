@@ -40,10 +40,12 @@ This will establish a connection with the server  at `ip:port` and display a TUI
 To run the server, run:
 
 ```
-cargo run --bin server -- -p port
+cargo run --bin kagu-server -- -p port -c cert_dir
 ```
 
-The server will listen for QUIC connections on port `port`.
+The server will listen for QUIC connections on port `port` and encrypt the connection using the certificate provided in `cert_dir` (must be a full path). 
+
+The `--ipv6` argument may be provided to serve over IPv6.
 
 ## Navigating the Client Interface
 To navigate through different panes (Messages, Channels, Input), use arrow keys.
@@ -78,12 +80,16 @@ Similarly, text and voice channels can be added by navigating to the Channels pa
 `Esc` will exit focus from an input box, and pressing `q` will back out of a menu to add or remove a realm or channel.
 
 ## Planned Features
+* Ability to generate certificates for the server
 * Persistent messages using a database
-* Text scrolling in text input
+* Scrolling in text input
 * Ability to choose an audio input and output
+* Group messages and calls
+* User roles
+* User permissions
 
 ## Notes / Known Issues
-* If using voice comms on macOS, verify your input format is 48,000 Hz in the Audio MIDI Setup program.
+* If using voice comms on macOS, verify your input format is `48,000 Hz` in the Audio MIDI Setup program.
 * Some features that are drawn out of bounds due to too small of a terminal size will panic the client.
 * Kagu was used as motivation to learn Rust, so it is currently *very* unoptimized.
 * Audio is currently echoed back to the user speaking.

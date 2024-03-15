@@ -1,0 +1,6 @@
+The following openssl (3.0+) command will generate a self-signed certificate and private key
+that can be used with the Rust swiftlet_quic library / quiche sub-library.
+The -days and -subj parameter contents can be changed but /CN=localhost should always exist.
+
+openssl req -x509 -noenc -newkey rsa:2048 -outform PEM -config CertConfig.cnf -keyout pkey.pem -out cert.pem -sha256 -days 3650 -subj "/C=US/ST=NewYork/L=NYC/O=OrgNameHere/OU=Kagu/CN=localhost"
+
