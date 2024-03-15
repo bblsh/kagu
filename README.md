@@ -32,10 +32,11 @@ git clone https://github.com/bblsh/kagu.git
 To run the client, run:
 
 ```
-cargo run --bin client -- -u username -a address
+cargo run --bin client -- -u username -a address -c cert_dir
 ```
 
 This will establish a connection with the server  at `ip:port` and display a TUI. Messages sent will be sent as `username`.
+The connection will be encrypted using the cert provided in `cert_dir` (must be a full path).
 
 To run the server, run:
 
@@ -43,7 +44,7 @@ To run the server, run:
 cargo run --bin kagu-server -- -p port -c cert_dir
 ```
 
-The server will listen for QUIC connections on port `port` and encrypt the connection using the certificate provided in `cert_dir` (must be a full path). 
+The server will listen for QUIC connections on port `port` and encrypt the connection using the certificate provided in `cert_dir` (must be a full path). The provided certificates should not be used in production.
 
 The `--ipv6` argument may be provided to serve over IPv6.
 
