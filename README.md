@@ -7,7 +7,7 @@ Kagu aims to be a fast, private, self-hosted and lightweight alternative to a fa
 Kagu is powered by:
 - 🚀 [rust] for stability, speed and security
 - 🔊 [cpal] for audio playback and recording
-- 👟 [quinn] to leverage the speed and reliability of QUIC
+- 👟 [swiftlet] to leverage the speed and reliability of QUIC
 - 🖼️ [ratatui] for a rich terminal user interface
 
 <h1 align="center"><img width="500" src="assets/screenshot_1.png" /></h1>
@@ -93,5 +93,5 @@ Similarly, text and voice channels can be added by navigating to the Channels pa
 
 [rust]: https://www.rust-lang.org/
 [cpal]: https://github.com/RustAudio/cpal
-[quinn]: https://github.com/quinn-rs/quinn
+[swiftlet]: https://github.com/MediaEnhanced/Swiftlet
 [ratatui]: https://github.com/tui-rs-revival/ratatui
