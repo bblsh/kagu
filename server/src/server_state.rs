@@ -67,6 +67,12 @@ impl ServerState {
                     let message = Message::from(MessageType::LoginSuccess(user.clone()));
                     self.send(SendTo::SingleUser(user_id), message, endpoint);
 
+                    println!(
+                        "[server] Authenticated user {} with id {}",
+                        user.get_username(),
+                        user.get_id()
+                    );
+
                     // Announce the new user to everyone
                     let message = Message::from(MessageType::UserJoined(user));
                     self.send(SendTo::EveryoneExceptUserID(user_id), message, endpoint);
@@ -266,6 +272,11 @@ impl EndpointEventCallbacks for ServerState {
         reason: ConnectionEndReason,
         remaining_connections: usize,
     ) -> bool {
+        if self.clients.contains_key(cid) {
+            self.clients.remove(cid);
+            // send user disconnected to everyone
+        }
+
         false
     }
 

@@ -217,10 +217,16 @@ impl NewClient {
                 .set_header(MessageHeader::new(user.get_id(), realm_id, channel_id));
 
             // Start recording and sending
-            self.audio_manager.start_recording().unwrap();
+            match self.audio_manager.start_recording() {
+                Ok(_) => (),
+                Err(_) => println!("FAILED TO START LISTENING"),
+            }
 
             // Let the voices be heard
-            self.audio_manager.start_listening().unwrap();
+            match self.audio_manager.start_listening() {
+                Ok(_) => (),
+                Err(_) => println!("FAILED TO START RECORDING"),
+            }
         }
     }
 
