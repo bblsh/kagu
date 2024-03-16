@@ -82,11 +82,11 @@ impl NewAudioManager {
         };
 
         let data_callback = move |data: &[f32], _: &_| {
-            let bytes = encoder.encode_vec_float(data, 480 * 4).unwrap();
+            if let Ok(bytes) = encoder.encode_vec_float(data, 480 * 4) {
+                let message = Message::from(MessageType::Audio((header, bytes)));
 
-            let message = Message::from(MessageType::Audio((header, bytes)));
-
-            let _ = audio_sender.send(message);
+                let _ = audio_sender.send(message);
+            }
         };
 
         if let Ok(stream) = input_device.build_input_stream(&config, data_callback, err_fn, None) {
