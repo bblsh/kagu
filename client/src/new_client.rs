@@ -107,10 +107,10 @@ impl NewClient {
                 ClientHandler::new(outgoing_receiver, incoming_sender, audio_in_sender);
             let mut rtc_handler = EndpointHandler::new(&mut client_endpoint, &mut client_handler);
 
-            match rtc_handler.run_event_loop(std::time::Duration::from_millis(1)) {
+            match rtc_handler.run_event_loop(std::time::Duration::from_millis(5)) {
                 Ok(_) => {}
-                Err(_) => {
-                    eprintln!("Error running event loop?")
+                Err(e) => {
+                    eprintln!("Error running event loop: {:?}", e)
                 }
             }
         });
