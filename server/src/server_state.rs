@@ -209,7 +209,11 @@ impl ServerState {
         send_buffer.extend(message_buffer);
 
         for connection in &self.clients {
-            println!("conn id: {}", connection.0);
+            println!(
+                "conn id: {}, user_id: {}",
+                connection.0,
+                connection.1.get_id()
+            );
         }
 
         match send_to {
