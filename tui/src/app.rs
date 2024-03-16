@@ -337,13 +337,6 @@ impl<'a> App<'a> {
                         self.request_all_users();
                     }
                     MessageType::UserJoined(user) => {
-                        // // We should already know we're online, so ignore anything about us
-                        // if let Some(our_user) = &self.user {
-                        //     if user.get_id() == our_user.get_id() {
-                        //         continue;
-                        //     }
-                        // }
-
                         // Add this user to a map to know who is who
                         self.user_id_to_username
                             .insert(user.get_id(), String::from(user.get_username()));
@@ -385,6 +378,8 @@ impl<'a> App<'a> {
                                 self.is_voice_connected = true;
                                 // Update our current voice channel ID
                                 self.current_voice_channel = Some(join.channel_id);
+
+                                self.connect_voice(join.realm_id, join.channel_id);
                             }
                         }
                     }
@@ -805,7 +800,7 @@ impl<'a> App<'a> {
                 self.client.join_channel(realm_id, channel_type, channel_id);
 
                 // Let the voices be heard
-                self.connect_voice(realm_id, channel_id);
+                //self.connect_voice(realm_id, channel_id);
             }
         }
     }

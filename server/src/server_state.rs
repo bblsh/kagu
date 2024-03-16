@@ -159,16 +159,32 @@ impl ServerState {
                     // If we couldn't find the realm or channel, don't send it
                 }
                 MessageType::Typing(message) => {
+                    let id = message.user_id;
                     let message = Message::from(MessageType::Typing(message));
-                    self.send(SendTo::Everyone, message, endpoint);
+                    self.send(SendTo::EveryoneExceptUserID(id), message, endpoint);
                 }
                 MessageType::UserJoinedVoiceChannel(message) => {
-                    let message = Message::from(MessageType::UserJoinedVoiceChannel(message));
-                    self.send(SendTo::Everyone, message, endpoint);
+                    if let Some(realm) = self.realms_manager.get_realm_mut(message.realm_id) {
+                        if let Some(channel) = realm.get_voice_channel_mut(message.channel_id) {
+                            channel.connected_users.push(message.user_id);
+
+                            let message =
+                                Message::from(MessageType::UserJoinedVoiceChannel(message));
+                            self.send(SendTo::Everyone, message, endpoint);
+                        }
+                    }
                 }
                 MessageType::UserLeftVoiceChannel(message) => {
-                    let message = Message::from(MessageType::UserLeftVoiceChannel(message));
-                    self.send(SendTo::Everyone, message, endpoint);
+                    if let Some(realm) = self.realms_manager.get_realm_mut(message.realm_id) {
+                        if let Some(channel) = realm.get_voice_channel_mut(message.channel_id) {
+                            channel
+                                .connected_users
+                                .retain(|user_id| *user_id != message.user_id);
+
+                            let message = Message::from(MessageType::UserLeftVoiceChannel(message));
+                            self.send(SendTo::Everyone, message, endpoint);
+                        }
+                    }
                 }
                 MessageType::NewFriendRequest((header, requested_id)) => {
                     let message =
@@ -191,8 +207,13 @@ impl ServerState {
                     self.send(SendTo::SingleUser(rejected_id), message, endpoint);
                 }
                 MessageType::Audio((header, audio)) => {
-                    let message = Message::from(MessageType::Audio((header, audio)));
-                    self.send(SendTo::Everyone, message, endpoint);
+                    if let Some(realm) = self.realms_manager.get_realm(header.realm_id) {
+                        if let Some(channel) = realm.get_voice_channel(header.channel_id) {
+                            let users = channel.get_connected_users().clone();
+                            let message = Message::from(MessageType::Audio((header, audio)));
+                            self.send(SendTo::Users(users), message, endpoint);
+                        }
+                    }
                 }
                 _ => println!("Not implemented: {:?}", message),
             }
@@ -280,8 +301,11 @@ impl EndpointEventCallbacks for ServerState {
         false
     }
 
-    fn connection_started(&mut self, _endpoint: &mut Endpoint, _cid: &ConnectionId) {
-        println!("[server] client connected");
+    fn connection_started(&mut self, endpoint: &mut Endpoint, cid: &ConnectionId) {
+        println!(
+            "[server] client connected from {}",
+            endpoint.get_connection_socket_addr(cid).unwrap()
+        );
     }
 
     fn connection_ended(
@@ -289,11 +313,17 @@ impl EndpointEventCallbacks for ServerState {
         endpoint: &mut Endpoint,
         cid: &ConnectionId,
         reason: ConnectionEndReason,
-        remaining_connections: usize,
+        _remaining_connections: usize,
     ) -> bool {
-        if self.clients.contains_key(cid) {
+        if let Some(user) = self.clients.get(cid) {
+            println!(
+                "[server] client {} lost connection: {:?}",
+                user.get_id(),
+                reason
+            );
+            let message = Message::from(MessageType::UserLeft(user.get_id()));
+            self.send(SendTo::Everyone, message, endpoint);
             self.clients.remove(cid);
-            // send user disconnected to everyone
         }
 
         false
@@ -316,6 +346,27 @@ impl EndpointEventCallbacks for ServerState {
 
             // Tell swiftlet to read another message header
             Some(MESSAGE_HEADER_SIZE)
+        }
+    }
+
+    fn rt_stream_recv(
+        &mut self,
+        endpoint: &mut Endpoint,
+        cid: &ConnectionId,
+        read_data: &[u8],
+        _rt_id: u64,
+    ) -> usize {
+        if read_data.len() == MESSAGE_HEADER_SIZE {
+            self.get_message_size(read_data)
+        } else {
+            // We know this is (likely) a message
+            let message_buffer = read_data.to_vec();
+            let message = Message::from_vec_u8(message_buffer).unwrap();
+
+            self.process_message(cid, message, endpoint);
+
+            // Tell swiftlet to read another message header
+            MESSAGE_HEADER_SIZE
         }
     }
 }
