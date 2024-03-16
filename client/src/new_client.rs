@@ -187,6 +187,11 @@ impl NewClient {
         message_id: MessageIdSize,
         message_chunks: Vec<(String, Option<UserIdSize>)>,
     ) {
+        if let Some(user) = &self.user {
+            let header = MessageHeader::new(user.get_id(), realm_id, channel_id);
+            let message = Message::from(MessageType::Reply((header, message_id, message_chunks)));
+            self.send(message);
+        }
     }
 
     pub fn send_image(&self, realm_id: RealmIdSize, channel_id: ChannelIdSize, image: Vec<u8>) {}

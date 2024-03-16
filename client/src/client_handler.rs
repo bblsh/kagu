@@ -10,8 +10,6 @@ pub struct ClientHandler {
     connected: bool,
     _user: Option<User>, // not used yet?
     connection_id: Option<ConnectionId>,
-    probable_index: usize,
-    msg_type_recv: Option<Message>,
     outgoing_receiver: Receiver<Message>,
     incoming_sender: Sender<Message>,
     audio_in_sender: Sender<Message>,
@@ -27,8 +25,6 @@ impl ClientHandler {
             connected: false,
             _user: None,
             connection_id: None,
-            probable_index: 0,
-            msg_type_recv: None,
             outgoing_receiver,
             incoming_sender,
             audio_in_sender,
@@ -75,8 +71,6 @@ impl EndpointEventCallbacks for ClientHandler {
         if let Some(my_conn_id) = &self.connection_id {
             if *my_conn_id == *cid {
                 self.connection_id = None;
-                self.probable_index = 0;
-                self.msg_type_recv = None;
             }
         }
 

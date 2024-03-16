@@ -139,6 +139,25 @@ impl ServerState {
 
                     // If we couldn't find the realm or channel, don't send it
                 }
+                MessageType::Reply(mut message) => {
+                    // Before sending, we need to generate an id for this message
+                    if let Some(realm) = self.realms_manager.get_realm_mut(message.0.realm_id) {
+                        if let Some(channel) = realm.get_text_channel_mut(message.0.channel_id) {
+                            let id = channel.generate_message_id();
+
+                            // Set the message id
+                            message.0.message_id = Some(id);
+
+                            // Set the time the message was sent
+                            message.0.datetime = Some(Utc::now());
+
+                            let message = Message::from(MessageType::Reply(message));
+                            self.send(SendTo::Everyone, message, endpoint);
+                        }
+                    }
+
+                    // If we couldn't find the realm or channel, don't send it
+                }
                 MessageType::Typing(message) => {
                     let message = Message::from(MessageType::Typing(message));
                     self.send(SendTo::Everyone, message, endpoint);
