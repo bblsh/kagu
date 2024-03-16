@@ -65,7 +65,7 @@ impl ServerState {
 
                     // Notify the user of a successful login
                     let message = Message::from(MessageType::LoginSuccess(user.clone()));
-                    self.send(SendTo::SingleUser(user_id), message, endpoint);
+                    self.send(SendTo::SingleUser(user_id), false, message, endpoint);
 
                     println!(
                         "[server] Authenticated user {} with id {}",
@@ -75,7 +75,12 @@ impl ServerState {
 
                     // Announce the new user to everyone
                     let message = Message::from(MessageType::UserJoined(user));
-                    self.send(SendTo::EveryoneExceptUserID(user_id), message, endpoint);
+                    self.send(
+                        SendTo::EveryoneExceptUserID(user_id),
+                        false,
+                        message,
+                        endpoint,
+                    );
                 }
                 _ => self
                     .disconnect_queue
@@ -87,7 +92,7 @@ impl ServerState {
                     self.clients.retain(|_, u| u.get_id() != user_id);
 
                     let message = Message::from(MessageType::UserLeft(user_id));
-                    self.send(SendTo::Everyone, message, endpoint);
+                    self.send(SendTo::Everyone, false, message, endpoint);
                 }
                 MessageType::GetAllUsers(gau) => {
                     let mut users = Vec::new();
@@ -96,17 +101,17 @@ impl ServerState {
                     }
 
                     let message = Message::from(MessageType::AllUsers(users));
-                    self.send(SendTo::SingleUser(gau.user_id), message, endpoint);
+                    self.send(SendTo::SingleUser(gau.user_id), false, message, endpoint);
                 }
                 MessageType::GetRealms(user_id) => {
                     let rm = self.realms_manager.clone();
                     let message = Message::from(MessageType::RealmsManager(rm));
-                    self.send(SendTo::SingleUser(user_id), message, endpoint);
+                    self.send(SendTo::SingleUser(user_id), false, message, endpoint);
                 }
                 MessageType::AddRealm(ar) => {
                     let realm_id = self.realms_manager.add_realm(ar.1.clone());
                     let message = Message::from(MessageType::RealmAdded((realm_id, ar.1)));
-                    self.send(SendTo::Everyone, message, endpoint);
+                    self.send(SendTo::Everyone, false, message, endpoint);
                 }
                 MessageType::AddChannel(ac) => {
                     let channel =
@@ -118,7 +123,7 @@ impl ServerState {
                         channel.0,
                         channel.1,
                     )));
-                    self.send(SendTo::Everyone, message, endpoint);
+                    self.send(SendTo::Everyone, false, message, endpoint);
                 }
                 MessageType::Text(mut message) => {
                     // Before sending, we need to generate an id for this message
@@ -133,7 +138,7 @@ impl ServerState {
                             message.0.datetime = Some(Utc::now());
 
                             let text = Message::from(MessageType::Text(message));
-                            self.send(SendTo::Everyone, text, endpoint);
+                            self.send(SendTo::Everyone, false, text, endpoint);
                         }
                     }
 
@@ -152,7 +157,7 @@ impl ServerState {
                             message.0.datetime = Some(Utc::now());
 
                             let message = Message::from(MessageType::Reply(message));
-                            self.send(SendTo::Everyone, message, endpoint);
+                            self.send(SendTo::Everyone, false, message, endpoint);
                         }
                     }
 
@@ -161,7 +166,7 @@ impl ServerState {
                 MessageType::Typing(message) => {
                     let id = message.user_id;
                     let message = Message::from(MessageType::Typing(message));
-                    self.send(SendTo::EveryoneExceptUserID(id), message, endpoint);
+                    self.send(SendTo::EveryoneExceptUserID(id), false, message, endpoint);
                 }
                 MessageType::UserJoinedVoiceChannel(message) => {
                     if let Some(realm) = self.realms_manager.get_realm_mut(message.realm_id) {
@@ -170,7 +175,7 @@ impl ServerState {
 
                             let message =
                                 Message::from(MessageType::UserJoinedVoiceChannel(message));
-                            self.send(SendTo::Everyone, message, endpoint);
+                            self.send(SendTo::Everyone, false, message, endpoint);
                         }
                     }
                 }
@@ -182,36 +187,36 @@ impl ServerState {
                                 .retain(|user_id| *user_id != message.user_id);
 
                             let message = Message::from(MessageType::UserLeftVoiceChannel(message));
-                            self.send(SendTo::Everyone, message, endpoint);
+                            self.send(SendTo::Everyone, false, message, endpoint);
                         }
                     }
                 }
                 MessageType::NewFriendRequest((header, requested_id)) => {
                     let message =
                         Message::from(MessageType::NewFriendRequest((header, requested_id)));
-                    self.send(SendTo::SingleUser(requested_id), message, endpoint);
+                    self.send(SendTo::SingleUser(requested_id), false, message, endpoint);
                 }
                 MessageType::RemoveFriend((header, old_friend_id)) => {
                     // Break the bad news to this now former friend
                     let message = Message::from(MessageType::FriendshipEnded(header));
-                    self.send(SendTo::SingleUser(old_friend_id), message, endpoint);
+                    self.send(SendTo::SingleUser(old_friend_id), false, message, endpoint);
                 }
                 MessageType::FriendRequestAccepted((header, new_friend_id)) => {
                     let message =
                         Message::from(MessageType::FriendRequestAccepted((header, new_friend_id)));
-                    self.send(SendTo::SingleUser(new_friend_id), message, endpoint);
+                    self.send(SendTo::SingleUser(new_friend_id), false, message, endpoint);
                 }
                 MessageType::FriendRequestRejected((header, rejected_id)) => {
                     let message =
                         Message::from(MessageType::FriendRequestRejected((header, rejected_id)));
-                    self.send(SendTo::SingleUser(rejected_id), message, endpoint);
+                    self.send(SendTo::SingleUser(rejected_id), false, message, endpoint);
                 }
                 MessageType::Audio((header, audio)) => {
                     if let Some(realm) = self.realms_manager.get_realm(header.realm_id) {
                         if let Some(channel) = realm.get_voice_channel(header.channel_id) {
                             let users = channel.get_connected_users().clone();
                             let message = Message::from(MessageType::Audio((header, audio)));
-                            self.send(SendTo::Users(users), message, endpoint);
+                            self.send(SendTo::Users(users), true, message, endpoint);
                         }
                     }
                 }
@@ -247,11 +252,15 @@ impl ServerState {
         self.exiting = true;
     }
 
-    fn send(&self, send_to: SendTo, message: Message, endpoint: &mut Endpoint) {
+    fn send(&self, send_to: SendTo, realtime: bool, message: Message, endpoint: &mut Endpoint) {
         println!("{:?}", message);
         let message_buffer = message.into_vec_u8().unwrap();
         let mut send_buffer = Vec::new();
-        send_buffer.extend(u16::try_from(message_buffer.len()).unwrap().to_ne_bytes());
+
+        if !realtime {
+            send_buffer.extend(u16::try_from(message_buffer.len()).unwrap().to_ne_bytes());
+        }
+
         send_buffer.extend(message_buffer);
 
         for connection in &self.clients {
@@ -265,27 +274,75 @@ impl ServerState {
         match send_to {
             SendTo::Everyone => {
                 for connection in &self.clients {
-                    let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
+                    match realtime {
+                        true => {
+                            let _ = endpoint.rt_stream_send(
+                                connection.0,
+                                Some(send_buffer.clone()),
+                                true,
+                            );
+                        }
+                        false => {
+                            let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
+                        }
+                    }
+                    //let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
                 }
             }
             SendTo::EveryoneExceptUserID(user_id) => {
                 for connection in &self.clients {
                     if connection.1.get_id() != user_id {
-                        let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
+                        match realtime {
+                            true => {
+                                let _ = endpoint.rt_stream_send(
+                                    connection.0,
+                                    Some(send_buffer.clone()),
+                                    true,
+                                );
+                            }
+                            false => {
+                                let _ =
+                                    endpoint.main_stream_send(connection.0, send_buffer.clone());
+                            }
+                        }
                     }
                 }
             }
             SendTo::SingleUser(user_id) => {
                 for connection in &self.clients {
                     if connection.1.get_id() == user_id {
-                        let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
+                        match realtime {
+                            true => {
+                                let _ = endpoint.rt_stream_send(
+                                    connection.0,
+                                    Some(send_buffer.clone()),
+                                    true,
+                                );
+                            }
+                            false => {
+                                let _ =
+                                    endpoint.main_stream_send(connection.0, send_buffer.clone());
+                            }
+                        }
                     }
                 }
             }
             SendTo::Users(user_ids) => {
                 for connection in &self.clients {
                     if user_ids.contains(&connection.1.get_id()) {
-                        let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
+                        match realtime {
+                            true => {
+                                let _ = endpoint.rt_stream_send(
+                                    connection.0,
+                                    Some(send_buffer.clone()),
+                                    true,
+                                );
+                            }
+                            false => {
+                                let _ =
+                                    endpoint.main_stream_send(connection.0, send_buffer.clone());
+                            }
+                        }
                     }
                 }
             }
@@ -322,7 +379,7 @@ impl EndpointEventCallbacks for ServerState {
                 reason
             );
             let message = Message::from(MessageType::UserLeft(user.get_id()));
-            self.send(SendTo::Everyone, message, endpoint);
+            self.send(SendTo::Everyone, false, message, endpoint);
             self.clients.remove(cid);
         }
 
@@ -356,17 +413,13 @@ impl EndpointEventCallbacks for ServerState {
         read_data: &[u8],
         _rt_id: u64,
     ) -> usize {
-        if read_data.len() == MESSAGE_HEADER_SIZE {
-            self.get_message_size(read_data)
-        } else {
-            // We know this is (likely) a message
-            let message_buffer = read_data.to_vec();
-            let message = Message::from_vec_u8(message_buffer).unwrap();
+        println!("Got RT message");
+        // We know this is (likely) a message
+        let message_buffer = read_data.to_vec();
+        let message = Message::from_vec_u8(message_buffer).unwrap();
 
-            self.process_message(cid, message, endpoint);
+        self.process_message(cid, message, endpoint);
 
-            // Tell swiftlet to read another message header
-            MESSAGE_HEADER_SIZE
-        }
+        0
     }
 }

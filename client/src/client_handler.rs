@@ -43,14 +43,25 @@ impl ClientHandler {
         usize::from_ne_bytes([read_data[0], read_data[1], 0, 0, 0, 0, 0, 0])
     }
 
-    fn send_message(&self, endpoint: &mut Endpoint, message: Message) {
+    fn send_message(&self, realtime: bool, endpoint: &mut Endpoint, message: Message) {
         if let Some(connection_id) = &self.connection_id {
             let message_buffer = message.into_vec_u8().unwrap();
             let mut send_buffer = Vec::new();
-            send_buffer.extend(u16::try_from(message_buffer.len()).unwrap().to_ne_bytes());
+
+            if !realtime {
+                send_buffer.extend(u16::try_from(message_buffer.len()).unwrap().to_ne_bytes());
+            }
+
             send_buffer.extend(message_buffer);
 
-            let _ = endpoint.main_stream_send(connection_id, send_buffer);
+            match realtime {
+                true => {
+                    let _ = endpoint.rt_stream_send(connection_id, Some(send_buffer), true);
+                }
+                false => {
+                    let _ = endpoint.main_stream_send(connection_id, send_buffer);
+                }
+            }
         }
     }
 }
@@ -83,10 +94,11 @@ impl EndpointEventCallbacks for ClientHandler {
         // Check to see if there's anything to send
         while let Ok(message) = self.outgoing_receiver.try_recv() {
             // If we're sending a Disconnecting message, we know to exit after sending it
-            if let MessageType::Disconnecting(_) = message.message {
-                exit = true;
+            match message.message {
+                MessageType::Disconnecting(_) => exit = true,
+                MessageType::Audio(_) => self.send_message(true, endpoint, message),
+                _ => self.send_message(false, endpoint, message),
             }
-            self.send_message(endpoint, message);
 
             if exit {
                 let _ = endpoint.close_connection(&self.connection_id.unwrap(), 0);
@@ -99,7 +111,7 @@ impl EndpointEventCallbacks for ClientHandler {
     fn main_stream_recv(
         &mut self,
         endpoint: &mut Endpoint,
-        _cid: &ConnectionId,
+        cid: &ConnectionId,
         read_data: &[u8],
     ) -> Option<usize> {
         if read_data.len() == MESSAGE_HEADER_SIZE {
@@ -109,10 +121,26 @@ impl EndpointEventCallbacks for ClientHandler {
             let message_buffer = read_data.to_vec();
             let message = Message::from_vec_u8(message_buffer).unwrap();
 
-            self.process_message(_cid, message, endpoint);
+            self.process_message(cid, message, endpoint);
 
             // Tell swiftlet to read another message header
             Some(MESSAGE_HEADER_SIZE)
         }
+    }
+
+    fn rt_stream_recv(
+        &mut self,
+        endpoint: &mut Endpoint,
+        cid: &ConnectionId,
+        read_data: &[u8],
+        _rt_id: u64,
+    ) -> usize {
+        // We know this is (likely) a message
+        let message_buffer = read_data.to_vec();
+        let message = Message::from_vec_u8(message_buffer).unwrap();
+
+        self.process_message(cid, message, endpoint);
+
+        0
     }
 }
