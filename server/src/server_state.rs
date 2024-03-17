@@ -32,6 +32,7 @@ pub struct ServerState {
     realms_manager: RealmsManager,
     disconnect_queue: Vec<(ConnectionId, DisconnectReasonSize)>,
     exiting: bool,
+    last_id: u64,
 }
 
 impl ServerState {
@@ -43,6 +44,7 @@ impl ServerState {
             realms_manager: RealmsManager::default(),
             disconnect_queue: Vec::new(),
             exiting: false,
+            last_id: 0,
         }
     }
 
@@ -253,7 +255,7 @@ impl ServerState {
     }
 
     fn send(&self, send_to: SendTo, realtime: bool, message: Message, endpoint: &mut Endpoint) {
-        println!("{:?}", message);
+        //println!("{:?}", message);
         let message_buffer = message.into_vec_u8().unwrap();
         let mut send_buffer = Vec::new();
 
@@ -411,9 +413,16 @@ impl EndpointEventCallbacks for ServerState {
         endpoint: &mut Endpoint,
         cid: &ConnectionId,
         read_data: &[u8],
-        _rt_id: u64,
+        rt_id: u64,
     ) -> usize {
         println!("Got RT message");
+
+        if rt_id - 1 != self.last_id {
+            println!("SKIPPED PACKET");
+        } else {
+            self.last_id += rt_id;
+        }
+
         // We know this is (likely) a message
         let message_buffer = read_data.to_vec();
         let message = Message::from_vec_u8(message_buffer).unwrap();
