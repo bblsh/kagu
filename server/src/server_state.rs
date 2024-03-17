@@ -417,11 +417,11 @@ impl EndpointEventCallbacks for ServerState {
     ) -> usize {
         println!("Got RT message");
 
-        if rt_id - 1 != self.last_id {
-            println!("SKIPPED PACKET");
-        } else {
-            self.last_id += rt_id;
+        let dif = rt_id - self.last_id;
+        if dif != 0 {
+            println!("Diff: {}", dif);
         }
+        self.last_id = rt_id;
 
         // We know this is (likely) a message
         let message_buffer = read_data.to_vec();
