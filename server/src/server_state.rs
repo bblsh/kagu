@@ -415,8 +415,6 @@ impl EndpointEventCallbacks for ServerState {
         read_data: &[u8],
         rt_id: u64,
     ) -> usize {
-        println!("Got RT message");
-
         let dif = rt_id - self.last_id;
         if dif > 1 {
             println!("Diff: {}", dif - 1);
