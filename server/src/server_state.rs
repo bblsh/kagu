@@ -418,8 +418,8 @@ impl EndpointEventCallbacks for ServerState {
         println!("Got RT message");
 
         let dif = rt_id - self.last_id;
-        if dif != 0 {
-            println!("Diff: {}", dif);
+        if dif > 1 {
+            println!("Diff: {}", dif - 1);
         }
         self.last_id = rt_id;
 
