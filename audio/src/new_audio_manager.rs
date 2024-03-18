@@ -1,4 +1,5 @@
 use std::collections::VecDeque;
+use std::io::BufRead;
 
 use message::message::{Message, MessageHeader, MessageType};
 
@@ -128,8 +129,12 @@ impl NewAudioManager {
             eprintln!("an error occurred on stream: {}", err);
         };
 
+        let mut output_buffer = VecDeque::with_capacity(480 * 4);
+        for _ in 0..480 * 4 {
+            output_buffer.push_back(0.0);
+        }
+
         let data_callback = move |data: &mut [f32], _: &_| {
-            //assert_eq!(480, data.len());
             data.fill(0.0);
 
             // There's data to play back, so mix and play it back
@@ -141,10 +146,16 @@ impl NewAudioManager {
                         .decode_float(audio.as_slice(), &mut user_audio, false)
                         .unwrap();
 
+                    // Add this data to the end of our buffer
                     for i in 0..480 {
-                        data[i] += user_audio[i];
+                        output_buffer[i + (480 * 3)] += user_audio[i];
                     }
                 }
+            }
+
+            for sample in data.iter_mut().take(480) {
+                *sample = output_buffer.pop_front().unwrap_or(0.0);
+                output_buffer.push_back(0.0);
             }
         };
 
