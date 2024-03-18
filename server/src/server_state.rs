@@ -32,7 +32,7 @@ pub struct ServerState {
     realms_manager: RealmsManager,
     disconnect_queue: Vec<(ConnectionId, DisconnectReasonSize)>,
     exiting: bool,
-    last_id: u64,
+    //last_id: u64,
 }
 
 impl ServerState {
@@ -44,7 +44,7 @@ impl ServerState {
             realms_manager: RealmsManager::default(),
             disconnect_queue: Vec::new(),
             exiting: false,
-            last_id: 0,
+            //last_id: 0,
         }
     }
 
@@ -413,13 +413,13 @@ impl EndpointEventCallbacks for ServerState {
         endpoint: &mut Endpoint,
         cid: &ConnectionId,
         read_data: &[u8],
-        rt_id: u64,
+        _rt_id: u64,
     ) -> usize {
-        let dif = rt_id - self.last_id;
-        if dif > 1 {
-            println!("Diff: {}", dif - 1);
-        }
-        self.last_id = rt_id;
+        // let dif = rt_id - self.last_id;
+        // if dif > 1 {
+        //     println!("Diff: {}", dif - 1);
+        // }
+        // self.last_id = rt_id;
 
         // We know this is (likely) a message
         let message_buffer = read_data.to_vec();

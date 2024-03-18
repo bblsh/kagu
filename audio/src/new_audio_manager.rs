@@ -129,8 +129,8 @@ impl NewAudioManager {
             eprintln!("an error occurred on stream: {}", err);
         };
 
-        let mut output_buffer = VecDeque::with_capacity(480 * 4);
-        for _ in 0..480 * 4 {
+        let mut output_buffer = VecDeque::with_capacity(480 * 5);
+        for _ in 0..480 * 5 {
             output_buffer.push_back(0.0);
         }
 
@@ -148,7 +148,7 @@ impl NewAudioManager {
 
                     // Add this data to the end of our buffer
                     for i in 0..480 {
-                        output_buffer[i + (480 * 3)] += user_audio[i];
+                        output_buffer[i + (480 * 4)] += user_audio[i];
                     }
                 }
             }
