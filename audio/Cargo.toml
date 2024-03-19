@@ -13,5 +13,4 @@ types = { path = "../types" }
 
 cpal = { version = "0.15.2" }
 opus = { version = "*" }
-rtrb = { version = "*" }
 crossbeam = { version = "0.8.4" }

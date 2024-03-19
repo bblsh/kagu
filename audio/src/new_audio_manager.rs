@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::{BTreeMap, VecDeque};
 use std::io::BufRead;
 
 use message::message::{Message, MessageHeader, MessageType};
@@ -7,6 +7,11 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, Sample, Stream, StreamConfig};
 use crossbeam::channel::{Receiver, Sender};
 use opus::{Decoder, Encoder};
+use types::UserIdSize;
+
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use crate::audio_buffer_manager::AudioBufferManager;
 
 #[derive(Debug)]
 pub enum AudioManagerError {
@@ -83,7 +88,13 @@ impl NewAudioManager {
         };
 
         let data_callback = move |data: &[f32], _: &_| {
-            if let Ok(bytes) = encoder.encode_vec_float(data, 480 * 4) {
+            // let start = SystemTime::now();
+            // let since_the_epoch = start
+            //     .duration_since(UNIX_EPOCH)
+            //     .expect("Time went backwards");
+            // let in_ms = since_the_epoch.as_millis();
+            //println!("{:?}", in_ms);
+            if let Ok(bytes) = encoder.encode_vec_float(data, 480 * 8) {
                 let message = Message::from(MessageType::Audio((header, bytes)));
 
                 let _ = audio_sender.send(message);
@@ -129,34 +140,25 @@ impl NewAudioManager {
             eprintln!("an error occurred on stream: {}", err);
         };
 
-        let mut output_buffer = VecDeque::with_capacity(480 * 5);
-        for _ in 0..480 * 5 {
-            output_buffer.push_back(0.0);
-        }
+        let mut buffer_manager = AudioBufferManager::new();
 
         let data_callback = move |data: &mut [f32], _: &_| {
             data.fill(0.0);
 
             // There's data to play back, so mix and play it back
             while let Ok(message) = audio_receiver.try_recv() {
-                if let MessageType::Audio((_header, audio)) = message.message {
+                if let MessageType::Audio((header, audio)) = message.message {
                     // Volume manipulation may be able to be done here later on
                     let mut user_audio: [f32; 480] = [0.0; 480];
                     let _decoded_samples = decoder
                         .decode_float(audio.as_slice(), &mut user_audio, false)
                         .unwrap();
 
-                    // Add this data to the end of our buffer
-                    for i in 0..480 {
-                        output_buffer[i + (480 * 4)] += user_audio[i];
-                    }
+                    buffer_manager.buffer_data(header.user_id, user_audio);
                 }
             }
 
-            for sample in data.iter_mut().take(480) {
-                *sample = output_buffer.pop_front().unwrap_or(0.0);
-                output_buffer.push_back(0.0);
-            }
+            data[..480].copy_from_slice(&buffer_manager.get_output_data()[..480]);
         };
 
         if let Ok(stream) = ouput_device.build_output_stream(&config, data_callback, err_fn, None) {

@@ -67,7 +67,7 @@ impl NewServer {
         let _server_handle = std::thread::spawn(move || {
             let mut endpoint_handler =
                 EndpointHandler::new(&mut server_endpoint, &mut server_state);
-            match endpoint_handler.run_event_loop(std::time::Duration::from_millis(5)) {
+            match endpoint_handler.run_event_loop(std::time::Duration::from_millis(2)) {
                 Ok(_) => (),
                 Err(e) => {
                     println!("[server]: event loop error: {:?}", e);
