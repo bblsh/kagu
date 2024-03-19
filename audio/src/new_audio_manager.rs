@@ -131,8 +131,6 @@ impl NewAudioManager {
         let mut buffer_manager = AudioBufferManager::new();
 
         let data_callback = move |data: &mut [f32], _: &_| {
-            data.fill(0.0);
-
             // There's data to play back, so mix and play it back
             while let Ok(message) = audio_receiver.try_recv() {
                 if let MessageType::Audio((header, audio)) = message.message {
