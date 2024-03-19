@@ -194,7 +194,7 @@ impl NewClient {
         }
     }
 
-    pub fn send_image(&self, realm_id: RealmIdSize, channel_id: ChannelIdSize, image: Vec<u8>) {}
+    pub fn send_image(&self, _realm_id: RealmIdSize, _channel_id: ChannelIdSize, _image: Vec<u8>) {}
 
     pub fn join_channel(
         &self,

@@ -1,15 +1,9 @@
-use std::collections::{BTreeMap, VecDeque};
-use std::io::BufRead;
-
 use message::message::{Message, MessageHeader, MessageType};
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{FromSample, Sample, Stream, StreamConfig};
+use cpal::{Stream, StreamConfig};
 use crossbeam::channel::{Receiver, Sender};
 use opus::{Decoder, Encoder};
-use types::UserIdSize;
-
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::audio_buffer_manager::AudioBufferManager;
 
@@ -88,12 +82,6 @@ impl NewAudioManager {
         };
 
         let data_callback = move |data: &[f32], _: &_| {
-            // let start = SystemTime::now();
-            // let since_the_epoch = start
-            //     .duration_since(UNIX_EPOCH)
-            //     .expect("Time went backwards");
-            // let in_ms = since_the_epoch.as_millis();
-            //println!("{:?}", in_ms);
             if let Ok(bytes) = encoder.encode_vec_float(data, 480 * 8) {
                 let message = Message::from(MessageType::Audio((header, bytes)));
 

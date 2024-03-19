@@ -31,7 +31,7 @@ pub struct ServerState {
     client_count: UserIdSize,
     realms_manager: RealmsManager,
     disconnect_queue: Vec<(ConnectionId, DisconnectReasonSize)>,
-    exiting: bool,
+    _exiting: bool,
     //last_id: u64,
 }
 
@@ -43,7 +43,7 @@ impl ServerState {
             client_count: 0,
             realms_manager: RealmsManager::default(),
             disconnect_queue: Vec::new(),
-            exiting: false,
+            _exiting: false,
             //last_id: 0,
         }
     }
@@ -251,7 +251,7 @@ impl ServerState {
             let _ =
                 endpoint.close_connection(connection.0, DisconnectReason::ServerShutdown as u64);
         }
-        self.exiting = true;
+        self._exiting = true;
     }
 
     fn send(&self, send_to: SendTo, realtime: bool, message: Message, endpoint: &mut Endpoint) {

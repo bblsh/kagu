@@ -1,17 +1,13 @@
-use std::collections::{BTreeMap, VecDeque};
-
-use types::UserIdSize;
+use std::collections::VecDeque;
 
 pub struct AudioBuffer {
     buffer: VecDeque<[f32; 480]>,
-    //start: std::time::Instant,
 }
 
 impl AudioBuffer {
     pub fn new() -> AudioBuffer {
         AudioBuffer {
             buffer: VecDeque::new(),
-            //start: std::time::Instant::now(),
         }
     }
 
