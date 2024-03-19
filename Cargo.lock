@@ -132,6 +132,7 @@ dependencies = [
 name = "audio"
 version = "0.1.0"
 dependencies = [
+ "chrono",
  "cpal",
  "crossbeam",
  "message",
@@ -332,6 +333,7 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "audio",
+ "chrono",
  "crossbeam",
  "message",
  "mio",

@@ -75,7 +75,7 @@ impl NewAudioManager {
         };
 
         let audio_sender = self.audio_out_sender.clone();
-        let header = self.current_header;
+        let mut header = self.current_header;
 
         let err_fn = move |err| {
             eprintln!("an error occurred on stream: {}", err);
@@ -83,6 +83,8 @@ impl NewAudioManager {
 
         let data_callback = move |data: &[f32], _: &_| {
             if let Ok(bytes) = encoder.encode_vec_float(data, 480 * 8) {
+                header.datetime = Some(chrono::Utc::now());
+
                 let message = Message::from(MessageType::Audio((header, bytes)));
 
                 let _ = audio_sender.send(message);
