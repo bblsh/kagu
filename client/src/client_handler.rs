@@ -75,15 +75,20 @@ impl EndpointEventCallbacks for ClientHandler {
     fn connection_ended(
         &mut self,
         _endpoint: &mut Endpoint,
-        cid: &ConnectionId,
+        _cid: &ConnectionId,
         _reason: ConnectionEndReason,
         _remaining_connections: usize,
     ) -> bool {
-        if let Some(my_conn_id) = &self.connection_id {
-            if *my_conn_id == *cid {
-                self.connection_id = None;
-            }
-        }
+        // Deal with multiple servers later
+        let _ = self
+            .incoming_sender
+            .send(Message::from(MessageType::ServerShutdown));
+
+        // if let Some(my_conn_id) = &self.connection_id {
+        //     if *my_conn_id == *cid {
+        //         self.connection_id = None;
+        //     }
+        // }
 
         false
     }
@@ -95,7 +100,10 @@ impl EndpointEventCallbacks for ClientHandler {
         while let Ok(message) = self.outgoing_receiver.try_recv() {
             // If we're sending a Disconnecting message, we know to exit after sending it
             match message.message {
-                MessageType::Disconnecting(_) => exit = true,
+                MessageType::Disconnecting(_) => {
+                    exit = true;
+                    self.send_message(false, endpoint, message);
+                }
                 MessageType::Audio(_) => self.send_message(true, endpoint, message),
                 _ => self.send_message(false, endpoint, message),
             }

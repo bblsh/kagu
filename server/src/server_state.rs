@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 
+use crate::server_message::ServerMessage;
 use message::message::{Message, MessageType};
 use network_manager::MESSAGE_HEADER_SIZE;
 use realms::realms_manager::RealmsManager;
@@ -7,6 +8,7 @@ use types::UserIdSize;
 use user::User;
 
 use chrono::Utc;
+use crossbeam::channel::{Receiver, Sender};
 use swiftlet_quic::endpoint::{ConnectionEndReason, ConnectionId, Endpoint};
 use swiftlet_quic::EndpointEventCallbacks;
 
@@ -32,11 +34,17 @@ pub struct ServerState {
     realms_manager: RealmsManager,
     disconnect_queue: Vec<(ConnectionId, DisconnectReasonSize)>,
     _exiting: bool,
+    message_receiver: Receiver<ServerMessage>,
+    server_message_sender: Sender<ServerMessage>,
     //last_id: u64,
 }
 
 impl ServerState {
-    pub fn new(server_name: String) -> ServerState {
+    pub fn new(
+        server_name: String,
+        server_message_recv: Receiver<ServerMessage>,
+        el_to_server_sender: Sender<ServerMessage>,
+    ) -> ServerState {
         ServerState {
             _name: server_name,
             clients: BTreeMap::new(),
@@ -44,6 +52,8 @@ impl ServerState {
             realms_manager: RealmsManager::default(),
             disconnect_queue: Vec::new(),
             _exiting: false,
+            message_receiver: server_message_recv,
+            server_message_sender: el_to_server_sender,
             //last_id: 0,
         }
     }
@@ -246,11 +256,15 @@ impl ServerState {
         }
     }
 
-    fn _terminate_server(&mut self, endpoint: &mut Endpoint) {
+    fn terminate_server(&mut self, endpoint: &mut Endpoint) {
+        println!("[server] closing all client connections");
         for connection in self.clients.iter() {
             let _ =
                 endpoint.close_connection(connection.0, DisconnectReason::ServerShutdown as u64);
         }
+        let _ = self
+            .server_message_sender
+            .send(ServerMessage::GracefullyEnded);
         self._exiting = true;
     }
 
@@ -264,14 +278,6 @@ impl ServerState {
         }
 
         send_buffer.extend(message_buffer);
-
-        // for connection in &self.clients {
-        //     println!(
-        //         "conn id: {}, user_id: {}",
-        //         connection.0,
-        //         connection.1.get_id()
-        //     );
-        // }
 
         match send_to {
             SendTo::Everyone => {
@@ -288,7 +294,6 @@ impl ServerState {
                             let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
                         }
                     }
-                    //let _ = endpoint.main_stream_send(connection.0, send_buffer.clone());
                 }
             }
             SendTo::EveryoneExceptUserID(user_id) => {
@@ -354,6 +359,10 @@ impl ServerState {
 
 impl EndpointEventCallbacks for ServerState {
     fn tick(&mut self, endpoint: &mut Endpoint) -> bool {
+        if let Ok(ServerMessage::ShutDownServer) = self.message_receiver.try_recv() {
+            self.terminate_server(endpoint);
+        }
+
         // Handle disconnect of users to be disconnected
         self.disconnect_users(endpoint);
 
@@ -375,14 +384,19 @@ impl EndpointEventCallbacks for ServerState {
         _remaining_connections: usize,
     ) -> bool {
         if let Some(user) = self.clients.get(cid) {
-            println!(
-                "[server] client {} lost connection: {:?}",
-                user.get_id(),
-                reason
-            );
-            let message = Message::from(MessageType::UserLeft(user.get_id()));
-            self.send(SendTo::Everyone, false, message, endpoint);
-            self.clients.remove(cid);
+            match reason {
+                ConnectionEndReason::PeerApplication(_) => (),
+                _ => {
+                    println!(
+                        "[server] client {} lost connection: {:?}",
+                        user.get_id(),
+                        reason
+                    );
+                    let message = Message::from(MessageType::UserLeft(user.get_id()));
+                    self.send(SendTo::Everyone, false, message, endpoint);
+                    self.clients.remove(cid);
+                }
+            }
         }
 
         false

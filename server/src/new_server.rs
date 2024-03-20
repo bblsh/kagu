@@ -1,9 +1,11 @@
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::path::{Path, PathBuf};
 
+use crate::server_message::ServerMessage;
 use crate::server_state::ServerState;
 use network_manager::*;
 
+use crossbeam::channel::{Receiver, Sender};
 use swiftlet_quic::endpoint::{Config, Endpoint};
 use swiftlet_quic::EndpointHandler;
 
@@ -12,15 +14,31 @@ pub struct NewServer {
     port: u16,
     ipv6: Option<bool>,
     cert_dir: PathBuf,
+    server_message_send: Sender<ServerMessage>,
+    server_message_recv: Receiver<ServerMessage>,
+
+    // Messages from the event loop to this exposed server
+    el_to_server_send: Sender<ServerMessage>,
+    el_to_server_recv: Receiver<ServerMessage>,
 }
 
 impl NewServer {
     pub fn new(server_name: String, port: u16, ipv6: Option<bool>, cert_dir: PathBuf) -> NewServer {
+        let (send, recv): (Sender<ServerMessage>, Receiver<ServerMessage>) =
+            crossbeam::channel::bounded(1);
+
+        let (el_send, el_recv): (Sender<ServerMessage>, Receiver<ServerMessage>) =
+            crossbeam::channel::bounded(1);
+
         NewServer {
             server_name,
             port,
             ipv6,
             cert_dir,
+            server_message_send: send,
+            server_message_recv: recv,
+            el_to_server_recv: el_recv,
+            el_to_server_send: el_send,
         }
     }
 
@@ -62,7 +80,11 @@ impl NewServer {
             }
         };
 
-        let mut server_state = ServerState::new(self.server_name.clone());
+        let mut server_state = ServerState::new(
+            self.server_name.clone(),
+            self.server_message_recv.clone(),
+            self.el_to_server_send.clone(),
+        );
 
         let _server_handle = std::thread::spawn(move || {
             let mut endpoint_handler =
@@ -76,6 +98,15 @@ impl NewServer {
         });
 
         println!("[server] server started");
+    }
+
+    pub fn stop_server(&self) {
+        println!();
+        println!("[server] stopping server...");
+        let _ = self.server_message_send.send(ServerMessage::ShutDownServer);
+
+        if let Ok(ServerMessage::GracefullyEnded) = self.el_to_server_recv.recv() {}
+        println!("[server] gracefully shut down. exiting");
     }
 
     fn get_pem_paths(&self, cert_dir: &Path) -> (String, String) {

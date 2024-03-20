@@ -85,6 +85,9 @@ pub enum MessageType {
 
     // Probing heartbeat
     Heartbeat,
+
+    // Errors
+    ServerShutdown,
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
@@ -157,6 +160,7 @@ impl From<MessageType> for Message {
             MessageType::RenameChannel(rc) => Message::new(0, MessageType::RenameChannel(rc)),
             MessageType::ChannelAdded(ca) => Message::new(0, MessageType::ChannelAdded(ca)),
             MessageType::ChannelRemoved(cr) => Message::new(0, MessageType::ChannelRemoved(cr)),
+            MessageType::ServerShutdown => Message::new(0, MessageType::ServerShutdown),
             _ => Message::new(0, MessageType::Heartbeat),
         }
     }
@@ -225,6 +229,7 @@ impl Message {
             MessageType::Disconnect => MessageType::Disconnect,
             MessageType::Disconnecting(user_id) => MessageType::Disconnecting(user_id),
             MessageType::Heartbeat => MessageType::Heartbeat,
+            MessageType::ServerShutdown => MessageType::ServerShutdown,
         }
     }
 

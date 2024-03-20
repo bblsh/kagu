@@ -318,6 +318,9 @@ impl<'a> App<'a> {
             // Update any new messages received by the Client
             for message in self.client.get_new_messages() {
                 match message.message {
+                    MessageType::ServerShutdown => {
+                        self.quit();
+                    }
                     MessageType::LoginSuccess(user) => {
                         // Save who we are
                         self.user_id_to_username

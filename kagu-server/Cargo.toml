@@ -16,3 +16,4 @@ server = { path = "../server" }
 network_manager = { path = "../network_manager" }
 
 clap = { version = "4.3.23", features = ["derive"] }
+ctrlc = { version = "3.4.4" }

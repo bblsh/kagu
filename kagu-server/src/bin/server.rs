@@ -35,6 +35,13 @@ fn main() {
     let server = NewServer::new(server_name, port, args.ipv6, args.cert_dir);
     server.start_server();
 
+    // Set up ctrl-c handler
+    ctrlc::set_handler(move || {
+        server.stop_server();
+        std::process::exit(0);
+    })
+    .expect("Error setting Ctrl-C handler");
+
     loop {
         std::thread::sleep(std::time::Duration::from_secs(5));
     }
