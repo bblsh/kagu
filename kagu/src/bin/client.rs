@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use clap::Parser;
-use client::new_client::NewClient;
+use client::client::NewClient;
 use tui::app::App;
 
 #[derive(Parser, Debug)]

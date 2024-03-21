@@ -16,7 +16,7 @@ use crate::{
     tui::Tui,
 };
 
-use client::new_client::NewClient;
+use client::client::NewClient;
 use message::message::MessageType;
 use realms::channels::text_channel::TextChannelMessage;
 use realms::realm::ChannelType;
