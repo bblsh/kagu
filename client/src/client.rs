@@ -1,5 +1,5 @@
 use crate::client_handler::ClientHandler;
-use audio::new_audio_manager::NewAudioManager;
+use audio::audio_manager::AudioManager;
 use message::message::{Message, MessageHeader, MessageType};
 use network_manager::*;
 use realms::realm::ChannelType;
@@ -20,7 +20,7 @@ pub struct NewClient {
     username: String,
     user: Option<User>,
     cert_dir: PathBuf,
-    audio_manager: NewAudioManager,
+    audio_manager: AudioManager,
     incoming_sender: Sender<Message>,
     incoming_receiver: Receiver<Message>,
     outgoing_sender: Sender<Message>,
@@ -45,7 +45,7 @@ impl NewClient {
             user: None,
             cert_dir,
 
-            audio_manager: NewAudioManager::new(
+            audio_manager: AudioManager::new(
                 // Use our outgoing sender for all messages as the audio sender
                 outgoing_sender.clone(),
                 audio_in_receiver,

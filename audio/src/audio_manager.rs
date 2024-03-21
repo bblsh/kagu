@@ -21,13 +21,13 @@ pub enum AudioManagerError {
     DeviceNotFound,
 }
 
-impl std::fmt::Debug for NewAudioManager {
+impl std::fmt::Debug for AudioManager {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "DEBUG WRITE NOT IMPLEMENTED")
     }
 }
 
-pub struct NewAudioManager {
+pub struct AudioManager {
     audio_out_sender: Sender<Message>,
     audio_in_receiver: Receiver<Message>,
     current_header: MessageHeader,
@@ -35,13 +35,13 @@ pub struct NewAudioManager {
     output_stream: Option<Stream>,
 }
 
-impl NewAudioManager {
+impl AudioManager {
     pub fn new(
         audio_out_sender: Sender<Message>,
         audio_in_receiver: Receiver<Message>,
         current_header: MessageHeader,
-    ) -> NewAudioManager {
-        NewAudioManager {
+    ) -> AudioManager {
+        AudioManager {
             audio_out_sender,
             audio_in_receiver,
             current_header,
