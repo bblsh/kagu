@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use clap::{ArgAction, Parser};
-use server::new_server::NewServer;
+use server::server::NewServer;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
