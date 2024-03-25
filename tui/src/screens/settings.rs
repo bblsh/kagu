@@ -8,7 +8,7 @@ use ratatui::{
 
 pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     let [settings_list_area, settings_view_area] = *Layout::default()
-        .direction(Direction::Vertical)
+        .direction(Direction::Horizontal)
         .margin(0)
         .constraints([
             Constraint::Max(10),
@@ -18,6 +18,10 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     else {
         return;
     };
+
+    let settings_categories = vec![String::from("Audio")];
+    let settings_list = List::new(settings_categories);
+    frame.render_widget(settings_list, settings_list_area);
 
     let mut input_text = vec![String::from("Audio Inputs")];
     input_text.extend(app.client.get_audio_inputs());
