@@ -1,7 +1,7 @@
 use std::{net::SocketAddr, path::PathBuf};
 
 use clap::Parser;
-use client::client::NewClient;
+use client::client::Client;
 use tui::app::App;
 
 #[derive(Parser, Debug)]
@@ -23,7 +23,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let client = NewClient::new(args.address, args.username, args.cert_dir);
+    let client = Client::new(args.address, args.username, args.cert_dir);
     client.run_client();
 
     std::thread::sleep(std::time::Duration::from_millis(500));

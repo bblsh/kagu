@@ -15,7 +15,7 @@ use swiftlet_quic::endpoint::{Config, Endpoint};
 use swiftlet_quic::EndpointHandler;
 
 #[derive(Debug)]
-pub struct NewClient {
+pub struct Client {
     server_address: SocketAddr,
     username: String,
     user: Option<User>,
@@ -28,8 +28,8 @@ pub struct NewClient {
     audio_in_sender: Sender<Message>,
 }
 
-impl NewClient {
-    pub fn new(server_address: SocketAddr, username: String, cert_dir: PathBuf) -> NewClient {
+impl Client {
+    pub fn new(server_address: SocketAddr, username: String, cert_dir: PathBuf) -> Client {
         let (outgoing_sender, outgoing_receiver): (Sender<Message>, Receiver<Message>) =
             crossbeam::channel::bounded(10);
 
@@ -39,7 +39,7 @@ impl NewClient {
         let (audio_in_sender, audio_in_receiver): (Sender<Message>, Receiver<Message>) =
             crossbeam::channel::bounded(10);
 
-        NewClient {
+        Client {
             server_address,
             username,
             user: None,

@@ -16,7 +16,7 @@ use crate::{
     tui::Tui,
 };
 
-use client::client::NewClient;
+use client::client::Client;
 use message::message::MessageType;
 use realms::channels::text_channel::TextChannelMessage;
 use realms::realm::ChannelType;
@@ -154,7 +154,7 @@ pub struct App<'a> {
     /// Is the application running?
     pub running: bool,
     /// Client to handle all interactions with the server
-    pub client: NewClient,
+    pub client: Client,
     /// User ID to usernames
     pub user_id_to_username: HashMap<UserIdSize, String>,
     /// Realms manager to manage our realms and channels
@@ -234,7 +234,7 @@ pub struct App<'a> {
 
 impl<'a> App<'a> {
     /// Constructs a new instance of [`App`].
-    pub fn new(client: NewClient) -> Self {
+    pub fn new(client: Client) -> Self {
         // There's likely a better way to populate these commands
         let mut commands_list = StatefulList::default();
         commands_list
