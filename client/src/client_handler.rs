@@ -1,3 +1,4 @@
+use crate::client_message::ClientMessage;
 use message::message::{Message, MessageType};
 use network_manager::*;
 use user::User;
@@ -13,6 +14,7 @@ pub struct ClientHandler {
     outgoing_receiver: Receiver<Message>,
     incoming_sender: Sender<Message>,
     audio_in_sender: Sender<Message>,
+    el_to_client_sender: Sender<ClientMessage>,
 }
 
 impl ClientHandler {
@@ -20,6 +22,7 @@ impl ClientHandler {
         outgoing_receiver: Receiver<Message>,
         incoming_sender: Sender<Message>,
         audio_in_sender: Sender<Message>,
+        el_to_client_sender: Sender<ClientMessage>,
     ) -> Self {
         ClientHandler {
             connected: false,
@@ -28,6 +31,7 @@ impl ClientHandler {
             outgoing_receiver,
             incoming_sender,
             audio_in_sender,
+            el_to_client_sender,
         }
     }
 
@@ -70,6 +74,10 @@ impl EndpointEventCallbacks for ClientHandler {
     fn connection_started(&mut self, _endpoint: &mut Endpoint, cid: &ConnectionId) {
         self.connected = true;
         self.connection_id = Some(*cid);
+
+        let _ = self
+            .el_to_client_sender
+            .send(ClientMessage::ConnectedToServer);
     }
 
     fn connection_ended(

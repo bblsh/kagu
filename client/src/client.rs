@@ -1,4 +1,5 @@
 use crate::client_handler::ClientHandler;
+use crate::client_message::ClientMessage;
 use audio::audio_manager::AudioManager;
 use message::message::{Message, MessageHeader, MessageType};
 use network_manager::*;
@@ -26,6 +27,12 @@ pub struct Client {
     outgoing_sender: Sender<Message>,
     outgoing_receiver: Receiver<Message>,
     audio_in_sender: Sender<Message>,
+
+    // Channel used to send messages from the inner event loop to this client
+    el_to_client_sender: Sender<ClientMessage>,
+    el_to_client_receiver: Receiver<ClientMessage>,
+
+    is_connected: bool,
 }
 
 impl Client {
@@ -38,6 +45,11 @@ impl Client {
 
         let (audio_in_sender, audio_in_receiver): (Sender<Message>, Receiver<Message>) =
             crossbeam::channel::bounded(10);
+
+        let (el_to_client_sender, el_to_client_receiver): (
+            Sender<ClientMessage>,
+            Receiver<ClientMessage>,
+        ) = crossbeam::channel::bounded(1);
 
         Client {
             server_address,
@@ -58,6 +70,9 @@ impl Client {
             outgoing_sender,
             outgoing_receiver,
             audio_in_sender,
+            el_to_client_sender,
+            el_to_client_receiver,
+            is_connected: false,
         }
     }
 
@@ -71,6 +86,7 @@ impl Client {
         let outgoing_receiver = self.outgoing_receiver.clone();
         let incoming_sender = self.incoming_sender.clone();
         let audio_in_sender = self.audio_in_sender.clone();
+        let el_to_client_sender = self.el_to_client_sender.clone();
 
         let config = Config {
             idle_timeout_in_ms: 5000,
@@ -103,8 +119,12 @@ impl Client {
                 }
             };
 
-            let mut client_handler =
-                ClientHandler::new(outgoing_receiver, incoming_sender, audio_in_sender);
+            let mut client_handler = ClientHandler::new(
+                outgoing_receiver,
+                incoming_sender,
+                audio_in_sender,
+                el_to_client_sender,
+            );
             let mut rtc_handler = EndpointHandler::new(&mut client_endpoint, &mut client_handler);
 
             match rtc_handler.run_event_loop(std::time::Duration::from_millis(5)) {
@@ -128,6 +148,13 @@ impl Client {
 
     fn send(&self, message: Message) {
         self.outgoing_sender.send(message).unwrap();
+    }
+
+    pub fn is_connected(&self) -> bool {
+        match self.is_connected {
+            true => true,
+            false => self.el_to_client_receiver.try_recv().is_ok(),
+        }
     }
 
     pub fn get_username(&self) -> String {

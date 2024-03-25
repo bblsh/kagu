@@ -26,18 +26,20 @@ fn main() {
     let client = Client::new(args.address, args.username, args.cert_dir);
     client.run_client();
 
-    std::thread::sleep(std::time::Duration::from_millis(500));
+    let start_time = std::time::Instant::now();
 
-    // client.log_in(String::from("TestHello"));
-
-    // //std::thread::sleep(std::time::Duration::from_millis(500));
-
-    // loop {
-    //     std::thread::sleep(std::time::Duration::from_secs(1));
-    //     for message in client.get_new_messages() {
-    //         println!("{:?}", message);
-    //     }
-    // }
+    // Don't show the UI until we are connected
+    loop {
+        if client.is_connected() {
+            break;
+        } else {
+            let current_time = std::time::Instant::now();
+            if current_time - start_time > std::time::Duration::from_secs(2) {
+                println!("Failed to connect. Exiting");
+                std::process::exit(1);
+            }
+        }
+    }
 
     // Create an application.
     let mut app = App::new(client);
