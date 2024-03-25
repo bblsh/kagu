@@ -6,6 +6,7 @@ use crossbeam::channel::{Receiver, Sender};
 use opus::{Decoder, Encoder};
 
 use crate::audio_buffer_manager::AudioBufferManager;
+use crate::audio_io::AudioIo;
 
 #[derive(Debug)]
 pub enum AudioManagerError {
@@ -33,6 +34,7 @@ pub struct AudioManager {
     current_header: MessageHeader,
     input_stream: Option<Stream>,
     output_stream: Option<Stream>,
+    audio_io: AudioIo,
 }
 
 impl AudioManager {
@@ -47,6 +49,7 @@ impl AudioManager {
             current_header,
             input_stream: None,
             output_stream: None,
+            audio_io: AudioIo::new(),
         }
     }
 
@@ -160,5 +163,21 @@ impl AudioManager {
 
     pub fn stop_listening(&mut self) {
         self.output_stream = None;
+    }
+
+    pub fn get_audio_inputs(&self) -> Vec<String> {
+        self.audio_io.get_input_devices().unwrap_or_default()
+    }
+
+    pub fn get_audio_outputs(&self) -> Vec<String> {
+        self.audio_io.get_output_devices().unwrap_or_default()
+    }
+
+    pub fn set_audio_input(&mut self, input_name: String) {
+        self.audio_io.set_input_device(input_name);
+    }
+
+    pub fn set_audio_output(&mut self, output_name: String) {
+        self.audio_io.set_output_device(output_name);
     }
 }

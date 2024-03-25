@@ -360,4 +360,20 @@ impl Client {
             self.send(message);
         }
     }
+
+    pub fn get_audio_inputs(&self) -> Vec<String> {
+        self.audio_manager.get_audio_inputs()
+    }
+
+    pub fn get_audio_outputs(&self) -> Vec<String> {
+        self.audio_manager.get_audio_outputs()
+    }
+
+    pub fn set_audio_input(&mut self, input_name: String) {
+        self.audio_manager.set_audio_input(input_name)
+    }
+
+    pub fn set_audio_output(&mut self, output_name: String) {
+        self.audio_manager.set_audio_output(output_name);
+    }
 }

@@ -2,28 +2,31 @@ use crate::app::App;
 use ratatui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, List, Paragraph},
     Frame,
 };
 
-pub fn render(_app: &mut App, frame: &mut Frame<'_>) {
-    let back_panel = Layout::default()
-        .direction(Direction::Horizontal)
+pub fn render(app: &mut App, frame: &mut Frame<'_>) {
+    let [settings_list_area, settings_view_area] = *Layout::default()
+        .direction(Direction::Vertical)
         .margin(0)
-        .constraints(
-            [
-                Constraint::Max(10),
-                Constraint::Max(frame.size().width - 10),
-            ]
-            .as_ref(),
-        )
-        .split(frame.size());
+        .constraints([
+            Constraint::Max(10),
+            Constraint::Max(frame.size().width - 10),
+        ])
+        .split(frame.size())
+    else {
+        return;
+    };
 
-    let test_paragraph = Paragraph::new("Hello from the Settings page").block(
+    let mut input_text = vec![String::from("Audio Inputs")];
+    input_text.extend(app.client.get_audio_inputs());
+
+    let inputs = List::new(input_text).block(
         Block::default()
             .border_style(Style::default().bg(Color::Green))
             .borders(Borders::ALL),
     );
 
-    frame.render_widget(test_paragraph, back_panel[1]);
+    frame.render_widget(inputs, settings_view_area);
 }
