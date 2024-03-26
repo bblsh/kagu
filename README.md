@@ -91,6 +91,7 @@ Similarly, text and voice channels can be added by navigating to the Channels pa
 
 ## Notes / Known Issues
 * If using voice comms on macOS, verify your input format is `48,000 Hz` in the Audio MIDI Setup program.
+* All audio inputs and outputs may not be shown.
 * Some features that are drawn out of bounds due to too small of a terminal size will panic the client.
 * Kagu was used as motivation to learn Rust, so it is currently *very* unoptimized.
 * Audio is currently echoed back to the user speaking.
