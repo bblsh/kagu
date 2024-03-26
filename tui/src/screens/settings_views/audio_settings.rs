@@ -29,7 +29,7 @@ pub fn render(app: &mut App, setting_area: Rect, frame: &mut Frame<'_>) {
 
     let outputs_label =
         Paragraph::new(String::from("Audio Outputs")).style(Style::default().bold());
-    let outputs = app.client.get_audio_inputs();
+    let outputs = app.client.get_audio_outputs();
     let outputs_list = List::new(outputs);
 
     let spacer_1_paragraph = Paragraph::new(String::from(""));
