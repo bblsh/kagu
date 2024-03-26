@@ -40,6 +40,12 @@ use chrono::Local;
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
 #[derive(Debug)]
+pub enum SettingsCategory {
+    Audio,
+    Colors,
+}
+
+#[derive(Debug)]
 pub enum PopupType {
     General,
     YesNo,
@@ -230,6 +236,7 @@ pub struct App<'a> {
     /// What message id we are replying to
     pub reply_target_message_id: Option<MessageIdSize>,
     pub _not_used: &'a bool,
+    pub current_settings_category: SettingsCategory,
 }
 
 impl<'a> App<'a> {
@@ -287,6 +294,7 @@ impl<'a> App<'a> {
             chat_history: StatefulWidgetList::default(),
             reply_target_message_id: None,
             _not_used: &false,
+            current_settings_category: SettingsCategory::Audio,
         }
     }
 
