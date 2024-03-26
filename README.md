@@ -18,8 +18,9 @@ Follow these instructions.
 
 ### Prerequisites
 
-* To build on Debian or Ubuntu, install `libasound2-devel`.
-* To build on Fedora install `alsa-lib-devel`.
+* To build the client on Debian or Ubuntu, install `libasound2-devel`.
+* To build the client on Fedora install `alsa-lib-devel`.
+* Note: Running the server does not require installing additional dependencies.
 
 ### Clone the repo
 
