@@ -77,9 +77,14 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
     );
     frame.render_widget(settings_list, settings_list_area);
 
+    // Get the inner area to render the current settings view
+    let settings_block = Block::default().borders(Borders::TOP);
+    let inner_content_area = settings_block.inner(settings_view_area);
+    frame.render_widget(settings_block, settings_view_area);
+
     match app.current_settings_category {
         SettingsCategory::Audio => {
-            settings_views::audio_settings::render(app, settings_view_area, frame)
+            settings_views::audio_settings::render(app, inner_content_area, frame)
         }
         SettingsCategory::Colors => (),
     }
