@@ -141,7 +141,8 @@ impl Realm {
 
     pub fn add_user_to_voice_channel(&mut self, user_id: UserIdSize, channel_id: ChannelIdSize) {
         if let Some(channel) = self.voice_channels.get_mut(&channel_id) {
-            channel.connected_users.push(user_id);
+            let users = channel.get_connected_users_mut();
+            users.push(user_id);
         }
     }
 
@@ -151,12 +152,9 @@ impl Realm {
         channel_id: ChannelIdSize,
     ) {
         if let Some(channel) = self.voice_channels.get_mut(&channel_id) {
-            let index = channel
-                .connected_users
-                .iter()
-                .position(|x| x == &user_id)
-                .unwrap();
-            channel.connected_users.remove(index);
+            channel
+                .get_connected_users_mut()
+                .retain(|user| user != &user_id);
         }
     }
 }

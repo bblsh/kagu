@@ -183,7 +183,7 @@ impl ServerState {
                 MessageType::UserJoinedVoiceChannel(message) => {
                     if let Some(realm) = self.realms_manager.get_realm_mut(message.realm_id) {
                         if let Some(channel) = realm.get_voice_channel_mut(message.channel_id) {
-                            channel.connected_users.push(message.user_id);
+                            channel.get_connected_users_mut().push(message.user_id);
 
                             let message =
                                 Message::from(MessageType::UserJoinedVoiceChannel(message));
@@ -195,7 +195,7 @@ impl ServerState {
                     if let Some(realm) = self.realms_manager.get_realm_mut(message.realm_id) {
                         if let Some(channel) = realm.get_voice_channel_mut(message.channel_id) {
                             channel
-                                .connected_users
+                                .get_connected_users_mut()
                                 .retain(|user_id| *user_id != message.user_id);
 
                             let message = Message::from(MessageType::UserLeftVoiceChannel(message));
@@ -226,7 +226,11 @@ impl ServerState {
                 MessageType::Audio((header, audio)) => {
                     if let Some(realm) = self.realms_manager.get_realm(header.realm_id) {
                         if let Some(channel) = realm.get_voice_channel(header.channel_id) {
-                            let users = channel.get_connected_users().clone();
+                            let mut users = channel.get_connected_users().clone();
+
+                            // Don't echo audio back to the user speaking
+                            users.retain(|user| user != &header.user_id);
+
                             let message = Message::from(MessageType::Audio((header, audio)));
                             self.send(SendTo::Users(users), true, message, endpoint);
                         }

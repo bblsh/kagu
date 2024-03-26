@@ -143,8 +143,9 @@ impl RealmsManager {
             for channel in realm.get_voice_channels_mut() {
                 if channel.0 == &channel_id {
                     // Don't add the same user more than once
-                    if !channel.1.connected_users.contains(&user_id) {
-                        channel.1.connected_users.push(user_id);
+                    let users = channel.1.get_connected_users_mut();
+                    if !users.contains(&user_id) {
+                        users.push(user_id);
                     }
                 }
             }
@@ -160,11 +161,10 @@ impl RealmsManager {
         if let Some(realm) = self.realms.get_mut(&realm_id) {
             for channel in realm.get_voice_channels_mut() {
                 if channel.0 == &channel_id {
-                    if let Some(index) =
-                        channel.1.connected_users.iter().position(|x| x == &user_id)
-                    {
-                        channel.1.connected_users.remove(index);
-                    }
+                    channel
+                        .1
+                        .get_connected_users_mut()
+                        .retain(|user| user != &user_id);
                 }
             }
         }

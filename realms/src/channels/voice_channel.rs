@@ -5,7 +5,7 @@ use types::{ChannelIdSize, UserIdSize};
 pub struct VoiceChannel {
     id: ChannelIdSize,
     name: String,
-    pub connected_users: Vec<UserIdSize>,
+    connected_users: Vec<UserIdSize>,
 }
 
 impl VoiceChannel {
