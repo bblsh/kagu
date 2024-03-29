@@ -236,6 +236,15 @@ impl ServerState {
                         }
                     }
                 }
+                MessageType::PingReply(ping_id) => {
+                    let ping_message = Message::from(MessageType::PingReply(ping_id));
+                    self.send(
+                        SendTo::SingleUser(message.user_id),
+                        true,
+                        ping_message,
+                        endpoint,
+                    );
+                }
                 _ => println!("Not implemented: {:?}", message),
             }
         }

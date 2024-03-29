@@ -18,3 +18,6 @@ pub type TextMessageChunks = Vec<(String, Option<UserIdSize>)>;
 
 /// Type for the ID for a `Message`.
 pub type MessageIdSize = u32;
+
+/// Type for the ID of a Ping and PingReply
+pub type PingIdSize = u64;

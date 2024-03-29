@@ -385,4 +385,12 @@ impl Client {
     pub fn set_audio_output(&mut self, output_name: String) {
         self.audio_manager.set_audio_output(output_name);
     }
+
+    pub fn send_ping(&self, ping_id: PingIdSize) {
+        if let Some(user) = &self.user {
+            let mut message = Message::from(MessageType::PingReply(ping_id));
+            message.user_id = user.get_id();
+            self.send(message);
+        }
+    }
 }

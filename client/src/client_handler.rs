@@ -113,6 +113,7 @@ impl EndpointEventCallbacks for ClientHandler {
                     self.send_message(false, endpoint, message);
                 }
                 MessageType::Audio(_) => self.send_message(true, endpoint, message),
+                MessageType::Ping(_) => self.send_message(true, endpoint, message),
                 _ => self.send_message(false, endpoint, message),
             }
 

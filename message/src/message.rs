@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use realms::{realm::ChannelType, realm_desc::RealmDescription, realms_manager::RealmsManager};
 use serde::{Deserialize, Serialize};
-use types::{ChannelIdSize, MessageIdSize, RealmIdSize, TextMessageChunks, UserIdSize};
+use types::{ChannelIdSize, MessageIdSize, PingIdSize, RealmIdSize, TextMessageChunks, UserIdSize};
 use user::User;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy)]
@@ -85,8 +85,8 @@ pub enum MessageType {
 
     // Other
     Heartbeat,
-    Ping(u64),
-    PingReply(u64),
+    Ping(PingIdSize),
+    PingReply(PingIdSize),
 
     // Errors
     ServerShutdown,
