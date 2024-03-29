@@ -382,22 +382,19 @@ impl<'a> App<'a> {
                         );
 
                         // Add this user to the voice channel if we're in its realm
-                        if let Some(realm_id) = self.current_realm_id {
-                            if realm_id == join.realm_id {
-                                for channel in &mut self.voice_channels.items {
-                                    if channel.0 == join.channel_id {
-                                        channel.2.push(join.user_id);
+                        for channel in &mut self.voice_channels.items {
+                            if channel.0 == join.channel_id {
+                                channel.2.push(join.user_id);
+                            }
+                        }
 
-                                        // If we are in this channel, play a joined sound
-                                        if let Some(voice_channel_id) = self.current_voice_channel {
-                                            if channel.0 == voice_channel_id {
-                                                self.client.play_audio_file(String::from(
-                                                    "user_joined_voice.mp3",
-                                                ));
-                                            }
-                                        }
-                                    }
-                                }
+                        // Play a sound if the user left while we are in the channel
+                        if let (Some(realm_id), Some(voice_id)) =
+                            (self.current_realm_id, self.current_voice_channel)
+                        {
+                            if realm_id == join.realm_id && voice_id == join.channel_id {
+                                self.client
+                                    .play_audio_file(String::from("user_joined_voice.mp3"));
                             }
                         }
 
