@@ -71,7 +71,7 @@ impl AudioIo {
     }
 
     pub fn get_output_device(&self) -> Result<Device, AudioIoError> {
-        match &self.input_device {
+        match &self.output_device {
             Some(device_name) => match self.host.output_devices() {
                 Ok(mut devices) => {
                     match devices.find(|d| {
@@ -83,7 +83,7 @@ impl AudioIo {
                 }
                 Err(_) => Err(AudioIoError::FailedToGetOutputDevice),
             },
-            None => match self.host.default_input_device() {
+            None => match self.host.default_output_device() {
                 Some(device) => Ok(device),
                 None => Err(AudioIoError::FailedToGetDefaultOutput),
             },

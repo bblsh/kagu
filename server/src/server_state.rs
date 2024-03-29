@@ -396,6 +396,11 @@ impl EndpointEventCallbacks for ServerState {
                         user.get_id(),
                         reason
                     );
+
+                    // Remove this user from any voice channel
+                    self.realms_manager
+                        .remove_user_from_voice_channel_global(user.get_id());
+
                     let message = Message::from(MessageType::UserLeft(user.get_id()));
                     self.send(SendTo::Everyone, false, message, endpoint);
                     self.clients.remove(cid);

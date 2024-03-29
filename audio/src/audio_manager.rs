@@ -1,12 +1,15 @@
-use message::message::{Message, MessageHeader, MessageType};
+use std::fs::File;
+use std::io::BufReader;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Stream, StreamConfig};
 use crossbeam::channel::{Receiver, Sender};
-use opus::{Decoder, Encoder};
+use opus::{Decoder as OpusDecoder, Encoder};
+use rodio::{Decoder, OutputStream, Sink};
 
 use crate::audio_buffer_manager::AudioBufferManager;
 use crate::audio_io::AudioIo;
+use message::message::{Message, MessageHeader, MessageType};
 
 #[derive(Debug)]
 pub enum AudioManagerError {
@@ -121,7 +124,7 @@ impl AudioManager {
             buffer_size: cpal::BufferSize::Fixed(480),
         };
 
-        let mut decoder = match Decoder::new(48000, opus::Channels::Mono) {
+        let mut decoder = match OpusDecoder::new(48000, opus::Channels::Mono) {
             Ok(decoder) => decoder,
             Err(_) => return Err(AudioManagerError::FailedToCreateDecoder),
         };
@@ -179,5 +182,20 @@ impl AudioManager {
 
     pub fn set_audio_output(&mut self, output_name: String) {
         self.audio_io.set_output_device(output_name);
+    }
+
+    pub fn play_audio_file(&mut self, file_path: String) {
+        // Get a device to play audio back with
+        let device = self.audio_io.get_output_device().unwrap();
+
+        // Likely inefficient, but spawn a thread to play this sound
+        let _audio_handle = std::thread::spawn(move || {
+            let (_stream, stream_handle) = OutputStream::try_from_device(&device).unwrap();
+            let sink = Sink::try_new(&stream_handle).unwrap();
+            let file = BufReader::new(File::open(file_path).unwrap());
+            let source = Decoder::new(file).unwrap();
+            sink.append(source);
+            sink.sleep_until_end();
+        });
     }
 }

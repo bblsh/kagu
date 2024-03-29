@@ -358,7 +358,6 @@ impl<'a> App<'a> {
                             .push((user.get_id(), String::from(user.get_username())));
                     }
                     MessageType::UserLeft(user_id) => {
-                        //self.user_id_to_username.remove(&user_id);
                         let index = self
                             .users_online
                             .items
@@ -366,6 +365,13 @@ impl<'a> App<'a> {
                             .position(|x| x.0 == user_id)
                             .unwrap();
                         self.users_online.items.remove(index);
+
+                        // Remove this user from any voice channels
+                        self.realms_manager
+                            .remove_user_from_voice_channel_global(user_id);
+                        for channel in &mut self.voice_channels.items {
+                            channel.2.retain(|u| *u != user_id);
+                        }
                     }
                     MessageType::UserJoinedVoiceChannel(join) => {
                         // Add this user to that channel's connected_users

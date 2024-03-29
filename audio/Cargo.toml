@@ -15,3 +15,4 @@ cpal = { version = "0.15.2" }
 opus = { version = "*" }
 crossbeam = { version = "0.8.4" }
 chrono = { version = "0.4.31" }
+rodio = { version = "*" }

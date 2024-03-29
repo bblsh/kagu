@@ -169,4 +169,17 @@ impl RealmsManager {
             }
         }
     }
+
+    /// Less efficient version of remove_user_from_voice_channel().
+    /// Intended to be used when a client loses connection.
+    pub fn remove_user_from_voice_channel_global(&mut self, user_id: UserIdSize) {
+        for realm in self.realms.iter_mut() {
+            for channel in realm.1.get_voice_channels_mut() {
+                let users = channel.1.get_connected_users_mut();
+                if users.contains(&user_id) {
+                    users.retain(|u| u != &user_id);
+                }
+            }
+        }
+    }
 }
