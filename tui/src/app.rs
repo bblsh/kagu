@@ -957,6 +957,11 @@ impl<'a> App<'a> {
             self.client.hang_up(self.current_realm_id.unwrap(), channel);
             // todo: the current_realm_id may not be correct if the user goes to a new realm
 
+            if self.is_voice_connected {
+                self.client
+                    .play_audio_file(String::from("user_left_voice.mp3"));
+            }
+
             self.is_voice_connected = false;
             self.current_voice_channel = None;
         }
