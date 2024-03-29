@@ -184,7 +184,7 @@ impl AudioManager {
         self.audio_io.set_output_device(output_name);
     }
 
-    pub fn play_audio_file(&mut self, file_path: String) {
+    pub fn play_audio_file(&self, file_path: String) {
         // Get a device to play audio back with
         let device = self.audio_io.get_output_device().unwrap();
 

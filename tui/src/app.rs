@@ -947,6 +947,9 @@ impl<'a> App<'a> {
 
     pub fn connect_voice(&mut self, realm_id: RealmIdSize, channel_id: ChannelIdSize) {
         self.client.connect_voice(realm_id, channel_id);
+
+        self.client
+            .play_audio_file(String::from("user_joined_voice.mp3"));
     }
 
     pub fn hang_up(&mut self) {

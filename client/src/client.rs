@@ -259,14 +259,16 @@ impl Client {
                 Ok(_) => (),
                 Err(_) => println!("FAILED TO START RECORDING"),
             }
-
-            let mut audio = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-            audio.push("../assets/audio/");
-            audio.push("user_joined_voice.mp3");
-
-            self.audio_manager
-                .play_audio_file(String::from(audio.to_str().unwrap()));
         }
+    }
+
+    pub fn play_audio_file(&self, file: String) {
+        let mut audio = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        audio.push("../assets/audio/");
+        audio.push(file.as_str());
+
+        self.audio_manager
+            .play_audio_file(String::from(audio.to_str().unwrap()));
     }
 
     pub fn add_channel(
