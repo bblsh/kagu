@@ -381,11 +381,23 @@ impl<'a> App<'a> {
                             join.channel_id,
                         );
 
-                        // For now let's update the voice_channels list with
-                        // what we already have saved elsewhere
-                        for channel in &mut self.voice_channels.items {
-                            if channel.0 == join.channel_id {
-                                channel.2.push(join.user_id);
+                        // Add this user to the voice channel if we're in its realm
+                        if let Some(realm_id) = self.current_realm_id {
+                            if realm_id == join.realm_id {
+                                for channel in &mut self.voice_channels.items {
+                                    if channel.0 == join.channel_id {
+                                        channel.2.push(join.user_id);
+
+                                        // If we are in this channel, play a joined sound
+                                        if let Some(voice_channel_id) = self.current_voice_channel {
+                                            if channel.0 == voice_channel_id {
+                                                self.client.play_audio_file(String::from(
+                                                    "user_joined_voice.mp3",
+                                                ));
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
 
