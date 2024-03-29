@@ -86,6 +86,7 @@ pub enum MessageType {
     // Other
     Heartbeat,
     Ping(u64),
+    PingReply(u64),
 
     // Errors
     ServerShutdown,
@@ -163,6 +164,7 @@ impl From<MessageType> for Message {
             MessageType::ChannelRemoved(cr) => Message::new(0, MessageType::ChannelRemoved(cr)),
             MessageType::ServerShutdown => Message::new(0, MessageType::ServerShutdown),
             MessageType::Ping(ping_id) => Message::new(0, MessageType::Ping(ping_id)),
+            MessageType::PingReply(ping_id) => Message::new(0, MessageType::PingReply(ping_id)),
             _ => Message::new(0, MessageType::Heartbeat),
         }
     }
@@ -233,6 +235,7 @@ impl Message {
             MessageType::Heartbeat => MessageType::Heartbeat,
             MessageType::ServerShutdown => MessageType::ServerShutdown,
             MessageType::Ping(ping_id) => MessageType::Ping(ping_id),
+            MessageType::PingReply(ping_id) => MessageType::PingReply(ping_id),
         }
     }
 
