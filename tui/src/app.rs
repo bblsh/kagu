@@ -426,6 +426,16 @@ impl<'a> App<'a> {
                                 channel.2.remove(index);
                             }
                         }
+
+                        // Play a sound if the user left while we are in the channel
+                        if let (Some(realm_id), Some(voice_id)) =
+                            (self.current_realm_id, self.current_voice_channel)
+                        {
+                            if realm_id == left.realm_id && voice_id == left.channel_id {
+                                self.client
+                                    .play_audio_file(String::from("user_left_voice.mp3"));
+                            }
+                        }
                     }
                     MessageType::AllUsers(users) => {
                         if let Some(our_user) = &self.user {
