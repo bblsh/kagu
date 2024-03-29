@@ -83,8 +83,9 @@ pub enum MessageType {
     // User disconnects
     Disconnect,
 
-    // Probing heartbeat
+    // Other
     Heartbeat,
+    Ping(u64),
 
     // Errors
     ServerShutdown,
@@ -161,6 +162,7 @@ impl From<MessageType> for Message {
             MessageType::ChannelAdded(ca) => Message::new(0, MessageType::ChannelAdded(ca)),
             MessageType::ChannelRemoved(cr) => Message::new(0, MessageType::ChannelRemoved(cr)),
             MessageType::ServerShutdown => Message::new(0, MessageType::ServerShutdown),
+            MessageType::Ping(ping_id) => Message::new(0, MessageType::Ping(ping_id)),
             _ => Message::new(0, MessageType::Heartbeat),
         }
     }
@@ -230,6 +232,7 @@ impl Message {
             MessageType::Disconnecting(user_id) => MessageType::Disconnecting(user_id),
             MessageType::Heartbeat => MessageType::Heartbeat,
             MessageType::ServerShutdown => MessageType::ServerShutdown,
+            MessageType::Ping(ping_id) => MessageType::Ping(ping_id),
         }
     }
 
