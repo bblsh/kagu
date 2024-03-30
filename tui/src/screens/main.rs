@@ -23,17 +23,21 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .constraints([Constraint::Max(1), Constraint::Max(frame.size().width - 1)])
         .split(frame.size());
 
-    let kagu_bar = Layout::default()
-        .direction(Direction::Horizontal)
-        .margin(0)
-        .constraints([
-            Constraint::Max(10),                               // Kagu logo
-            Constraint::Max(16),                               // Voice status
-            Constraint::Max(7),                                // Latency
-            Constraint::Max(frame.size().width - 7 - 26 - 15), // Blank space
-            Constraint::Max(15),                               // Current time
-        ])
-        .split(top_and_bottom_layout[0]);
+    let [kagu_logo_area, kagu_voice_status_area, kagu_latency_area, kagu_blank_area, kagu_time_area] =
+        *Layout::default()
+            .direction(Direction::Horizontal)
+            .margin(0)
+            .constraints([
+                Constraint::Max(10),                               // Kagu logo
+                Constraint::Max(16),                               // Voice status
+                Constraint::Max(7),                                // Latency
+                Constraint::Max(frame.size().width - 7 - 26 - 15), // Blank space
+                Constraint::Max(15),                               // Current time
+            ])
+            .split(top_and_bottom_layout[0])
+    else {
+        return;
+    };
 
     let mut kagu_spans: Vec<Span> = vec![Span::raw("Kagu")];
 
@@ -65,10 +69,10 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         false => String::from(""),
     };
     let latency_paragraph = Paragraph::new(latency);
-    frame.render_widget(kagu_logo, kagu_bar[0]);
-    frame.render_widget(connected_label, kagu_bar[1]);
-    frame.render_widget(latency_paragraph, kagu_bar[2]);
-    frame.render_widget(time, kagu_bar[4]);
+    frame.render_widget(kagu_logo, kagu_logo_area);
+    frame.render_widget(connected_label, kagu_voice_status_area);
+    frame.render_widget(latency_paragraph, kagu_latency_area);
+    frame.render_widget(time, kagu_time_area);
 
     let back_panel = Layout::default()
         .direction(Direction::Horizontal)
