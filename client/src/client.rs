@@ -9,7 +9,7 @@ use user::User;
 
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::path::{Path, PathBuf};
-use std::thread;
+use std::thread::JoinHandle;
 
 use crossbeam::channel::{Receiver, Sender};
 use swiftlet_quic::endpoint::{Config, Endpoint};
@@ -33,6 +33,9 @@ pub struct Client {
     el_to_client_receiver: Receiver<ClientMessage>,
 
     is_connected: bool,
+
+    // Handle to the event loop thread
+    event_loop_handle: Option<JoinHandle<()>>,
 }
 
 impl Client {
@@ -73,10 +76,11 @@ impl Client {
             el_to_client_sender,
             el_to_client_receiver,
             is_connected: false,
+            event_loop_handle: None,
         }
     }
 
-    pub fn run_client(&self) {
+    pub fn run_client(&mut self) {
         let bind_address = match self.server_address.is_ipv6() {
             true => SocketAddr::V6(SocketAddrV6::new(Ipv6Addr::UNSPECIFIED, 0, 0, 0)),
             false => SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 0)),
@@ -103,7 +107,7 @@ impl Client {
 
         let (cert, _pkey) = self.get_pem_paths(&self.cert_dir);
 
-        let _client_thread = thread::spawn(move || {
+        let client_thread = std::thread::spawn(move || {
             let mut client_endpoint = match Endpoint::new_client_with_first_connection(
                 bind_address,
                 b"kagu",
@@ -128,12 +132,16 @@ impl Client {
             let mut rtc_handler = EndpointHandler::new(&mut client_endpoint, &mut client_handler);
 
             match rtc_handler.run_event_loop(std::time::Duration::from_millis(5)) {
-                Ok(_) => {}
+                Ok(_) => {
+                    println!("SHUTTED")
+                }
                 Err(e) => {
                     eprintln!("Error running event loop: {:?}", e)
                 }
             }
         });
+
+        self.event_loop_handle = Some(client_thread);
     }
 
     fn get_pem_paths(&self, cert_dir: &Path) -> (String, String) {
@@ -186,7 +194,11 @@ impl Client {
             self.send(message);
         }
 
-        // todo: Tell ClientHandler to disconnect
+        // Wait for the event loop thread to exit
+        // At this point the event loop should have closed our connection
+        if let Some(handle) = self.event_loop_handle.take() {
+            let _ = handle.join(); // todo: handle errors?
+        }
     }
 
     pub fn log_in(&self) {
@@ -384,13 +396,5 @@ impl Client {
 
     pub fn set_audio_output(&mut self, output_name: String) {
         self.audio_manager.set_audio_output(output_name);
-    }
-
-    pub fn send_ping(&self, ping_id: PingIdSize) {
-        if let Some(user) = &self.user {
-            let mut message = Message::from(MessageType::PingReply(ping_id));
-            message.user_id = user.get_id();
-            self.send(message);
-        }
     }
 }

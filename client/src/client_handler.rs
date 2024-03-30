@@ -1,6 +1,8 @@
 use crate::client_message::ClientMessage;
+use crate::ping_counter::PingCounter;
 use message::message::{Message, MessageType};
 use network_manager::*;
+use types::PingIdSize;
 use user::User;
 
 use crossbeam::channel::{Receiver, Sender};
@@ -9,12 +11,13 @@ use swiftlet_quic::EndpointEventCallbacks;
 
 pub struct ClientHandler {
     connected: bool,
-    _user: Option<User>, // not used yet?
+    user: Option<User>, // not used yet?
     connection_id: Option<ConnectionId>,
     outgoing_receiver: Receiver<Message>,
     incoming_sender: Sender<Message>,
     audio_in_sender: Sender<Message>,
     el_to_client_sender: Sender<ClientMessage>,
+    ping_counter: PingCounter,
 }
 
 impl ClientHandler {
@@ -26,18 +29,29 @@ impl ClientHandler {
     ) -> Self {
         ClientHandler {
             connected: false,
-            _user: None,
+            user: None,
             connection_id: None,
             outgoing_receiver,
             incoming_sender,
             audio_in_sender,
             el_to_client_sender,
+            ping_counter: PingCounter::new(),
         }
     }
 
     fn process_message(&mut self, _cid: &ConnectionId, message: Message, _endpoint: &mut Endpoint) {
         match message.message {
             MessageType::Audio(_) => self.audio_in_sender.send(message).unwrap(),
+            MessageType::PingReply(_) => {
+                let duration = self.ping_counter.get_rtt_latency();
+                let message = Message::from(MessageType::PingLatency(duration));
+                self.incoming_sender.send(message).unwrap();
+            }
+            MessageType::LoginSuccess(ref user) => {
+                // Save our user in the event loop
+                self.user = Some(user.clone());
+                self.incoming_sender.send(message).unwrap();
+            }
             _ => self.incoming_sender.send(message).unwrap(),
         }
     }
@@ -66,6 +80,15 @@ impl ClientHandler {
                     let _ = endpoint.main_stream_send(connection_id, send_buffer);
                 }
             }
+        }
+    }
+
+    fn send_ping(&mut self, endpoint: &mut Endpoint) {
+        if let Some(user) = &self.user {
+            let ping_id = self.ping_counter.generate_id();
+            let mut message = Message::from(MessageType::Ping(ping_id));
+            message.user_id = user.get_id();
+            self.send_message(false, endpoint, message);
         }
     }
 }
@@ -103,6 +126,18 @@ impl EndpointEventCallbacks for ClientHandler {
 
     fn tick(&mut self, endpoint: &mut Endpoint) -> bool {
         let mut exit = false;
+
+        if let Some(time) = self.ping_counter.last_ping() {
+            let now = std::time::Instant::now();
+            let diff = now - time;
+            // Send a ping every 5 seconds
+            if diff.as_secs() > 5 {
+                self.send_ping(endpoint);
+            }
+        } else {
+            // We haven't sent a ping, so send one now
+            self.send_ping(endpoint);
+        }
 
         // Check to see if there's anything to send
         while let Ok(message) = self.outgoing_receiver.try_recv() {

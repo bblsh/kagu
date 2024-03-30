@@ -87,6 +87,7 @@ pub enum MessageType {
     Heartbeat,
     Ping(PingIdSize),
     PingReply(PingIdSize),
+    PingLatency(std::time::Duration),
 
     // Errors
     ServerShutdown,
@@ -165,6 +166,9 @@ impl From<MessageType> for Message {
             MessageType::ServerShutdown => Message::new(0, MessageType::ServerShutdown),
             MessageType::Ping(ping_id) => Message::new(0, MessageType::Ping(ping_id)),
             MessageType::PingReply(ping_id) => Message::new(0, MessageType::PingReply(ping_id)),
+            MessageType::PingLatency(duration) => {
+                Message::new(0, MessageType::PingLatency(duration))
+            }
             _ => Message::new(0, MessageType::Heartbeat),
         }
     }
@@ -236,6 +240,7 @@ impl Message {
             MessageType::ServerShutdown => MessageType::ServerShutdown,
             MessageType::Ping(ping_id) => MessageType::Ping(ping_id),
             MessageType::PingReply(ping_id) => MessageType::PingReply(ping_id),
+            MessageType::PingLatency(duration) => MessageType::PingLatency(duration),
         }
     }
 

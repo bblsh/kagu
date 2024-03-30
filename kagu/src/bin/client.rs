@@ -23,7 +23,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let client = Client::new(args.address, args.username, args.cert_dir);
+    let mut client = Client::new(args.address, args.username, args.cert_dir);
     client.run_client();
 
     let start_time = std::time::Instant::now();

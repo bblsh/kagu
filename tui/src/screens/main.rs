@@ -27,10 +27,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .direction(Direction::Horizontal)
         .margin(0)
         .constraints([
-            Constraint::Max(10),                                // Kagu logo
-            Constraint::Max(20),                                // Voice status
-            Constraint::Max(frame.size().width - 10 - 20 - 15), // Blank space
-            Constraint::Max(15),                                // Current time
+            Constraint::Max(10),                               // Kagu logo
+            Constraint::Max(16),                               // Voice status
+            Constraint::Max(7),                                // Latency
+            Constraint::Max(frame.size().width - 7 - 26 - 15), // Blank space
+            Constraint::Max(15),                               // Current time
         ])
         .split(top_and_bottom_layout[0]);
 
@@ -52,9 +53,22 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         true => Span::styled("Voice connected", Style::default().fg(Color::LightGreen)),
         false => Span::styled("Voice off", Style::default()),
     });
+    let latency = match app.is_voice_connected {
+        true => match app.ping_latency {
+            Some(dur) => {
+                let mut formatted = dur.as_millis().to_string();
+                formatted.push_str(" ms");
+                formatted
+            }
+            None => String::from(""),
+        },
+        false => String::from(""),
+    };
+    let latency_paragraph = Paragraph::new(latency);
     frame.render_widget(kagu_logo, kagu_bar[0]);
     frame.render_widget(connected_label, kagu_bar[1]);
-    frame.render_widget(time, kagu_bar[3]);
+    frame.render_widget(latency_paragraph, kagu_bar[2]);
+    frame.render_widget(time, kagu_bar[4]);
 
     let back_panel = Layout::default()
         .direction(Direction::Horizontal)

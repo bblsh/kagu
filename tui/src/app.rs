@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::error;
 use std::io;
 use std::path::Path;
+use std::time::Duration;
 
 use ratatui::{backend::CrosstermBackend, Terminal};
 use tui_widget_list::widget_list::stateful_widget_list::StatefulWidgetList;
@@ -237,6 +238,7 @@ pub struct App<'a> {
     pub reply_target_message_id: Option<MessageIdSize>,
     pub _not_used: &'a bool,
     pub current_settings_category: SettingsCategory,
+    pub ping_latency: Option<Duration>,
 }
 
 impl<'a> App<'a> {
@@ -295,6 +297,7 @@ impl<'a> App<'a> {
             reply_target_message_id: None,
             _not_used: &false,
             current_settings_category: SettingsCategory::Audio,
+            ping_latency: None,
         }
     }
 
@@ -308,7 +311,7 @@ impl<'a> App<'a> {
         self.running = false;
 
         // Mega lazy instead of waiting for the client thread to finish
-        std::thread::sleep(std::time::Duration::from_millis(200));
+        //std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     pub fn run_app(&mut self) -> AppResult<()> {
@@ -765,6 +768,9 @@ impl<'a> App<'a> {
                             }
                         }
                     }
+                    MessageType::PingLatency(duration) => {
+                        self.ping_latency = Some(duration);
+                    }
                     MessageType::Disconnect => {
                         self.quit();
                     }
@@ -834,9 +840,6 @@ impl<'a> App<'a> {
             }
             ChannelType::VoiceChannel => {
                 self.client.join_channel(realm_id, channel_type, channel_id);
-
-                // Let the voices be heard
-                //self.connect_voice(realm_id, channel_id);
             }
         }
     }
@@ -983,6 +986,7 @@ impl<'a> App<'a> {
 
             self.is_voice_connected = false;
             self.current_voice_channel = None;
+            self.ping_latency = None;
         }
     }
 
