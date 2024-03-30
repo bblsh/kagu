@@ -23,7 +23,7 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         .constraints([Constraint::Max(1), Constraint::Max(frame.size().width - 1)])
         .split(frame.size());
 
-    let [kagu_logo_area, kagu_voice_status_area, kagu_latency_area, kagu_blank_area, kagu_time_area] =
+    let [kagu_logo_area, kagu_voice_status_area, kagu_latency_area, _kagu_blank_area, kagu_time_area] =
         *Layout::default()
             .direction(Direction::Horizontal)
             .margin(0)
@@ -62,11 +62,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             Some(dur) => {
                 let mut formatted = dur.as_millis().to_string();
                 formatted.push_str(" ms");
-                formatted
+                Span::styled(formatted, Style::default().fg(Color::Gray))
             }
-            None => String::from(""),
+            None => Span::styled("", Style::default()),
         },
-        false => String::from(""),
+        false => Span::styled("", Style::default()),
     };
     let latency_paragraph = Paragraph::new(latency);
     frame.render_widget(kagu_logo, kagu_logo_area);
