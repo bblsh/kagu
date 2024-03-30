@@ -2,7 +2,6 @@ use crate::client_message::ClientMessage;
 use crate::ping_counter::PingCounter;
 use message::message::{Message, MessageType};
 use network_manager::*;
-use types::PingIdSize;
 use user::User;
 
 use crossbeam::channel::{Receiver, Sender};
