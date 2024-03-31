@@ -8,6 +8,7 @@ package.repository = "https://github.com/bblsh/kagu"
 members = [
     "kagu-server",
     "kagu",
+    "bot-example",
     "server",
     "client",
     "network_manager",

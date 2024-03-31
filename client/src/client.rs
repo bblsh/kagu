@@ -189,6 +189,7 @@ impl Client {
     }
 
     pub fn disconnect(&mut self) {
+        // todo: can't disconnect if we are connected but not logged in
         if let Some(user) = &self.user {
             let message = Message::from(MessageType::Disconnecting(user.get_id()));
             self.send(message);

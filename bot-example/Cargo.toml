@@ -1,0 +1,23 @@
+[package]
+name = "bot-example"
+version = "0.1.0"
+edition = "2021"
+description = "An example of using the Kagu client to create a Kagu bot."
+license-file = "LICENSE.txt"
+homepage = "https://github.com/bblsh/kagu"
+repository = "https://github.com/bblsh/kagu"
+
+[[bin]]
+name = "bot"
+path = "src/bin/main.rs"
+
+[dependencies]
+client = { path = "../client", version ="*" }
+types = { path = "../types", version = "*" }
+user = { path = "../user", version = "*"  }
+realms = { path = "../realms", version = "*"  }
+message = { path = "../message", version = "*"  }
+network_manager = { path = "../network_manager", version = "*"  }
+
+ctrlc = { version = "3.4.4" }
+clap = { version = "4.3.23", features = ["derive"] }

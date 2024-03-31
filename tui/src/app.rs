@@ -309,9 +309,6 @@ impl<'a> App<'a> {
         self.hang_up();
         self.client.disconnect();
         self.running = false;
-
-        // Mega lazy instead of waiting for the client thread to finish
-        //std::thread::sleep(std::time::Duration::from_millis(200));
     }
 
     pub fn run_app(&mut self) -> AppResult<()> {
