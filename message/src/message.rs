@@ -1,7 +1,9 @@
 use chrono::{DateTime, Utc};
 use realms::{realm::ChannelType, realm_desc::RealmDescription, realms_manager::RealmsManager};
 use serde::{Deserialize, Serialize};
-use types::{ChannelIdSize, MessageIdSize, PingIdSize, RealmIdSize, TextMessageChunks, UserIdSize};
+
+use crate::file_transfer::FileTransfer;
+use types::*;
 use user::User;
 
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone, Copy)]
@@ -89,6 +91,13 @@ pub enum MessageType {
     PingReply(PingIdSize),
     PingLatency(std::time::Duration),
 
+    // File transferring
+    FileTransferRequest,
+    FileTransferDenied,
+    FileTransferApproved(FileTransferIdSize),
+    FileTransfer(FileTransfer),
+    FileTransferComplete(FileTransferIdSize),
+
     // Errors
     ServerShutdown,
 }
@@ -169,6 +178,14 @@ impl From<MessageType> for Message {
             MessageType::PingLatency(duration) => {
                 Message::new(0, MessageType::PingLatency(duration))
             }
+            MessageType::FileTransferRequest => Message::new(0, MessageType::FileTransferRequest),
+            MessageType::FileTransferDenied => Message::new(0, MessageType::FileTransferDenied),
+            MessageType::FileTransfer(transfer) => {
+                Message::new(0, MessageType::FileTransfer(transfer))
+            }
+            MessageType::FileTransferComplete(transfer) => {
+                Message::new(0, MessageType::FileTransferComplete(transfer))
+            }
             _ => Message::new(0, MessageType::Heartbeat),
         }
     }
@@ -241,6 +258,13 @@ impl Message {
             MessageType::Ping(ping_id) => MessageType::Ping(ping_id),
             MessageType::PingReply(ping_id) => MessageType::PingReply(ping_id),
             MessageType::PingLatency(duration) => MessageType::PingLatency(duration),
+            MessageType::FileTransferRequest => MessageType::FileTransferRequest,
+            MessageType::FileTransferApproved(tid) => MessageType::FileTransferApproved(tid),
+            MessageType::FileTransferDenied => MessageType::FileTransferDenied,
+            MessageType::FileTransfer(transfer) => MessageType::FileTransfer(transfer),
+            MessageType::FileTransferComplete(transfer) => {
+                MessageType::FileTransferComplete(transfer)
+            }
         }
     }
 

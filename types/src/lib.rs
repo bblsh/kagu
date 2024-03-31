@@ -21,3 +21,6 @@ pub type MessageIdSize = u32;
 
 /// Type for the ID of a Ping and PingReply
 pub type PingIdSize = u64;
+
+/// Type for the ID of a file transfer
+pub type FileTransferIdSize = u64;
