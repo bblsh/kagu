@@ -10,7 +10,7 @@ use swiftlet_quic::EndpointEventCallbacks;
 
 pub struct ClientHandler {
     connected: bool,
-    user: Option<User>, // not used yet?
+    user: Option<User>,
     connection_id: Option<ConnectionId>,
     outgoing_receiver: Receiver<Message>,
     incoming_sender: Sender<Message>,
