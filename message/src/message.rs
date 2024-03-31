@@ -92,7 +92,7 @@ pub enum MessageType {
     PingLatency(std::time::Duration),
 
     // File transferring
-    FileTransferRequest,
+    FileTransferRequest(MessageHeader),
     FileTransferDenied,
     FileTransferApproved(FileTransferIdSize),
     FileTransfer(FileTransfer),
@@ -178,7 +178,9 @@ impl From<MessageType> for Message {
             MessageType::PingLatency(duration) => {
                 Message::new(0, MessageType::PingLatency(duration))
             }
-            MessageType::FileTransferRequest => Message::new(0, MessageType::FileTransferRequest),
+            MessageType::FileTransferRequest(header) => {
+                Message::new(0, MessageType::FileTransferRequest(header))
+            }
             MessageType::FileTransferDenied => Message::new(0, MessageType::FileTransferDenied),
             MessageType::FileTransfer(transfer) => {
                 Message::new(0, MessageType::FileTransfer(transfer))
@@ -258,7 +260,7 @@ impl Message {
             MessageType::Ping(ping_id) => MessageType::Ping(ping_id),
             MessageType::PingReply(ping_id) => MessageType::PingReply(ping_id),
             MessageType::PingLatency(duration) => MessageType::PingLatency(duration),
-            MessageType::FileTransferRequest => MessageType::FileTransferRequest,
+            MessageType::FileTransferRequest(ftr) => MessageType::FileTransferRequest(ftr),
             MessageType::FileTransferApproved(tid) => MessageType::FileTransferApproved(tid),
             MessageType::FileTransferDenied => MessageType::FileTransferDenied,
             MessageType::FileTransfer(transfer) => MessageType::FileTransfer(transfer),

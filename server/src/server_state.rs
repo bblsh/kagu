@@ -1,10 +1,12 @@
 use std::collections::BTreeMap;
+use std::fs;
+use std::io::Write;
 
 use crate::server_message::ServerMessage;
 use message::message::{Message, MessageType};
 use network_manager::MESSAGE_HEADER_SIZE;
 use realms::realms_manager::RealmsManager;
-use types::UserIdSize;
+use types::{FileTransferIdSize, UserIdSize};
 use user::User;
 
 use chrono::Utc;
@@ -36,7 +38,8 @@ pub struct ServerState {
     _exiting: bool,
     message_receiver: Receiver<ServerMessage>,
     server_message_sender: Sender<ServerMessage>,
-    //last_id: u64,
+    num_files: FileTransferIdSize,
+    file_buffers: BTreeMap<FileTransferIdSize, Vec<u8>>,
 }
 
 impl ServerState {
@@ -54,7 +57,8 @@ impl ServerState {
             _exiting: false,
             message_receiver: server_message_recv,
             server_message_sender: el_to_server_sender,
-            //last_id: 0,
+            num_files: 0,
+            file_buffers: BTreeMap::new(),
         }
     }
 
@@ -244,6 +248,38 @@ impl ServerState {
                         ping_message,
                         endpoint,
                     );
+                }
+                MessageType::FileTransferRequest(ftr) => {
+                    // Get file transfer session id
+                    let id = self.num_files;
+
+                    // Increment for next file
+                    self.num_files += 1;
+
+                    // Add this "session" to our buffers
+                    self.file_buffers.insert(id, Vec::new());
+
+                    let message = Message::from(MessageType::FileTransferApproved(id));
+                    self.send(SendTo::SingleUser(ftr.user_id), false, message, endpoint);
+                }
+                MessageType::FileTransfer(transfer) => {
+                    // todo: handle file transfers that shouldn't be happening (not approved/added)
+                    if let Some(buffer) = self.file_buffers.get_mut(&transfer.id) {
+                        buffer.extend(transfer.data);
+                    }
+                }
+                MessageType::FileTransferComplete(tid) => {
+                    if let Some(buffer) = self.file_buffers.get(&tid) {
+                        // Write this file to disk
+                        let mut file = fs::OpenOptions::new()
+                            // .create(true) // To create a new file
+                            .write(true)
+                            // either use the ? operator or unwrap since it returns a Result
+                            .open(".")
+                            .unwrap();
+
+                        let _ = file.write_all(buffer);
+                    }
                 }
                 _ => println!("Not implemented: {:?}", message),
             }
