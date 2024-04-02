@@ -476,6 +476,25 @@ impl EndpointEventCallbacks for ServerState {
         }
     }
 
+    fn background_stream_recv(
+        &mut self,
+        endpoint: &mut Endpoint,
+        cid: &ConnectionId,
+        read_data: &[u8],
+    ) -> Option<usize> {
+        if read_data.len() == MESSAGE_HEADER_SIZE {
+            Some(self.get_message_size(read_data))
+        } else {
+            let message_buffer = read_data.to_vec();
+            if let Ok(message) = Message::from_vec_u8(message_buffer) {
+                self.process_message(cid, message, endpoint);
+            }
+
+            // Tell swiftlet to read another message header
+            Some(MESSAGE_HEADER_SIZE)
+        }
+    }
+
     fn rt_stream_recv(
         &mut self,
         endpoint: &mut Endpoint,
@@ -483,17 +502,10 @@ impl EndpointEventCallbacks for ServerState {
         read_data: &[u8],
         _rt_id: u64,
     ) -> usize {
-        // let dif = rt_id - self.last_id;
-        // if dif > 1 {
-        //     println!("Diff: {}", dif - 1);
-        // }
-        // self.last_id = rt_id;
-
-        // We know this is (likely) a message
         let message_buffer = read_data.to_vec();
-        let message = Message::from_vec_u8(message_buffer).unwrap();
-
-        self.process_message(cid, message, endpoint);
+        if let Ok(message) = Message::from_vec_u8(message_buffer) {
+            self.process_message(cid, message, endpoint);
+        }
 
         0
     }

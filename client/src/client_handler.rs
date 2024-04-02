@@ -16,6 +16,7 @@ pub struct ClientHandler {
     incoming_sender: Sender<Message>,
     audio_in_sender: Sender<Message>,
     el_to_client_sender: Sender<ClientMessage>,
+    client_to_el_receiver: Receiver<ClientMessage>,
     ping_counter: PingCounter,
 }
 
@@ -25,6 +26,7 @@ impl ClientHandler {
         incoming_sender: Sender<Message>,
         audio_in_sender: Sender<Message>,
         el_to_client_sender: Sender<ClientMessage>,
+        client_to_el_receiver: Receiver<ClientMessage>,
     ) -> Self {
         ClientHandler {
             connected: false,
@@ -34,6 +36,7 @@ impl ClientHandler {
             incoming_sender,
             audio_in_sender,
             el_to_client_sender,
+            client_to_el_receiver,
             ping_counter: PingCounter::new(),
         }
     }
@@ -89,6 +92,11 @@ impl ClientHandler {
             message.user_id = user.get_id();
             self.send_message(false, endpoint, message);
         }
+    }
+
+    // keep track of transfer id and if we should be transferring
+    fn start_file_transfer(&mut self) {
+        //
     }
 }
 
@@ -153,6 +161,16 @@ impl EndpointEventCallbacks for ClientHandler {
 
             if exit {
                 let _ = endpoint.close_connection(&self.connection_id.unwrap(), 0);
+            }
+        }
+
+        // Check for messages from the external client
+        while let Ok(message) = self.client_to_el_receiver.try_recv() {
+            match message {
+                ClientMessage::BeginFileTransfer(transfer) => {
+                    //
+                }
+                _ => (),
             }
         }
 

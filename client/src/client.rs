@@ -31,6 +31,8 @@ pub struct Client {
     // Channel used to send messages from the inner event loop to this client
     el_to_client_sender: Sender<ClientMessage>,
     el_to_client_receiver: Receiver<ClientMessage>,
+    client_to_el_receiver: Receiver<ClientMessage>,
+    client_to_el_sender: Sender<ClientMessage>,
 
     is_connected: bool,
 
@@ -50,6 +52,11 @@ impl Client {
             crossbeam::channel::bounded(10);
 
         let (el_to_client_sender, el_to_client_receiver): (
+            Sender<ClientMessage>,
+            Receiver<ClientMessage>,
+        ) = crossbeam::channel::bounded(1);
+
+        let (client_to_el_sender, client_to_el_receiver): (
             Sender<ClientMessage>,
             Receiver<ClientMessage>,
         ) = crossbeam::channel::bounded(1);
@@ -77,6 +84,8 @@ impl Client {
             el_to_client_receiver,
             is_connected: false,
             event_loop_handle: None,
+            client_to_el_receiver,
+            client_to_el_sender,
         }
     }
 
@@ -91,6 +100,7 @@ impl Client {
         let incoming_sender = self.incoming_sender.clone();
         let audio_in_sender = self.audio_in_sender.clone();
         let el_to_client_sender = self.el_to_client_sender.clone();
+        let client_to_el_receiver = self.client_to_el_receiver.clone();
 
         let config = Config {
             idle_timeout_in_ms: 5000,
@@ -128,13 +138,12 @@ impl Client {
                 incoming_sender,
                 audio_in_sender,
                 el_to_client_sender,
+                client_to_el_receiver,
             );
             let mut rtc_handler = EndpointHandler::new(&mut client_endpoint, &mut client_handler);
 
             match rtc_handler.run_event_loop(std::time::Duration::from_millis(5)) {
-                Ok(_) => {
-                    println!("SHUTTED")
-                }
+                Ok(_) => (),
                 Err(e) => {
                     eprintln!("Error running event loop: {:?}", e)
                 }
@@ -398,4 +407,17 @@ impl Client {
     pub fn set_audio_output(&mut self, output_name: String) {
         self.audio_manager.set_audio_output(output_name);
     }
+
+    /// This is to be called prior to transferring a file
+    pub fn request_file_upload(&self) {
+        if let Some(user) = &self.user {
+            let header = MessageHeader::new(user.get_id(), 0, 0);
+            let message = Message::from(MessageType::FileTransferRequest(header));
+            self.send(message);
+        }
+    }
+
+    /// To upload a file, `request_file_upload()` must first be called.
+    /// Once a FileTransferApproved message is received this may be called.
+    pub fn upload_file(&self, transfer_id: FileTransferIdSize, file_path: PathBuf) {}
 }
