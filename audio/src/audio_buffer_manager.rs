@@ -14,7 +14,7 @@ impl AudioBufferManager {
         }
     }
 
-    pub fn buffer_data(&mut self, user_id: UserIdSize, data: [f32; 480]) {
+    pub fn buffer_data(&mut self, user_id: UserIdSize, data: [f32; 960]) {
         if let Some(buffer) = self.buffers.get_mut(&user_id) {
             buffer.push_back(data);
         } else {
@@ -25,13 +25,13 @@ impl AudioBufferManager {
         }
     }
 
-    pub fn get_output_data(&mut self) -> [f32; 480] {
-        let mut output_buffer: [f32; 480] = [0.0; 480];
+    pub fn get_output_data(&mut self) -> [f32; 960] {
+        let mut output_buffer: [f32; 960] = [0.0; 960];
 
         for buffer in self.buffers.values_mut() {
             if buffer.is_buffered() {
                 let user_audio = buffer.pop_front();
-                for i in 0..480 {
+                for i in 0..960 {
                     output_buffer[i] += user_audio[i];
                 }
             }

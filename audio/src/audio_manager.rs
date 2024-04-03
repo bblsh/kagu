@@ -120,7 +120,7 @@ impl AudioManager {
 
         let config = StreamConfig {
             sample_rate: cpal::SampleRate(48000),
-            channels: 1,
+            channels: 2,
             buffer_size: cpal::BufferSize::Fixed(480),
         };
 
@@ -148,11 +148,18 @@ impl AudioManager {
                         .decode_float(audio.as_slice(), &mut user_audio, false)
                         .unwrap();
 
-                    buffer_manager.buffer_data(header.user_id, user_audio);
+                    // Opus data is mono, so convert the audio to stereo
+                    let mut stereo_audio = [0.0; 960];
+                    for i in 0..480 {
+                        stereo_audio[i * 2] = user_audio[i];
+                        stereo_audio[i * 2 + 1] = user_audio[i];
+                    }
+
+                    buffer_manager.buffer_data(header.user_id, stereo_audio);
                 }
             }
 
-            data[..480].copy_from_slice(&buffer_manager.get_output_data()[..480]);
+            data[..960].copy_from_slice(&buffer_manager.get_output_data()[..960]);
         };
 
         if let Ok(stream) = ouput_device.build_output_stream(&config, data_callback, err_fn, None) {
