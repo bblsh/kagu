@@ -420,4 +420,12 @@ impl Client {
     /// To upload a file, `request_file_upload()` must first be called.
     /// Once a FileTransferApproved message is received this may be called.
     pub fn upload_file(&self, transfer_id: FileTransferIdSize, file_path: PathBuf) {}
+
+    /// Audio sent using this should be sampled at 48000Hz and in 10ms chunks
+    pub fn send_audio_frame(&self, mut header: MessageHeader, audio: Vec<u8>) {
+        if let Some(_user) = &self.user {
+            header.datetime = Some(chrono::Utc::now());
+            self.send(Message::from(MessageType::Audio((header, audio))));
+        }
+    }
 }

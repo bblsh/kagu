@@ -229,7 +229,9 @@ dependencies = [
  "ctrlc",
  "message",
  "network_manager",
+ "opus",
  "realms",
+ "rodio",
  "types",
  "user",
 ]
@@ -378,11 +380,11 @@ name = "client"
 version = "0.1.0"
 dependencies = [
  "audio",
+ "chrono",
  "crossbeam",
  "message",
  "mio",
  "network_manager",
- "quiche",
  "realms",
  "swiftlet_quic",
  "types",

@@ -21,3 +21,5 @@ network_manager = { path = "../network_manager", version = "*"  }
 
 ctrlc = { version = "3.4.4" }
 clap = { version = "4.3.23", features = ["derive"] }
+rodio = { version = "*" }
+opus = { version = "*" }

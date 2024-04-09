@@ -43,7 +43,13 @@ impl ClientHandler {
 
     fn process_message(&mut self, _cid: &ConnectionId, message: Message, _endpoint: &mut Endpoint) {
         match message.message {
-            MessageType::Audio(_) => self.audio_in_sender.send(message).unwrap(),
+            MessageType::Audio(_) => {
+                // Lazy fix to prevent blocking
+                // todo: implement a way to not receive audio
+                if !self.audio_in_sender.is_full() {
+                    self.audio_in_sender.send(message).unwrap();
+                }
+            }
             MessageType::PingReply(_) => {
                 let duration = self.ping_counter.get_rtt_latency();
                 let message = Message::from(MessageType::PingLatency(duration));
@@ -154,7 +160,9 @@ impl EndpointEventCallbacks for ClientHandler {
                     exit = true;
                     self.send_message(false, endpoint, message);
                 }
-                MessageType::Audio(_) => self.send_message(true, endpoint, message),
+                MessageType::Audio(_) => {
+                    self.send_message(true, endpoint, message);
+                }
                 MessageType::Ping(_) => self.send_message(true, endpoint, message),
                 _ => self.send_message(false, endpoint, message),
             }
