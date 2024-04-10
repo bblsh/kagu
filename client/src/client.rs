@@ -119,7 +119,7 @@ impl Client {
 
         let client_thread = std::thread::spawn(move || {
             let mut client_endpoint = match Endpoint::new_client_with_first_connection(
-                bind_address,
+                bind_address.is_ipv6(),
                 b"kagu",
                 cert.as_str(),
                 server_address,

@@ -66,27 +66,30 @@ impl NewServer {
 
         let (cert, pkey) = self.get_pem_paths(&self.cert_dir);
 
-        let mut server_endpoint = match Endpoint::new_server(
-            bind_address,
-            ALPN_NAME,
-            cert.as_str(),
-            pkey.as_str(),
-            config,
-        ) {
-            Ok(endpoint) => endpoint,
-            Err(e) => {
-                println!("[server] failed to create server endpoint: {:?}", e);
-                return;
-            }
-        };
-
-        let mut server_state = ServerState::new(
-            self.server_name.clone(),
-            self.server_message_recv.clone(),
-            self.el_to_server_send.clone(),
-        );
+        let port = self.port;
+        let server_name = self.server_name.clone();
+        let server_message_recv = self.server_message_recv.clone();
+        let el_to_server_send = self.el_to_server_send.clone();
 
         let _server_handle = std::thread::spawn(move || {
+            let mut server_endpoint = match Endpoint::new_server(
+                bind_address.is_ipv6(),
+                port,
+                ALPN_NAME,
+                cert.as_str(),
+                pkey.as_str(),
+                config,
+            ) {
+                Ok(endpoint) => endpoint,
+                Err(e) => {
+                    println!("[server] failed to create server endpoint: {:?}", e);
+                    return;
+                }
+            };
+
+            let mut server_state =
+                ServerState::new(server_name, server_message_recv, el_to_server_send);
+
             let mut endpoint_handler =
                 EndpointHandler::new(&mut server_endpoint, &mut server_state);
             match endpoint_handler.run_event_loop(std::time::Duration::from_millis(2)) {
