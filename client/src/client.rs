@@ -54,12 +54,12 @@ impl Client {
         let (el_to_client_sender, el_to_client_receiver): (
             Sender<ClientMessage>,
             Receiver<ClientMessage>,
-        ) = crossbeam::channel::bounded(1);
+        ) = crossbeam::channel::bounded(5);
 
         let (client_to_el_sender, client_to_el_receiver): (
             Sender<ClientMessage>,
             Receiver<ClientMessage>,
-        ) = crossbeam::channel::bounded(1);
+        ) = crossbeam::channel::bounded(5);
 
         Client {
             server_address,

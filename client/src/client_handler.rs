@@ -53,7 +53,7 @@ impl ClientHandler {
             MessageType::PingReply(_) => {
                 let duration = self.ping_counter.get_rtt_latency();
                 let message = Message::from(MessageType::PingLatency(duration));
-                self.incoming_sender.send(message).unwrap();
+                let _ = self.incoming_sender.try_send(message);
             }
             MessageType::LoginSuccess(ref user) => {
                 // Save our user in the event loop

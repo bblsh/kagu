@@ -127,11 +127,8 @@ fn main() {
                             let source = Decoder::new(cursor).unwrap();
 
                             println!("Converting samples...");
-                            let samples = source.convert_samples::<f32>();
-                            let mut converted_samples = VecDeque::new();
-                            for sample in samples {
-                                converted_samples.push_back(sample);
-                            }
+                            let mut converted_samples: VecDeque<f32> =
+                                source.convert_samples().collect();
 
                             println!("Building encoder...");
                             let mut encoder = Encoder::new(
