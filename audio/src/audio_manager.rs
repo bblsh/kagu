@@ -74,11 +74,11 @@ impl AudioManager {
             buffer_size: cpal::BufferSize::Fixed(480),
         };
 
-        let mut encoder = match Encoder::new(48000, opus::Channels::Mono, opus::Application::Audio)
-        {
-            Ok(encoder) => encoder,
-            Err(_) => return Err(AudioManagerError::FailedToCreateEncoder),
-        };
+        let mut encoder =
+            match Encoder::new(48000, opus::Channels::Stereo, opus::Application::Audio) {
+                Ok(encoder) => encoder,
+                Err(_) => return Err(AudioManagerError::FailedToCreateEncoder),
+            };
 
         let audio_sender = self.audio_out_sender.clone();
         let mut header = self.current_header;
@@ -88,7 +88,14 @@ impl AudioManager {
         };
 
         let data_callback = move |data: &[f32], _: &_| {
-            if let Ok(bytes) = encoder.encode_vec_float(data, 480 * 8) {
+            // Make mono recording into stereo
+            let mut stereo_audio = [0.0; 960];
+            for i in 0..480 {
+                stereo_audio[i * 2] = data[i];
+                stereo_audio[i * 2 + 1] = data[i];
+            }
+
+            if let Ok(bytes) = encoder.encode_vec_float(&stereo_audio, 480 * 8) {
                 header.datetime = Some(chrono::Utc::now());
 
                 let message = Message::from(MessageType::Audio((header, bytes)));
@@ -124,7 +131,7 @@ impl AudioManager {
             buffer_size: cpal::BufferSize::Fixed(480),
         };
 
-        let mut decoder = match OpusDecoder::new(48000, opus::Channels::Mono) {
+        let mut decoder = match OpusDecoder::new(48000, opus::Channels::Stereo) {
             Ok(decoder) => decoder,
             Err(_) => return Err(AudioManagerError::FailedToCreateDecoder),
         };
@@ -143,19 +150,12 @@ impl AudioManager {
             while let Ok(message) = audio_receiver.try_recv() {
                 if let MessageType::Audio((header, audio)) = message.message {
                     // Volume manipulation may be able to be done here later on
-                    let mut user_audio: [f32; 480] = [0.0; 480];
+                    let mut user_audio: [f32; 960] = [0.0; 960];
                     let _decoded_samples = decoder
                         .decode_float(audio.as_slice(), &mut user_audio, false)
                         .unwrap();
 
-                    // Opus data is mono, so convert the audio to stereo
-                    let mut stereo_audio = [0.0; 960];
-                    for i in 0..480 {
-                        stereo_audio[i * 2] = user_audio[i];
-                        stereo_audio[i * 2 + 1] = user_audio[i];
-                    }
-
-                    buffer_manager.buffer_data(header.user_id, stereo_audio);
+                    buffer_manager.buffer_data(header.user_id, user_audio);
                 }
             }
 
