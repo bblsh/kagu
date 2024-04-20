@@ -105,7 +105,12 @@ impl ServerState {
         } else {
             match message.message {
                 MessageType::Disconnecting(user_id) => {
+                    // Remove this user from our list of users
                     self.clients.retain(|_, u| u.get_id() != user_id);
+
+                    // If this user was in a voice channel, remove them from the channel
+                    self.realms_manager
+                        .remove_user_from_voice_channel_global(user_id);
 
                     let message = Message::from(MessageType::UserLeft(user_id));
                     self.send(SendTo::Everyone, false, message, endpoint);
