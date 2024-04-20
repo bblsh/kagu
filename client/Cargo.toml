@@ -19,3 +19,4 @@ mio = { version = "*", features = ["os-poll", "net"]}
 crossbeam = { version = "0.8.4" }
 swiftlet_quic = { version = "*", git = "https://github.com/MediaEnhanced/Swiftlet.git" }
 chrono = { version = "0.4.31", features = ["serde"] }
+opus = { version = "*" }

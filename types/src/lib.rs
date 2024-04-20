@@ -24,3 +24,6 @@ pub type PingIdSize = u64;
 
 /// Type for the ID of a file transfer
 pub type FileTransferIdSize = u64;
+
+/// Internal ID for a song to broadcast
+pub type AudioFileIdSize = u64;

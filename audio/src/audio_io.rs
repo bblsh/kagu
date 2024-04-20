@@ -21,6 +21,12 @@ pub struct AudioIo {
     host: Host,
 }
 
+impl Default for AudioIo {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AudioIo {
     pub fn new() -> AudioIo {
         let host = cpal::default_host();

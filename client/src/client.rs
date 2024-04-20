@@ -7,11 +7,14 @@ use realms::realm::ChannelType;
 use types::*;
 use user::User;
 
+use std::collections::VecDeque;
 use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 
 use crossbeam::channel::{Receiver, Sender};
+use opus::Encoder;
 use swiftlet_quic::endpoint::{Config, Endpoint};
 use swiftlet_quic::EndpointHandler;
 
@@ -38,6 +41,12 @@ pub struct Client {
 
     // Handle to the event loop thread
     event_loop_handle: Option<JoinHandle<()>>,
+
+    // Flag to indicate if we are broadcasting audio
+    is_broadcasting: Arc<Mutex<bool>>,
+
+    // Flag to indicate if we are preparing (fetching or encoding) audio to broadcast
+    is_preparing_audio: Arc<Mutex<bool>>,
 }
 
 impl Client {
@@ -86,6 +95,9 @@ impl Client {
             event_loop_handle: None,
             client_to_el_receiver,
             client_to_el_sender,
+
+            is_broadcasting: Arc::new(Mutex::new(false)),
+            is_preparing_audio: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -101,6 +113,8 @@ impl Client {
         let audio_in_sender = self.audio_in_sender.clone();
         let el_to_client_sender = self.el_to_client_sender.clone();
         let client_to_el_receiver = self.client_to_el_receiver.clone();
+        let is_broadcasting = self.is_broadcasting.clone();
+        let is_preparing_audio = self.is_preparing_audio.clone();
 
         let config = Config {
             idle_timeout_in_ms: 5000,
@@ -139,6 +153,8 @@ impl Client {
                 audio_in_sender,
                 el_to_client_sender,
                 client_to_el_receiver,
+                is_broadcasting,
+                is_preparing_audio,
             );
             let mut rtc_handler = EndpointHandler::new(&mut client_endpoint, &mut client_handler);
 
@@ -259,6 +275,13 @@ impl Client {
                 ChannelType::VoiceChannel => {
                     let message = Message::from(MessageType::UserJoinedVoiceChannel(header));
                     self.send(message);
+
+                    let message = ClientMessage::UpdateVoiceHeader(Some(MessageHeader::new(
+                        user.get_id(),
+                        realm_id,
+                        channel_id,
+                    )));
+                    let _ = self.client_to_el_sender.send(message);
                 }
             }
         }
@@ -367,6 +390,13 @@ impl Client {
         self.audio_manager.stop_recording();
         self.audio_manager.stop_listening();
 
+        let _ = self
+            .client_to_el_sender
+            .send(ClientMessage::UpdateVoiceHeader(None));
+        let _ = self
+            .client_to_el_sender
+            .send(ClientMessage::StopBroadcasting);
+
         if let Some(user) = &self.user {
             let header = MessageHeader::new(user.get_id(), realm_id, channel_id);
             let message = Message::from(MessageType::UserLeftVoiceChannel(header));
@@ -419,7 +449,7 @@ impl Client {
 
     /// To upload a file, `request_file_upload()` must first be called.
     /// Once a FileTransferApproved message is received this may be called.
-    pub fn upload_file(&self, transfer_id: FileTransferIdSize, file_path: PathBuf) {}
+    pub fn upload_file(&self, _transfer_id: FileTransferIdSize, _file_path: PathBuf) {}
 
     /// Audio sent using this should be sampled at 48000Hz and in 10ms chunks
     pub fn send_audio_frame(&self, mut header: MessageHeader, audio: Vec<u8>) {
@@ -427,5 +457,80 @@ impl Client {
             header.datetime = Some(chrono::Utc::now());
             self.send(Message::from(MessageType::Audio((header, audio))));
         }
+    }
+
+    /// Broadcast audio in a buffer over voice chat.
+    /// Audio not done being broadcasted will be queued.
+    pub fn broadcast_audio_buffer(&self, buffer: Vec<f32>) {
+        let sender = self.client_to_el_sender.clone();
+
+        // Indicate that we are broadcasting audio
+        let mut guard = self.is_broadcasting.lock().unwrap();
+        *guard = true;
+
+        let mut guard = self.is_preparing_audio.lock().unwrap();
+        *guard = true;
+
+        // Maybe encode this in a background thread to prevent blocking
+        let _thread_handle = std::thread::spawn(move || {
+            let mut encoder =
+                Encoder::new(48000, opus::Channels::Stereo, opus::Application::Audio).unwrap();
+
+            // Create a buffer of opus frame buffers
+            // Each element will have 10ms of opus-encoded audio
+            let mut encoded_frames = Vec::new();
+            let mut buffer = VecDeque::from(buffer);
+
+            let mut buffered = false;
+            loop {
+                let mut frame = Vec::new();
+
+                // Get 10ms of audio
+                // todo: handle 960 float chunks instead of popping one at a time
+                for _ in 0..960 {
+                    match buffer.pop_front() {
+                        Some(f) => frame.push(f),
+                        None => {
+                            buffered = true;
+                            break;
+                        }
+                    }
+                }
+
+                if buffered {
+                    break;
+                }
+
+                // Encode this 10ms
+                if let Ok(encoded_frame) = encoder.encode_vec_float(frame.as_slice(), 480 * 8) {
+                    encoded_frames.push(encoded_frame);
+                }
+            }
+
+            let _ = sender.send(ClientMessage::BroadcastBuffer(encoded_frames));
+        });
+    }
+
+    pub fn is_broadcasting_audio(&self) -> bool {
+        let guard = self.is_broadcasting.lock().unwrap();
+        *guard
+    }
+
+    pub fn pause_broadcasting(&self) {
+        let _ = self
+            .client_to_el_sender
+            .send(ClientMessage::PauseBroadcasting);
+    }
+
+    pub fn resume_broadcasting(&self) {
+        let _ = self
+            .client_to_el_sender
+            .send(ClientMessage::ResumeBroadcasting);
+    }
+
+    pub fn stop_broadcasting(&self) {
+        let _ = self
+            .client_to_el_sender
+            .send(ClientMessage::StopBroadcasting);
     }
 }

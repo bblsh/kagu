@@ -1,3 +1,4 @@
+use crate::audio_broadcaster::AudioBroadcaster;
 use crate::client_message::ClientMessage;
 use crate::ping_counter::PingCounter;
 use message::message::{Message, MessageType};
@@ -7,6 +8,8 @@ use user::User;
 use crossbeam::channel::{Receiver, Sender};
 use swiftlet_quic::endpoint::{ConnectionEndReason, ConnectionId, Endpoint};
 use swiftlet_quic::EndpointEventCallbacks;
+
+use std::sync::{Arc, Mutex};
 
 pub struct ClientHandler {
     connected: bool,
@@ -18,6 +21,12 @@ pub struct ClientHandler {
     el_to_client_sender: Sender<ClientMessage>,
     client_to_el_receiver: Receiver<ClientMessage>,
     ping_counter: PingCounter,
+    audio_broadcaster: AudioBroadcaster,
+    broadcast_audio: bool,
+    send_audio: bool,
+    send_idx: u8,
+    is_broadcasting: Arc<Mutex<bool>>,
+    is_preparing_audio: Arc<Mutex<bool>>,
 }
 
 impl ClientHandler {
@@ -27,6 +36,8 @@ impl ClientHandler {
         audio_in_sender: Sender<Message>,
         el_to_client_sender: Sender<ClientMessage>,
         client_to_el_receiver: Receiver<ClientMessage>,
+        is_broadcasting: Arc<Mutex<bool>>,
+        is_preparing_audio: Arc<Mutex<bool>>,
     ) -> Self {
         ClientHandler {
             connected: false,
@@ -38,6 +49,12 @@ impl ClientHandler {
             el_to_client_sender,
             client_to_el_receiver,
             ping_counter: PingCounter::new(),
+            audio_broadcaster: AudioBroadcaster::new(),
+            broadcast_audio: true,
+            send_audio: true,
+            send_idx: 0,
+            is_broadcasting,
+            is_preparing_audio,
         }
     }
 
@@ -101,7 +118,7 @@ impl ClientHandler {
     }
 
     // keep track of transfer id and if we should be transferring
-    fn start_file_transfer(&mut self) {
+    fn _start_file_transfer(&mut self) {
         //
     }
 }
@@ -172,12 +189,54 @@ impl EndpointEventCallbacks for ClientHandler {
             }
         }
 
+        // Check for any audio to broadcast
+        if self.broadcast_audio {
+            match self.send_audio {
+                true => {
+                    if let Some(message) = self.audio_broadcaster.get_next_message() {
+                        self.send_message(true, endpoint, message);
+
+                        self.send_idx = 0;
+                        self.send_audio = false;
+                    }
+                    // If we don't get any samples to broadcast, verify if audio is being prepared
+                    else if let Ok(preparing) = self.is_preparing_audio.lock() {
+                        // Audio isn't being prepared, so we aren't broadcasting anything anymore
+                        if !*preparing {
+                            let mut guard = self.is_broadcasting.lock().unwrap();
+                            *guard = false;
+                        }
+                    }
+                }
+                false => {
+                    // Because we have the event loop set to 5ms, send audio every 10ms
+                    self.send_idx += 1;
+                    if self.send_idx == 1 {
+                        self.send_audio = true;
+                    }
+                }
+            }
+        }
+
         // Check for messages from the external client
         while let Ok(message) = self.client_to_el_receiver.try_recv() {
             match message {
-                ClientMessage::BeginFileTransfer(transfer) => {
+                ClientMessage::BeginFileTransfer(_transfer) => {
                     //
                 }
+                ClientMessage::UpdateVoiceHeader(header) => {
+                    self.audio_broadcaster.set_header(header)
+                }
+                ClientMessage::BroadcastBuffer(buffer) => {
+                    self.audio_broadcaster.queue_audio(buffer);
+
+                    // We got an audio buffer, so we are no longer preparing audio
+                    let mut guard = self.is_preparing_audio.lock().unwrap();
+                    *guard = false;
+                }
+                ClientMessage::PauseBroadcasting => self.broadcast_audio = false,
+                ClientMessage::ResumeBroadcasting => self.broadcast_audio = true,
+                ClientMessage::StopBroadcasting => self.audio_broadcaster.clear_buffers(),
                 _ => (),
             }
         }
