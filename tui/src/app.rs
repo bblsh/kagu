@@ -40,10 +40,21 @@ use chrono::Local;
 /// Application result type.
 pub type AppResult<T> = std::result::Result<T, Box<dyn error::Error>>;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum SettingsCategory {
     Audio,
     Colors,
+    FriendRequests,
+}
+
+impl std::fmt::Display for SettingsCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            SettingsCategory::Audio => write!(f, "Audio"),
+            SettingsCategory::FriendRequests => write!(f, "Friend Requests"),
+            SettingsCategory::Colors => write!(f, "Colors"),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -95,15 +106,15 @@ pub enum Pane {
     None,
 }
 
-impl Pane {
-    pub fn to_str(&self) -> String {
+impl std::fmt::Display for Pane {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Pane::RealmsPane => String::from("Realms"),
-            Pane::ChannelsPane => String::from("Channels"),
-            Pane::ChatPane => String::from("Chat"),
-            Pane::MembersPane => String::from("Members"),
-            Pane::InputPane => String::from("Input"),
-            _ => String::new(),
+            Pane::RealmsPane => write!(f, "Realms"),
+            Pane::ChannelsPane => write!(f, "Channels"),
+            Pane::ChatPane => write!(f, "Chat"),
+            Pane::MembersPane => write!(f, "Members"),
+            Pane::InputPane => write!(f, "Input"),
+            Pane::None => write!(f, "None"),
         }
     }
 }
@@ -238,6 +249,7 @@ pub struct App<'a> {
     pub reply_target_message_id: Option<MessageIdSize>,
     pub _not_used: &'a bool,
     pub current_settings_category: SettingsCategory,
+    pub settings_category_list: StatefulList<SettingsCategory>,
     pub ping_latency: Option<Duration>,
 }
 
@@ -249,6 +261,15 @@ impl<'a> App<'a> {
         commands_list
             .items
             .push((Command::Image, Command::Image.to_str()));
+
+        // Populate Settings categories
+        let mut settings_categories = StatefulList::default();
+        settings_categories.items.push(SettingsCategory::Audio);
+        settings_categories
+            .items
+            .push(SettingsCategory::FriendRequests);
+        settings_categories.items.push(SettingsCategory::Colors);
+        settings_categories.next();
 
         Self {
             user: None,
@@ -297,6 +318,7 @@ impl<'a> App<'a> {
             reply_target_message_id: None,
             _not_used: &false,
             current_settings_category: SettingsCategory::Audio,
+            settings_category_list: settings_categories,
             ping_latency: None,
         }
     }

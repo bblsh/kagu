@@ -3,10 +3,10 @@ use crate::app::{App, SettingsCategory};
 
 use ratatui::{
     layout::{Constraint, Direction, Layout},
-    prelude::{Alignment, Color, Line, Span},
+    prelude::{Alignment, Color, Line, Modifier, Span},
     style::Style,
     symbols,
-    widgets::{Block, Borders, List, Paragraph},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
 
@@ -65,17 +65,30 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
         return;
     };
 
-    let settings_categories = vec![String::from("Audio")];
-    let settings_list = List::new(settings_categories).block(
-        Block::default()
-            .border_style(Style::default())
-            .borders(Borders::RIGHT | Borders::TOP)
-            .border_set(symbols::border::Set {
-                top_right: symbols::line::HORIZONTAL_DOWN,
-                ..symbols::border::PLAIN
-            }),
+    let settings_categories: Vec<ListItem> = app
+        .settings_category_list
+        .items
+        .iter()
+        .map(|i| ListItem::new(i.to_string()).style(Style::default()))
+        .collect();
+
+    let settings_list = List::new(settings_categories)
+        .block(
+            Block::default()
+                .border_style(Style::default())
+                .borders(Borders::RIGHT | Borders::TOP)
+                .border_set(symbols::border::Set {
+                    top_right: symbols::line::HORIZONTAL_DOWN,
+                    ..symbols::border::PLAIN
+                }),
+        )
+        .highlight_style(Style::default().add_modifier(Modifier::BOLD))
+        .highlight_symbol(">");
+    frame.render_stateful_widget(
+        settings_list,
+        settings_list_area,
+        &mut app.settings_category_list.state,
     );
-    frame.render_widget(settings_list, settings_list_area);
 
     // Get the inner area to render the current settings view
     let settings_block = Block::default().borders(Borders::TOP);
@@ -87,5 +100,6 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             settings_views::audio_settings::render(app, inner_content_area, frame)
         }
         SettingsCategory::Colors => (),
+        SettingsCategory::FriendRequests => (),
     }
 }

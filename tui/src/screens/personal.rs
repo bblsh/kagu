@@ -70,8 +70,8 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                     ..symbols::border::PLAIN
                 })
                 .title(match app.current_pane {
-                    Pane::RealmsPane => Pane::to_str(&app.current_pane).with_focus(),
-                    _ => Pane::to_str(&Pane::RealmsPane),
+                    Pane::RealmsPane => Pane::RealmsPane.to_string().with_focus(),
+                    _ => Pane::RealmsPane.to_string(),
                 }),
         )
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))

@@ -122,8 +122,8 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             Block::default()
                 .borders(Borders::TOP | Borders::RIGHT)
                 .title(match app.current_pane {
-                    Pane::RealmsPane => Pane::to_str(&app.current_pane).with_focus(),
-                    _ => Pane::to_str(&Pane::RealmsPane),
+                    Pane::RealmsPane => Pane::RealmsPane.to_string().with_focus(),
+                    _ => Pane::RealmsPane.to_string(),
                 })
                 .border_set(symbols::border::Set {
                     top_right: symbols::line::HORIZONTAL_DOWN,
@@ -169,10 +169,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             ..symbols::border::PLAIN
         })
         .title(match &app.current_pane {
-            Pane::ChannelsPane => Pane::to_str(&app.current_pane)
+            Pane::ChannelsPane => Pane::ChannelsPane
+                .to_string()
                 .with_focus()
                 .with_pre_post_spaces(),
-            _ => Pane::to_str(&Pane::ChannelsPane).with_pre_post_spaces(),
+            _ => Pane::ChannelsPane.to_string().with_pre_post_spaces(),
         })
         .border_style(Style::default());
     let inner_channels_area = channels_outer_block.inner(channels_block_area);
@@ -315,10 +316,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                 _ => channel.1.clone().with_pre_post_spaces(),
             },
             None => match &app.current_pane {
-                Pane::ChatPane => Pane::to_str(&app.current_pane)
+                Pane::ChatPane => Pane::ChatPane
+                    .to_string()
                     .with_focus()
                     .with_pre_post_spaces(),
-                _ => Pane::to_str(&Pane::ChatPane).with_pre_post_spaces(),
+                _ => Pane::ChatPane.to_string().with_pre_post_spaces(),
             },
         })
         .border_style(Style::default());
@@ -370,10 +372,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
             Block::default()
                 .borders(Borders::TOP)
                 .title(match app.current_pane {
-                    Pane::MembersPane => Pane::to_str(&app.current_pane)
+                    Pane::MembersPane => Pane::MembersPane
+                        .to_string()
                         .with_focus()
                         .with_pre_post_spaces(),
-                    _ => Pane::to_str(&Pane::MembersPane).with_pre_post_spaces(),
+                    _ => Pane::MembersPane.to_string().with_pre_post_spaces(),
                 }),
         )
         .highlight_style(Style::default().add_modifier(Modifier::BOLD))
@@ -415,10 +418,11 @@ pub fn render(app: &mut App, frame: &mut Frame<'_>) {
                 } else {
                     Span::styled(
                         match app.current_pane {
-                            Pane::InputPane => Pane::to_str(&app.current_pane)
+                            Pane::InputPane => Pane::InputPane
+                                .to_string()
                                 .with_focus()
                                 .with_pre_post_spaces(),
-                            _ => Pane::to_str(&Pane::InputPane).with_pre_post_spaces(),
+                            _ => Pane::InputPane.to_string().with_pre_post_spaces(),
                         },
                         Style::default(),
                     )
