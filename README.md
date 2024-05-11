@@ -81,6 +81,23 @@ Similarly, text and voice channels can be added by navigating to the Channels pa
 
 `Esc` will exit focus from an input box, and pressing `q` will back out of a menu to add or remove a realm or channel.
 
+## Certificates
+It is encouraged to use your own self-generated certificate. To generate one, first verify you have `openssl` installed. After this, create a file (let's call it `CertConfig.cnf` here) with the following text:
+
+```
+[ req ]
+x509_extensions	= v3_ca
+
+[ v3_ca ]
+subjectAltName = DNS:localhost
+```
+
+After this file has been created, execute the follow command:
+
+`openssl req -x509 -noenc -newkey rsa:2048 -outform PEM -config CertConfig.cnf -keyout pkey.pem -out cert.pem -sha256 -days 3650 -subj "/C=US/ST=NewYork/L=NYC/O=OrgNameHere/OU=Kagu/CN=localhost"`
+
+You should now have a new, unique certificate and private key to use with Kagu.
+
 ## Planned Features
 * Ability to generate certificates for the server
 * Persistent messages using a database
